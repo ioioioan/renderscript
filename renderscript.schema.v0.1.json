@@ -1,0 +1,358 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://renderscript.studio/spec/renderscript.schema.v0.1.json",
+  "title": "RenderScript Document Schema v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "rscript_version",
+    "doc_id",
+    "meta",
+    "entities",
+    "scenes"
+  ],
+  "properties": {
+    "rscript_version": {
+      "type": "string",
+      "const": "0.1"
+    },
+    "doc_id": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 64
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "source",
+        "compiler",
+        "created_at"
+      ],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "format"
+          ],
+          "properties": {
+            "format": {
+              "type": "string",
+              "const": "fountain"
+            },
+            "name": {
+              "type": "string"
+            },
+            "hash": {
+              "type": "string"
+            }
+          }
+        },
+        "compiler": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "version"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
+        "created_at": {
+          "type": "string",
+          "description": "ISO-8601 timestamp (e.g., 2026-02-12T00:00:00Z)",
+          "format": "date-time"
+        }
+      }
+    },
+    "entities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "characters",
+        "locations",
+        "props"
+      ],
+      "properties": {
+        "characters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/character"
+          }
+        },
+        "locations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/location"
+          }
+        },
+        "props": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/prop"
+          }
+        }
+      }
+    },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/scene"
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Optional namespace for forward-compatible additions.",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "id_string": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "character": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id_string"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "first_scene_id": {
+          "$ref": "#/$defs/id_string"
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id_string"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "context": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "int_ext": {
+              "type": "string",
+              "enum": [
+                "INT",
+                "EXT"
+              ]
+            },
+            "time_of_day_default": {
+              "type": "string"
+            }
+          }
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "prop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id_string"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "first_scene_id": {
+          "$ref": "#/$defs/id_string"
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "ordinal",
+        "heading",
+        "beats"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id_string"
+        },
+        "ordinal": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "heading": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "raw",
+            "location_id"
+          ],
+          "properties": {
+            "raw": {
+              "type": "string",
+              "minLength": 1
+            },
+            "location_id": {
+              "$ref": "#/$defs/id_string"
+            },
+            "time_of_day": {
+              "type": "string"
+            },
+            "int_ext": {
+              "type": "string",
+              "enum": [
+                "INT",
+                "EXT"
+              ]
+            },
+            "extensions": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "presence": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "characters": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/id_string"
+              },
+              "uniqueItems": true
+            },
+            "props": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/id_string"
+              },
+              "uniqueItems": true
+            }
+          }
+        },
+        "beats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/beat"
+          }
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "beat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "text"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "action",
+            "dialogue",
+            "parenthetical",
+            "transition"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "speaker_id": {
+          "$ref": "#/$defs/id_string"
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "dialogue"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "speaker_id"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "parenthetical"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "speaker_id"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
