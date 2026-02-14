@@ -57,11 +57,16 @@ def _build_document(text: str, source_name: str | None) -> dict[str, object]:
             if token.token_type in {"dialogue", "parenthetical"}:
                 speaker = token.speaker
                 if speaker is None:
-                    continue
+                    raise ValueError(f"{token.token_type} beat missing speaker in scene: {scene.raw_heading}")
+                speaker_id = ensure_character(speaker, sid)
+                if not speaker_id:
+                    raise ValueError(
+                        f"{token.token_type} beat has empty speaker_id in scene: {scene.raw_heading}"
+                    )
                 beats.append(
                     {
                         "type": token.token_type,
-                        "speaker_id": ensure_character(speaker, sid),
+                        "speaker_id": speaker_id,
                         "text": token.text,
                     }
                 )
@@ -69,6 +74,9 @@ def _build_document(text: str, source_name: str | None) -> dict[str, object]:
                 beats.append({"type": "transition", "text": token.text})
             else:
                 beats.append({"type": "action", "text": token.text})
+
+        if not beats:
+            raise ValueError(f"Scene has zero beats: {scene.raw_heading}")
 
         scenes.append(
             {

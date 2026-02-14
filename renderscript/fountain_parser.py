@@ -9,6 +9,10 @@ _CHARACTER_RE = re.compile(r"^[A-Z0-9 .'\-()]+$")
 _TRANSITION_RE = re.compile(r"^(?:[A-Z0-9 .'\-]+ TO:|FADE OUT\.|FADE IN:)$")
 
 
+class FountainParseError(ValueError):
+    pass
+
+
 @dataclass(frozen=True)
 class ParsedScene:
     raw_heading: str
@@ -73,6 +77,14 @@ def _is_parenthetical(stripped: str) -> bool:
     return stripped.startswith("(") and stripped.endswith(")") and len(stripped) >= 3
 
 
+def _looks_like_dialogue_without_cue(raw_line: str) -> bool:
+    stripped = raw_line.strip()
+    if not stripped:
+        return False
+    leading = len(raw_line) - len(raw_line.lstrip(" \t"))
+    return leading >= 2
+
+
 def _tokenize_scene_body(lines: list[str]) -> list[ParsedToken]:
     tokens: list[ParsedToken] = []
     idx = 0
@@ -87,6 +99,12 @@ def _tokenize_scene_body(lines: list[str]) -> list[ParsedToken]:
             tokens.append(ParsedToken(token_type="transition", text=stripped))
             idx += 1
             continue
+
+        if _is_parenthetical(stripped):
+            raise FountainParseError(f"Parenthetical without character cue: {stripped}")
+
+        if _looks_like_dialogue_without_cue(lines[idx]):
+            raise FountainParseError(f"Dialogue without character cue: {stripped}")
 
         if _is_character_cue(stripped):
             speaker = stripped
@@ -138,31 +156,40 @@ def parse_fountain(text: str) -> tuple[str, list[ParsedScene]]:
         if _SCENE_RE.match(stripped):
             if current_heading is not None:
                 int_ext, location_name, time_of_day = _parse_heading(current_heading)
+                tokens = _tokenize_scene_body(current_body)
+                if not tokens:
+                    raise FountainParseError(f"Scene has zero beats: {current_heading}")
                 scenes.append(
                     ParsedScene(
                         raw_heading=current_heading,
                         int_ext=int_ext,
                         location_name=location_name,
                         time_of_day=time_of_day,
-                        tokens=_tokenize_scene_body(current_body),
+                        tokens=tokens,
                     )
                 )
             current_heading = stripped
             current_body = []
             continue
 
+        if current_heading is None and stripped:
+            raise FountainParseError(f"Content appears before first scene heading: {stripped}")
+
         if current_heading is not None:
             current_body.append(line)
 
     if current_heading is not None:
         int_ext, location_name, time_of_day = _parse_heading(current_heading)
+        tokens = _tokenize_scene_body(current_body)
+        if not tokens:
+            raise FountainParseError(f"Scene has zero beats: {current_heading}")
         scenes.append(
             ParsedScene(
                 raw_heading=current_heading,
                 int_ext=int_ext,
                 location_name=location_name,
                 time_of_day=time_of_day,
-                tokens=_tokenize_scene_body(current_body),
+                tokens=tokens,
             )
         )
 

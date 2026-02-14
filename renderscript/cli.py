@@ -91,8 +91,12 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.command == "compile":
-        compile_file(args.input, args.output)
-        return 0
+        try:
+            compile_file(args.input, args.output)
+            return 0
+        except Exception as exc:
+            print(exc)
+            return 1
 
     if args.command == "validate":
         ok, message = validate_file(args.file)
@@ -100,8 +104,12 @@ def main() -> int:
         return 0 if ok else 1
 
     if args.command == "bench":
-        rows = run_bench(args.input_dir, args.out, args.label, args.emit_dir)
-        return 0 if all(row["schema_valid"] == "true" for row in rows) else 1
+        try:
+            rows = run_bench(args.input_dir, args.out, args.label, args.emit_dir)
+            return 0 if all(row["schema_valid"] == "true" for row in rows) else 1
+        except Exception as exc:
+            print(exc)
+            return 1
 
     return 2
 
