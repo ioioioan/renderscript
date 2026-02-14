@@ -1,0 +1,73 @@
+{
+  "doc_id": "doc_da583b9f18b9",
+  "entities": {
+    "characters": [],
+    "locations": [
+      {
+        "context": {
+          "int_ext": "INT",
+          "time_of_day_default": "DAY"
+        },
+        "id": "loc_ee510d1a07ac",
+        "name": "WORKSHOP"
+      },
+      {
+        "context": {
+          "int_ext": "EXT",
+          "time_of_day_default": "NIGHT"
+        },
+        "id": "loc_a1a8dbefabbe",
+        "name": "ALLEY DOOR"
+      }
+    ],
+    "props": []
+  },
+  "meta": {
+    "compiler": {
+      "name": "renderscript",
+      "version": "0.1.0"
+    },
+    "created_at": "1970-01-01T00:00:00Z",
+    "source": {
+      "format": "fountain",
+      "hash": "da583b9f18b9144677575b3ade2aebb55ef182940244e59b000058e5492bddfb",
+      "name": "t3_prop_dependency.fountain"
+    },
+    "title": "T3 Prop Dependency"
+  },
+  "rscript_version": "0.1",
+  "scenes": [
+    {
+      "beats": [
+        {
+          "text": "RAVI lifts a brass key from a drawer.",
+          "type": "action"
+        }
+      ],
+      "heading": {
+        "int_ext": "INT",
+        "location_id": "loc_ee510d1a07ac",
+        "raw": "INT. WORKSHOP - DAY",
+        "time_of_day": "DAY"
+      },
+      "id": "scn_22a26705a031",
+      "ordinal": 1
+    },
+    {
+      "beats": [
+        {
+          "text": "RAVI inserts the brass key and opens the lock.",
+          "type": "action"
+        }
+      ],
+      "heading": {
+        "int_ext": "EXT",
+        "location_id": "loc_a1a8dbefabbe",
+        "raw": "EXT. ALLEY DOOR - NIGHT",
+        "time_of_day": "NIGHT"
+      },
+      "id": "scn_e4176b521b29",
+      "ordinal": 2
+    }
+  ]
+}

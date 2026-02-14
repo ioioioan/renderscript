@@ -1,0 +1,65 @@
+{
+  "doc_id": "doc_1f7eb6645322",
+  "entities": {
+    "characters": [],
+    "locations": [
+      {
+        "context": {
+          "int_ext": "INT",
+          "time_of_day_default": "DAY"
+        },
+        "id": "loc_fd8ecd2d4d81",
+        "name": "DINER"
+      }
+    ],
+    "props": []
+  },
+  "meta": {
+    "compiler": {
+      "name": "renderscript",
+      "version": "0.1.0"
+    },
+    "created_at": "1970-01-01T00:00:00Z",
+    "source": {
+      "format": "fountain",
+      "hash": "1f7eb6645322846c2f76df0285d762812b16643ccb7530b2558fc779b47007fe",
+      "name": "t4_location_persistence.fountain"
+    },
+    "title": "T4 Location Persistence"
+  },
+  "rscript_version": "0.1",
+  "scenes": [
+    {
+      "beats": [
+        {
+          "text": "LENA scans the empty booths.",
+          "type": "action"
+        }
+      ],
+      "heading": {
+        "int_ext": "INT",
+        "location_id": "loc_fd8ecd2d4d81",
+        "raw": "INT. DINER - DAY",
+        "time_of_day": "DAY"
+      },
+      "id": "scn_3e2d3248a4c0",
+      "ordinal": 1
+    },
+    {
+      "beats": [
+        {
+          "text": "LENA wipes the same counter before closing.",
+          "type": "action"
+        }
+      ],
+      "heading": {
+        "int_ext": "INT",
+        "location_id": "loc_fd8ecd2d4d81",
+        "raw": "INT. DINER - NIGHT",
+        "time_of_day": "NIGHT"
+      },
+      "id": "scn_74bab0d8e90a",
+      "ordinal": 2
+    }
+  ]
+}

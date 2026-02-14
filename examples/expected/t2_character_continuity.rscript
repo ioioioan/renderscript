@@ -1,0 +1,106 @@
+{
+  "doc_id": "doc_09ee892c7811",
+  "entities": {
+    "characters": [
+      {
+        "first_scene_id": "scn_49eeb6c57180",
+        "id": "char_001",
+        "name": "MARA"
+      }
+    ],
+    "locations": [
+      {
+        "context": {
+          "int_ext": "INT",
+          "time_of_day_default": "MORNING"
+        },
+        "id": "loc_6f347b04efac",
+        "name": "APARTMENT"
+      },
+      {
+        "context": {
+          "int_ext": "EXT",
+          "time_of_day_default": "DAY"
+        },
+        "id": "loc_6168d576bc09",
+        "name": "BUS STOP"
+      },
+      {
+        "context": {
+          "int_ext": "INT",
+          "time_of_day_default": "NIGHT"
+        },
+        "id": "loc_5cc3f82838ba",
+        "name": "OFFICE"
+      }
+    ],
+    "props": []
+  },
+  "meta": {
+    "compiler": {
+      "name": "renderscript",
+      "version": "0.1.0"
+    },
+    "created_at": "1970-01-01T00:00:00Z",
+    "source": {
+      "format": "fountain",
+      "hash": "09ee892c7811029db798eb174bfa407cca4eb8fa4f7a1254925c3bd75df159de",
+      "name": "t2_character_continuity.fountain"
+    },
+    "title": "T2 Character Continuity"
+  },
+  "rscript_version": "0.1",
+  "scenes": [
+    {
+      "beats": [
+        {
+          "speaker_id": "char_001",
+          "text": "I overslept.",
+          "type": "dialogue"
+        }
+      ],
+      "heading": {
+        "int_ext": "INT",
+        "location_id": "loc_6f347b04efac",
+        "raw": "INT. APARTMENT - MORNING",
+        "time_of_day": "MORNING"
+      },
+      "id": "scn_49eeb6c57180",
+      "ordinal": 1
+    },
+    {
+      "beats": [
+        {
+          "speaker_id": "char_001",
+          "text": "The bus is late.",
+          "type": "dialogue"
+        }
+      ],
+      "heading": {
+        "int_ext": "EXT",
+        "location_id": "loc_6168d576bc09",
+        "raw": "EXT. BUS STOP - DAY",
+        "time_of_day": "DAY"
+      },
+      "id": "scn_6bbb1f520673",
+      "ordinal": 2
+    },
+    {
+      "beats": [
+        {
+          "speaker_id": "char_001",
+          "text": "Long day.",
+          "type": "dialogue"
+        }
+      ],
+      "heading": {
+        "int_ext": "INT",
+        "location_id": "loc_5cc3f82838ba",
+        "raw": "INT. OFFICE - NIGHT",
+        "time_of_day": "NIGHT"
+      },
+      "id": "scn_7fa1a04f6ab5",
+      "ordinal": 3
+    }
+  ]
+}
