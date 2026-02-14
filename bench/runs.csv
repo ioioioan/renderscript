@@ -1,0 +1,5 @@
+timestamp,label,script_file,compile_ms,output_bytes,schema_valid
+2026-02-14T23:30:31.376918Z,baseline_cli,t1_dialogue_attribution.fountain,0,1681,true
+2026-02-14T23:30:31.378805Z,baseline_cli,t2_character_continuity.fountain,0,2308,true
+2026-02-14T23:30:31.379969Z,baseline_cli,t3_prop_dependency.fountain,0,1608,true
+2026-02-14T23:30:31.380783Z,baseline_cli,t4_location_persistence.fountain,0,1414,true
