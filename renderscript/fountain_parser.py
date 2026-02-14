@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 
 _SCENE_RE = re.compile(r"^(INT|EXT)\.?\s+", re.IGNORECASE)
+_CHARACTER_RE = re.compile(r"^[A-Z0-9 .'\-()]+$")
+_TRANSITION_RE = re.compile(r"^(?:[A-Z0-9 .'\-]+ TO:|FADE OUT\.|FADE IN:)$")
 
 
 @dataclass(frozen=True)
@@ -13,7 +15,14 @@ class ParsedScene:
     int_ext: str | None
     location_name: str
     time_of_day: str | None
-    body_lines: list[str]
+    tokens: list["ParsedToken"]
+
+
+@dataclass(frozen=True)
+class ParsedToken:
+    token_type: str
+    text: str
+    speaker: str | None = None
 
 
 def _parse_heading(heading: str) -> tuple[str | None, str, str | None]:
@@ -38,6 +47,75 @@ def _parse_heading(heading: str) -> tuple[str | None, str, str | None]:
         time_of_day = None
 
     return int_ext, location_name, time_of_day
+
+
+def _is_transition(stripped: str) -> bool:
+    return bool(_TRANSITION_RE.match(stripped))
+
+
+def _is_character_cue(stripped: str) -> bool:
+    if not stripped:
+        return False
+    if stripped != stripped.upper():
+        return False
+    if len(stripped) > 40:
+        return False
+    if stripped.startswith("(") or stripped.endswith(":"):
+        return False
+    if _SCENE_RE.match(stripped) or _is_transition(stripped):
+        return False
+    if not any(ch.isalpha() for ch in stripped):
+        return False
+    return bool(_CHARACTER_RE.match(stripped))
+
+
+def _is_parenthetical(stripped: str) -> bool:
+    return stripped.startswith("(") and stripped.endswith(")") and len(stripped) >= 3
+
+
+def _tokenize_scene_body(lines: list[str]) -> list[ParsedToken]:
+    tokens: list[ParsedToken] = []
+    idx = 0
+
+    while idx < len(lines):
+        stripped = lines[idx].strip()
+        if not stripped:
+            idx += 1
+            continue
+
+        if _is_transition(stripped):
+            tokens.append(ParsedToken(token_type="transition", text=stripped))
+            idx += 1
+            continue
+
+        if _is_character_cue(stripped):
+            speaker = stripped
+            idx += 1
+            emitted_speech = False
+            while idx < len(lines):
+                line = lines[idx].strip()
+                if not line:
+                    idx += 1
+                    break
+                if _SCENE_RE.match(line) or _is_transition(line) or _is_character_cue(line):
+                    break
+                if _is_parenthetical(line):
+                    tokens.append(
+                        ParsedToken(token_type="parenthetical", text=line, speaker=speaker)
+                    )
+                else:
+                    tokens.append(ParsedToken(token_type="dialogue", text=line, speaker=speaker))
+                emitted_speech = True
+                idx += 1
+
+            if not emitted_speech:
+                tokens.append(ParsedToken(token_type="action", text=speaker))
+            continue
+
+        tokens.append(ParsedToken(token_type="action", text=stripped))
+        idx += 1
+
+    return tokens
 
 
 def parse_fountain(text: str) -> tuple[str, list[ParsedScene]]:
@@ -66,7 +144,7 @@ def parse_fountain(text: str) -> tuple[str, list[ParsedScene]]:
                         int_ext=int_ext,
                         location_name=location_name,
                         time_of_day=time_of_day,
-                        body_lines=[x for x in current_body if x.strip()],
+                        tokens=_tokenize_scene_body(current_body),
                     )
                 )
             current_heading = stripped
@@ -84,7 +162,7 @@ def parse_fountain(text: str) -> tuple[str, list[ParsedScene]]:
                 int_ext=int_ext,
                 location_name=location_name,
                 time_of_day=time_of_day,
-                body_lines=[x for x in current_body if x.strip()],
+                tokens=_tokenize_scene_body(current_body),
             )
         )
 
