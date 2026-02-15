@@ -1,0 +1,23 @@
+Create a short cinematic video that strictly follows the structured screenplay below.
+
+Constraints:
+- Follow the events in order scene-by-scene.
+
+- Do not invent new characters, locations, or props.
+
+- Only use the characters listed for each scene.
+
+- Keep the location consistent within each scene.
+
+- Include all dialogue lines exactly as written.
+
+- If something is unclear, keep it minimal rather than inventing.
+
+Scene 1
+Location: INT. SERVER ROOM - NIGHT
+Characters present: ALICE, BOB
+
+ALICE (whispering)
+ALICE: Did you copy the drive?
+BOB: Yes.
+ALICE: Then move.
