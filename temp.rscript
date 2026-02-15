@@ -1,76 +1,9 @@
-{
-  "doc_id": "doc_c7d4934dd6b0",
-  "entities": {
-    "characters": [
-      {
-        "first_scene_id": "scn_4ecc7d5506db",
-        "id": "char_001",
-        "name": "ALICE"
-      },
-      {
-        "first_scene_id": "scn_4ecc7d5506db",
-        "id": "char_002",
-        "name": "BOB"
-      }
-    ],
-    "locations": [
-      {
-        "context": {
-          "int_ext": "INT",
-          "time_of_day_default": "NIGHT"
-        },
-        "id": "loc_231dbdcb60cf",
-        "name": "SERVER ROOM"
-      }
-    ],
-    "props": []
-  },
-  "meta": {
-    "compiler": {
-      "name": "renderscript",
-      "version": "0.1.0"
-    },
-    "created_at": "1970-01-01T00:00:00Z",
-    "source": {
-      "format": "fountain",
-      "hash": "c7d4934dd6b021f2b9524f7c59ac09f34f400e5143a8d68678ef932a1419a4f2",
-      "name": "t1_dialogue_attribution.fountain"
-    },
-    "title": "T1 Dialogue Attribution"
-  },
-  "rscript_version": "0.1",
-  "scenes": [
-    {
-      "beats": [
-        {
-          "speaker_id": "char_001",
-          "text": "(whispering)",
-          "type": "parenthetical"
-        },
-        {
-          "speaker_id": "char_001",
-          "text": "Did you copy the drive?",
-          "type": "dialogue"
-        },
-        {
-          "speaker_id": "char_002",
-          "text": "Yes.",
-          "type": "dialogue"
-        },
-        {
-          "speaker_id": "char_001",
-          "text": "Then move.",
-          "type": "dialogue"
-        }
-      ],
-      "heading": {
-        "int_ext": "INT",
-        "location_id": "loc_231dbdcb60cf",
-        "raw": "INT. SERVER ROOM - NIGHT",
-        "time_of_day": "NIGHT"
-      },
-      "id": "scn_4ecc7d5506db",
-      "ordinal": 1
-    }
-  ]
-}
+Scene 1
+Location: INT. SERVER ROOM - NIGHT
+Characters present: ALICE, BOB
+Beats:
+
+Parenthetical: ALICE (whispering)
+Dialogue: ALICE: Did you copy the drive?
+Dialogue: BOB: Yes.
+Dialogue: ALICE: Then move.
