@@ -1,0 +1,54 @@
+Create a short cinematic video that strictly follows the structured screenplay below.
+
+Constraints:
+- Follow the events in order scene-by-scene.
+
+- Do not invent new characters, locations, or props.
+
+- Only use the characters listed for each scene.
+
+- Keep the location consistent within each scene.
+
+- Include all dialogue lines exactly as written.
+
+- If something is unclear, keep it minimal rather than inventing.
+
+Scene 1
+Location: INT. APARTMENT KITCHEN - MORNING
+Characters present: MAYA, JONAH
+
+Action: A kettle clicks off on the stove.
+Action: MAYA folds a city map and slides it into a canvas tote.
+Action: JONAH checks his watch near the doorway.
+MAYA: Did you print the permit form?
+JONAH: It's in the blue folder.
+MAYA: Good. Grab the tape measure too.
+
+Scene 2
+Location: EXT. BUS STOP - MORNING
+Characters present: DIANE, JONAH
+
+Action: A city bus sighs to the curb as rain starts lightly.
+Action: DIANE jogs up with a clipboard under her coat.
+Action: MAYA holds the tote closed against the rain.
+DIANE: If traffic is bad, we lose the loading window.
+JONAH: Then we unload first and sort inside.
+
+Scene 3
+Location: INT. COMMUNITY CENTER LOBBY - DAY
+Characters present: 
+
+Action: Stacked folding chairs block part of the entrance.
+Action: JONAH moves two stacks aside to clear a path.
+Action: MAYA marks door widths on the permit form.
+Action: DIANE sets a roll of gaffer tape on the front desk.
+Transition: CUT TO:
+
+Scene 4
+Location: INT. APARTMENT KITCHEN - NIGHT
+Characters present: MAYA, JONAH
+
+Action: A wet umbrella drips into the sink.
+Action: The permit form sits signed beside a ring of keys.
+MAYA: Tomorrow we start at seven.
+JONAH: I'll bring coffee.

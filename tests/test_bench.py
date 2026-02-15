@@ -15,5 +15,6 @@ def test_bench_examples_writes_valid_rows(tmp_path: Path):
     with out_csv.open("r", encoding="utf-8", newline="") as fh:
         rows = list(csv.DictReader(fh))
 
-    assert len(rows) == 4
+    expected_rows = len(list(Path("examples").glob("*.fountain")))
+    assert len(rows) == expected_rows
     assert all(row["schema_valid"] == "true" for row in rows)
