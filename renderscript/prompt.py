@@ -130,3 +130,88 @@ def render_structured_sora_prompt(doc: dict[str, object]) -> str:
             lines.append("")
 
     return "\n".join(lines) + "\n"
+
+
+def render_natural_prompt(doc: dict[str, object]) -> str:
+    id_to_name = _character_lookup(doc)
+    raw_scenes = doc.get("scenes", [])
+    if not isinstance(raw_scenes, list):
+        raise ValueError("Document scenes must be a list")
+    scenes = [scene for scene in raw_scenes if isinstance(scene, dict)]
+    scenes.sort(key=lambda s: int(s.get("ordinal", 0)))
+
+    lines = [
+        "Create a short cinematic video that follows the screenplay faithfully.",
+        "",
+        "Constraints:",
+        "- Follow events in order.",
+        "- Do not invent new characters, locations, or props.",
+        "- Keep characters consistent.",
+        "- Keep each scene’s location consistent.",
+        "- If dialogue cannot be spoken, render the exact lines as subtitles.",
+        "",
+    ]
+
+    paragraphs: list[str] = []
+    for scene in scenes:
+        ordinal = scene.get("ordinal")
+        heading = scene.get("heading", {})
+        heading_raw = ""
+        if isinstance(heading, dict):
+            raw = heading.get("raw")
+            if isinstance(raw, str):
+                heading_raw = raw
+
+        character_names = _scene_character_names(scene, id_to_name)
+
+        beats = scene.get("beats", [])
+        if not isinstance(beats, list):
+            raise ValueError("Scene beats must be a list")
+
+        action_texts: list[str] = []
+        dialogue_lines: list[str] = []
+        for beat in beats:
+            if not isinstance(beat, dict):
+                raise ValueError("Invalid beat entry")
+            beat_type = beat.get("type")
+            text = beat.get("text")
+            if not isinstance(beat_type, str) or not isinstance(text, str):
+                raise ValueError("Invalid beat entry")
+            if beat_type == "action":
+                action_texts.append(text)
+            elif beat_type == "dialogue":
+                speaker_id = beat.get("speaker_id")
+                if not isinstance(speaker_id, str):
+                    raise ValueError("dialogue beat missing speaker_id")
+                speaker_name = id_to_name.get(speaker_id)
+                if speaker_name is None:
+                    raise ValueError(f"Unknown speaker_id: {speaker_id}")
+                dialogue_lines.append(f'{speaker_name}: "{text}"')
+            elif beat_type == "parenthetical":
+                speaker_id = beat.get("speaker_id")
+                if not isinstance(speaker_id, str):
+                    raise ValueError("parenthetical beat missing speaker_id")
+                speaker_name = id_to_name.get(speaker_id)
+                if speaker_name is None:
+                    raise ValueError(f"Unknown speaker_id: {speaker_id}")
+                dialogue_lines.append(f"{speaker_name} {text}")
+
+        action_summary = "; ".join(action_texts) if action_texts else "none"
+        dialogue_summary = " | ".join(dialogue_lines) if dialogue_lines else "none"
+        paragraph = (
+            f"Scene {ordinal}. Location: {heading_raw}. Characters present: "
+            f"{', '.join(character_names)}. Action summary: {action_summary}. "
+            f"Dialogue lines: {dialogue_summary}."
+        )
+        paragraphs.append(paragraph)
+
+    lines.append("\n\n".join(paragraphs))
+    return "\n".join(lines) + "\n"
+
+
+def render_prompt(doc: dict[str, object], mode: str) -> str:
+    if mode == "structured":
+        return render_structured_sora_prompt(doc)
+    if mode == "natural":
+        return render_natural_prompt(doc)
+    raise ValueError("Unsupported mode. Only 'structured' and 'natural' are supported.")

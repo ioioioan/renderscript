@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .compiler import compile_file, compile_fountain_text, write_rscript
-from .prompt import render_structured_sora_prompt
+from .prompt import render_prompt
 from .validate import validate_document, validate_file
 
 
@@ -86,7 +86,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     prompt_parser = subparsers.add_parser("prompt")
     prompt_parser.add_argument("input", type=Path)
-    prompt_parser.add_argument("--target", type=str, required=True)
+    prompt_parser.add_argument("--target", type=str, default="universal")
     prompt_parser.add_argument("--mode", type=str, required=True)
     prompt_parser.add_argument("-o", "--output", type=Path, required=True)
 
@@ -120,13 +120,11 @@ def main() -> int:
 
     if args.command == "prompt":
         try:
-            if args.target != "sora":
-                raise ValueError("Unsupported target. Only 'sora' is supported.")
-            if args.mode != "structured":
-                raise ValueError("Unsupported mode. Only 'structured' is supported.")
+            if args.target not in {"universal", "sora"}:
+                raise ValueError("Unsupported target. Supported targets: universal, sora.")
             text = args.input.read_text(encoding="utf-8")
             compiled = compile_fountain_text(text, source_name=args.input.name)
-            prompt_text = render_structured_sora_prompt(compiled)
+            prompt_text = render_prompt(compiled, mode=args.mode)
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(prompt_text, encoding="utf-8")
             return 0
