@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .compiler import compile_file, compile_fountain_text, write_rscript
+from .prompt import render_structured_sora_prompt
 from .validate import validate_document, validate_file
 
 
@@ -83,6 +84,12 @@ def build_parser() -> argparse.ArgumentParser:
     bench_parser.add_argument("--label", type=str, required=True)
     bench_parser.add_argument("--emit-dir", type=Path)
 
+    prompt_parser = subparsers.add_parser("prompt")
+    prompt_parser.add_argument("input", type=Path)
+    prompt_parser.add_argument("--target", type=str, required=True)
+    prompt_parser.add_argument("--mode", type=str, required=True)
+    prompt_parser.add_argument("-o", "--output", type=Path, required=True)
+
     return parser
 
 
@@ -107,6 +114,22 @@ def main() -> int:
         try:
             rows = run_bench(args.input_dir, args.out, args.label, args.emit_dir)
             return 0 if all(row["schema_valid"] == "true" for row in rows) else 1
+        except Exception as exc:
+            print(exc)
+            return 1
+
+    if args.command == "prompt":
+        try:
+            if args.target != "sora":
+                raise ValueError("Unsupported target. Only 'sora' is supported.")
+            if args.mode != "structured":
+                raise ValueError("Unsupported mode. Only 'structured' is supported.")
+            text = args.input.read_text(encoding="utf-8")
+            compiled = compile_fountain_text(text, source_name=args.input.name)
+            prompt_text = render_structured_sora_prompt(compiled)
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(prompt_text, encoding="utf-8")
+            return 0
         except Exception as exc:
             print(exc)
             return 1
