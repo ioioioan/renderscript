@@ -1,4 +1,4 @@
-Create a short cinematic video that strictly follows the structured screenplay below.
+Create a video that strictly follows structure below.
 
 Constraints:
 - Follow the events in order scene-by-scene.
