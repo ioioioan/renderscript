@@ -97,6 +97,7 @@ def build_parser() -> argparse.ArgumentParser:
     package_parser.add_argument("--provider-version", type=str, default="")
     package_parser.add_argument("--scene", type=int)
     package_parser.add_argument("--duration-s", type=int, default=3)
+    package_parser.add_argument("--project", type=str, default="project")
     package_parser.add_argument("-o", "--output", type=Path, required=True)
 
     return parser
@@ -152,6 +153,7 @@ def main() -> int:
                 provider_version=args.provider_version,
                 scene_ordinal=args.scene,
                 duration_s=args.duration_s,
+                project=args.project,
             )
             return 0
         except Exception as exc:

@@ -14,10 +14,16 @@ SUPPORTED_PROVIDER = "runway.gen4_image_refs"
 PROMPTS_FILENAME = "prompts/runway.gen4_image_refs_prompts.md"
 REQUIRED_FILES = [
     "rpack.json",
+    "rpack.schema.json",
     "README.md",
     "assets/ingredients_manifest.md",
+    "assets/placeholder/characters/README.md",
+    "assets/placeholder/locations/README.md",
+    "assets/placeholder/styles/README.md",
+    "assets/placeholder/props/README.md",
     "shots/shot_list.csv",
     "bindings/bindings.csv",
+    "rubric/scoring_sheet.csv",
     PROMPTS_FILENAME,
 ]
 ZIP_FIXED_DATETIME = (1980, 1, 1, 0, 0, 0)
@@ -30,17 +36,129 @@ def _render_readme() -> str:
     return (
         "# How to run this RenderPackage in Runway Gen-4 Image References\n\n"
         "This package is prepared for `runway.gen4_image_refs` workflows.\n\n"
-        "## Drift warnings\n\n"
-        "- Reference quality and consistency still depend on source image quality.\n"
-        "- Overly broad prompt edits can reduce visual continuity across shots.\n"
-        "- Re-check identity, wardrobe, and location consistency after each run.\n\n"
         "## Steps\n\n"
         "1. Open Runway and start a Gen-4 image generation workflow.\n"
-        "2. Enable **References** for the generation task.\n"
-        "3. For each shot, review required references in `bindings/bindings.csv`.\n"
-        "4. Add up to 3 references in Runway for that shot as needed.\n"
-        "5. Paste the shot prompt from `prompts/runway.gen4_image_refs_prompts.md`.\n"
-        "6. Generate, review drift, and iterate while preserving shot intent.\n"
+        "2. Enable **References**.\n"
+        "3. Add references for the current shot (maximum 3 active at a time in Runway).\n"
+        "4. Read required references in `bindings/bindings.csv` for that shot.\n"
+        "5. Paste the matching prompt from `prompts/runway.gen4_image_refs_prompts.md`.\n"
+        "6. Set the shot duration from `shots/shot_list.csv`.\n"
+        "7. Generate output, then score it in `rubric/scoring_sheet.csv`.\n"
+        "8. Reroll as needed while keeping reference IDs and prompt intent unchanged.\n\n"
+        "## Limits & drift warnings\n\n"
+        "- Results are not deterministic, even with fixed prompts and references.\n"
+        "- Reference quality and consistency still depend on source image quality.\n"
+        "- Runway supports up to 3 active references per generation.\n"
+        "- Identity, wardrobe, and location drift can still occur and may require rerolls.\n"
+        "- Overly broad prompt edits can reduce visual continuity across shots.\n"
+    )
+
+
+def _render_placeholder_readme(asset_kind: str) -> str:
+    return (
+        f"# {asset_kind.capitalize()} Placeholder\n\n"
+        "Use this folder to stage reference images before generation.\n\n"
+        "## Naming examples\n\n"
+        "- `char_A_ref_01`\n"
+        "- `loc_01_ref_01`\n"
+        "- `style_01_ref_01`\n"
+        "- `prop_01_ref_01`\n\n"
+        "## Capture checklist\n\n"
+        "- Capture clean, front-facing references where applicable.\n"
+        "- Keep lighting and color temperature consistent.\n"
+        "- Avoid heavy motion blur and extreme occlusion.\n"
+        "- Keep wardrobe and key props consistent across captures.\n\n"
+        "## Provider limits\n\n"
+        "- Exact reference limits depend on provider.\n"
+        "- Runway Gen-4 Image References supports up to 3 active references.\n"
+    )
+
+
+def _render_rpack_schema_json() -> str:
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "RenderPackage v0.1",
+        "type": "object",
+        "required": [
+            "rpack_version",
+            "target_provider",
+            "target_provider_version",
+            "source",
+            "scene",
+            "shots",
+            "bindings",
+            "risk_flags",
+        ],
+        "properties": {
+            "rpack_version": {"type": "string"},
+            "target_provider": {"type": "string"},
+            "target_provider_version": {"type": "string"},
+            "source": {
+                "type": "object",
+                "required": ["filename", "hash"],
+                "properties": {"filename": {"type": "string"}, "hash": {"type": "string"}},
+            },
+            "scene": {
+                "type": "object",
+                "required": ["scene_id", "heading_raw", "ordinal"],
+                "properties": {
+                    "scene_id": {"type": "string"},
+                    "heading_raw": {"type": "string"},
+                    "ordinal": {"type": "integer"},
+                },
+            },
+            "shots": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["shot_id", "duration_s", "framing", "beat", "notes", "risk_flags"],
+                },
+            },
+            "bindings": {"type": "object"},
+            "required_references": {"type": "object"},
+            "risk_flags": {"type": "array", "items": {"type": "string"}},
+        },
+    }
+    return json.dumps(schema, indent=2, sort_keys=True) + "\n"
+
+
+def _normalize_name(name: str) -> str:
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "_", name.strip())
+    return safe or "project"
+
+
+def _resolve_output_path(
+    output_path: Path,
+    project: str,
+    selected_scene: dict[str, object],
+    provider: str,
+) -> Path:
+    is_dir_output = output_path.exists() and output_path.is_dir()
+    if not is_dir_output and not output_path.suffix:
+        is_dir_output = True
+    if not is_dir_output:
+        return output_path
+    ordinal = int(selected_scene.get("ordinal", 0))
+    scene_tag = f"scene_{ordinal:03d}"
+    file_name = f"{_normalize_name(project)}_{scene_tag}_{provider.replace('.', '_')}_renderpackage_v1.zip"
+    return output_path / file_name
+
+
+def _render_scoring_sheet(shots: list[dict[str, object]]) -> str:
+    rows = [
+        [str(shot["shot_id"]), "", "", "", "", ""]
+        for shot in shots
+    ]
+    return _to_csv(
+        headers=[
+            "shot_id",
+            "keeper",
+            "character_consistency_1_5",
+            "location_consistency_1_5",
+            "style_consistency_1_5",
+            "notes",
+        ],
+        rows=rows,
     )
 
 
@@ -435,6 +553,7 @@ def package_fountain_file(
     provider_version: str = "",
     scene_ordinal: int | None = None,
     duration_s: int = 3,
+    project: str = "project",
 ) -> None:
     if provider != SUPPORTED_PROVIDER:
         raise ValueError(f"Unsupported provider: {provider}. Supported providers: {SUPPORTED_PROVIDER}")
@@ -444,6 +563,12 @@ def package_fountain_file(
     source = doc.get("meta", {}).get("source", {}) if isinstance(doc.get("meta", {}), dict) else {}
     source_hash = source.get("hash", "") if isinstance(source, dict) else ""
     selected_scene = _extract_scene(doc, scene_ordinal)
+    resolved_output_path = _resolve_output_path(
+        output_path=output_path,
+        project=project,
+        selected_scene=selected_scene,
+        provider=provider,
+    )
     shots, shot_units, _ = _build_shots(selected_scene, doc=doc, duration_s=duration_s)
     bindings, required_refs = _build_bindings(shots, units=shot_units, doc=doc)
 
@@ -483,8 +608,13 @@ def package_fountain_file(
             bindings=bindings,
             required_refs=required_refs,
         ),
+        "rpack.schema.json": _render_rpack_schema_json(),
         "README.md": _render_readme(),
         "assets/ingredients_manifest.md": _render_ingredients_manifest(required_refs),
+        "assets/placeholder/characters/README.md": _render_placeholder_readme("characters"),
+        "assets/placeholder/locations/README.md": _render_placeholder_readme("locations"),
+        "assets/placeholder/styles/README.md": _render_placeholder_readme("styles"),
+        "assets/placeholder/props/README.md": _render_placeholder_readme("props"),
         "shots/shot_list.csv": _to_csv(
             headers=["shot_id", "duration_s", "framing", "beat", "notes", "risk_flags"], rows=shot_rows
         ),
@@ -498,6 +628,7 @@ def package_fountain_file(
             ],
             rows=bindings_rows,
         ),
+        "rubric/scoring_sheet.csv": _render_scoring_sheet(shots),
         PROMPTS_FILENAME: _render_prompts(shots, bindings),
     }
-    _write_deterministic_zip(output_path, files)
+    _write_deterministic_zip(resolved_output_path, files)
