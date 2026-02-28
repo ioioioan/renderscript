@@ -1,0 +1,33 @@
+{
+  "bindings": {
+    "shot_001": {
+      "character_ref_ids": [],
+      "location_ref_ids": [],
+      "prop_ref_ids": [],
+      "style_ref_ids": []
+    }
+  },
+  "risk_flags": [],
+  "rpack_version": "0.1",
+  "scene": {
+    "heading_raw": "INT. APARTMENT KITCHEN - MORNING",
+    "ordinal": 1,
+    "scene_id": "scn_49132c8a016b"
+  },
+  "shots": [
+    {
+      "beat": "Whole scene: INT. APARTMENT KITCHEN - MORNING",
+      "duration_s": 5,
+      "framing": "wide",
+      "notes": "RP1 placeholder shot",
+      "risk_flags": [],
+      "shot_id": "shot_001"
+    }
+  ],
+  "source": {
+    "filename": "realistic.fountain",
+    "hash": "421d9831099e0540cc88c3a662d77b5a412d84f7ce573bfec68f902b03ededa4"
+  },
+  "target_provider": "runway.gen4_image_refs",
+  "target_provider_version": ""
+}
