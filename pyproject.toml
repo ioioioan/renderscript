@@ -8,7 +8,9 @@ name = "renderscript"
 version = "0.1.0"
 description = "RenderScript Phase 1A bootstrap"
 requires-python = ">=3.9"
-dependencies = []
+dependencies = [
+  "reportlab>=4.0.0",
+]
 
 [project.scripts]
 renderscript = "renderscript.cli:main"

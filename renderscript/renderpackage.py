@@ -8,6 +8,7 @@ from pathlib import Path
 from zipfile import ZIP_STORED, ZipFile, ZipInfo
 
 from .compiler import compile_fountain_text
+from .pdf_guide import render_creator_guide_pdf
 
 
 SUPPORTED_PROVIDER = "runway.gen4_image_refs"
@@ -16,6 +17,7 @@ REQUIRED_FILES = [
     "rpack.json",
     "rpack.schema.json",
     "README.md",
+    "CREATOR_GUIDE.pdf",
     "assets/ingredients_manifest.md",
     "assets/placeholder/characters/README.md",
     "assets/placeholder/locations/README.md",
@@ -535,7 +537,7 @@ def _render_rpack_json(
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
 
-def _write_deterministic_zip(output_path: Path, files: dict[str, str]) -> None:
+def _write_deterministic_zip(output_path: Path, files: dict[str, str | bytes]) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(output_path, "w", compression=ZIP_STORED) as zf:
         for path in REQUIRED_FILES:
@@ -543,7 +545,12 @@ def _write_deterministic_zip(output_path: Path, files: dict[str, str]) -> None:
             info.date_time = ZIP_FIXED_DATETIME
             info.compress_type = ZIP_STORED
             info.external_attr = 0o100644 << 16
-            zf.writestr(info, files[path].encode("utf-8"))
+            content = files[path]
+            if isinstance(content, str):
+                content_bytes = content.encode("utf-8")
+            else:
+                content_bytes = content
+            zf.writestr(info, content_bytes)
 
 
 def package_fountain_file(
@@ -597,7 +604,7 @@ def package_fountain_file(
             ]
         )
 
-    files = {
+    files: dict[str, str | bytes] = {
         "rpack.json": _render_rpack_json(
             source_name=input_path.name,
             source_hash=str(source_hash),
@@ -610,6 +617,7 @@ def package_fountain_file(
         ),
         "rpack.schema.json": _render_rpack_schema_json(),
         "README.md": _render_readme(),
+        "CREATOR_GUIDE.pdf": render_creator_guide_pdf(PROMPTS_FILENAME),
         "assets/ingredients_manifest.md": _render_ingredients_manifest(required_refs),
         "assets/placeholder/characters/README.md": _render_placeholder_readme("characters"),
         "assets/placeholder/locations/README.md": _render_placeholder_readme("locations"),

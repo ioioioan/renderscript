@@ -14,6 +14,7 @@ REQUIRED_PATHS = [
     "rpack.json",
     "rpack.schema.json",
     "README.md",
+    "CREATOR_GUIDE.pdf",
     "assets/ingredients_manifest.md",
     "assets/placeholder/characters/README.md",
     "assets/placeholder/locations/README.md",
@@ -109,6 +110,8 @@ def test_package_generates_required_files_and_is_deterministic(
 
     for shot in rpack["shots"]:
         assert shot["shot_id"] in prompt_text
+
+    assert len(contents_one["CREATOR_GUIDE.pdf"]) > 2048
 
     for placeholder_path in [
         "assets/placeholder/characters/README.md",
