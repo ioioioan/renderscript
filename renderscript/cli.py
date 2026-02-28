@@ -96,6 +96,7 @@ def build_parser() -> argparse.ArgumentParser:
     package_parser.add_argument("--provider", type=str, required=True)
     package_parser.add_argument("--provider-version", type=str, default="")
     package_parser.add_argument("--scene", type=int)
+    package_parser.add_argument("--duration-s", type=int, default=3)
     package_parser.add_argument("-o", "--output", type=Path, required=True)
 
     return parser
@@ -142,12 +143,15 @@ def main() -> int:
 
     if args.command == "package":
         try:
+            if args.duration_s <= 0:
+                raise ValueError("--duration-s must be a positive integer")
             package_fountain_file(
                 input_path=args.input,
                 output_path=args.output,
                 provider=args.provider,
                 provider_version=args.provider_version,
                 scene_ordinal=args.scene,
+                duration_s=args.duration_s,
             )
             return 0
         except Exception as exc:

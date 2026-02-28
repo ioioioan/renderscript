@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 from pathlib import Path
 from zipfile import ZIP_STORED, ZipFile, ZipInfo
 
@@ -20,6 +21,9 @@ REQUIRED_FILES = [
     PROMPTS_FILENAME,
 ]
 ZIP_FIXED_DATETIME = (1980, 1, 1, 0, 0, 0)
+MIN_SHOTS = 8
+MAX_SHOTS = 12
+FRAMING_CYCLE = ("wide", "medium", "close")
 
 
 def _render_readme() -> str:
@@ -40,9 +44,18 @@ def _render_readme() -> str:
     )
 
 
-def _render_ingredients_manifest() -> str:
+def _render_ingredients_manifest(required_refs: dict[str, list[str]]) -> str:
+    all_refs = (
+        required_refs["style_ref_ids"]
+        + required_refs["location_ref_ids"]
+        + required_refs["character_ref_ids"]
+        + required_refs["prop_ref_ids"]
+    )
+    refs_list = "\n".join(f"- `{ref_id}`" for ref_id in all_refs) if all_refs else "- none"
     return (
         "# Ingredients Manifest\n\n"
+        "## Required reference IDs\n\n"
+        f"{refs_list}\n\n"
         "## Required asset categories\n\n"
         "- Characters\n"
         "- Locations\n"
@@ -55,8 +68,10 @@ def _render_ingredients_manifest() -> str:
         "- Verify reference files are named consistently before packaging.\n\n"
         "## Naming rules\n\n"
         "- `char_A_ref_01`\n"
+        "- `char_A_02_ref_01` (for initial collisions)\n"
         "- `loc_01_ref_01`\n"
         "- `style_01_ref_01`\n"
+        "- `prop_01_ref_01`\n"
     )
 
 
@@ -89,47 +104,285 @@ def _extract_scene(doc: dict[str, object], scene_ordinal: int | None) -> dict[st
     raise ValueError(f"Scene ordinal not found: {scene_ordinal}")
 
 
-def _build_shots(scene: dict[str, object]) -> list[dict[str, object]]:
-    heading = scene.get("heading", {})
-    heading_raw = heading.get("raw", "") if isinstance(heading, dict) else ""
-    return [
-        {
-            "shot_id": "shot_001",
-            "duration_s": 5,
-            "framing": "wide",
-            "beat": f"Whole scene: {heading_raw}",
-            "notes": "RP1 placeholder shot",
-            "risk_flags": [],
-        }
-    ]
-
-
-def _build_bindings(shots: list[dict[str, object]]) -> dict[str, dict[str, list[str]]]:
-    out: dict[str, dict[str, list[str]]] = {}
-    for shot in shots:
-        shot_id = str(shot["shot_id"])
-        out[shot_id] = {
-            "character_ref_ids": [],
-            "location_ref_ids": [],
-            "style_ref_ids": [],
-            "prop_ref_ids": [],
-        }
+def _speaker_lookup(doc: dict[str, object]) -> dict[str, str]:
+    entities = doc.get("entities", {})
+    if not isinstance(entities, dict):
+        return {}
+    characters_raw = entities.get("characters", [])
+    if not isinstance(characters_raw, list):
+        return {}
+    out: dict[str, str] = {}
+    for item in characters_raw:
+        if not isinstance(item, dict):
+            continue
+        cid = str(item.get("id", "")).strip()
+        name = str(item.get("name", "")).strip()
+        if cid and name:
+            out[cid] = name
     return out
 
 
+def _split_into_sentences(text: str) -> list[str]:
+    parts = re.split(r"(?<=[.!?])\s+", text.strip())
+    out = [part.strip() for part in parts if part.strip()]
+    return out or [text.strip()]
+
+
+def _extract_caps_tokens(text: str) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for token in re.findall(r"\b[A-Z][A-Z0-9]{1,}\b", text):
+        if token not in seen:
+            seen.add(token)
+            out.append(token)
+    return out
+
+
+def _build_units(scene: dict[str, object], speaker_by_id: dict[str, str]) -> tuple[list[dict[str, object]], list[str]]:
+    beats_raw = scene.get("beats", [])
+    if not isinstance(beats_raw, list):
+        return [], []
+
+    transition_flags: list[str] = []
+    units: list[dict[str, object]] = []
+    attached_to: dict[int, str] = {}
+
+    for idx, beat in enumerate(beats_raw):
+        if not isinstance(beat, dict):
+            continue
+        beat_type = str(beat.get("type", ""))
+        if beat_type == "transition":
+            transition_flags.append("scene_transition_present")
+            continue
+        if beat_type == "parenthetical":
+            speaker_id = str(beat.get("speaker_id", ""))
+            next_beat = beats_raw[idx + 1] if idx + 1 < len(beats_raw) and isinstance(beats_raw[idx + 1], dict) else {}
+            if (
+                isinstance(next_beat, dict)
+                and str(next_beat.get("type", "")) == "dialogue"
+                and str(next_beat.get("speaker_id", "")) == speaker_id
+            ):
+                attached_to[idx + 1] = str(beat.get("text", "")).strip()
+                continue
+            speaker_name = speaker_by_id.get(speaker_id, speaker_id)
+            text = str(beat.get("text", "")).strip()
+            units.append(
+                {
+                    "type": "parenthetical",
+                    "text": f"{speaker_name} {text}".strip(),
+                    "speaker_ids": [speaker_id] if speaker_id else [],
+                    "props": [],
+                    "salience": 1,
+                }
+            )
+            continue
+        if beat_type == "dialogue":
+            speaker_id = str(beat.get("speaker_id", ""))
+            speaker_name = speaker_by_id.get(speaker_id, speaker_id)
+            line = str(beat.get("text", "")).strip()
+            parenthetical = attached_to.get(idx, "")
+            text = f"{speaker_name} {parenthetical}: {line}".strip() if parenthetical else f"{speaker_name}: {line}"
+            units.append(
+                {
+                    "type": "dialogue",
+                    "text": text,
+                    "speaker_ids": [speaker_id] if speaker_id else [],
+                    "props": [],
+                    "salience": 3,
+                }
+            )
+            continue
+        action_text = str(beat.get("text", "")).strip()
+        units.append(
+            {
+                "type": "action",
+                "text": action_text,
+                "speaker_ids": [],
+                "props": _extract_caps_tokens(action_text),
+                "salience": 2,
+            }
+        )
+    return units, sorted(set(transition_flags))
+
+
+def _expand_units_to_min(units: list[dict[str, object]], min_shots: int) -> list[dict[str, object]]:
+    out = [dict(unit) for unit in units]
+    while len(out) < min_shots:
+        split_idx = -1
+        split_sentences: list[str] = []
+        for idx, unit in enumerate(out):
+            if unit.get("type") != "action":
+                continue
+            sentences = _split_into_sentences(str(unit.get("text", "")))
+            if len(sentences) > 1:
+                split_idx = idx
+                split_sentences = sentences
+                break
+        if split_idx == -1:
+            break
+        base = dict(out[split_idx])
+        replacements: list[dict[str, object]] = []
+        for sentence in split_sentences:
+            next_unit = dict(base)
+            next_unit["text"] = sentence
+            replacements.append(next_unit)
+        out = out[:split_idx] + replacements + out[split_idx + 1 :]
+    while len(out) < min_shots and out:
+        clone = dict(out[(len(out) - 1) % len(out)])
+        clone["notes"] = "Pacing hold"
+        out.append(clone)
+    return out
+
+
+def _merge_units_to_max(units: list[dict[str, object]], max_shots: int) -> list[dict[str, object]]:
+    out = [dict(unit) for unit in units]
+    while len(out) > max_shots and len(out) > 1:
+        merge_idx = 0
+        best_score = 10**9
+        for idx in range(len(out) - 1):
+            left = out[idx]
+            right = out[idx + 1]
+            score = int(left.get("salience", 2)) + int(right.get("salience", 2))
+            if score < best_score:
+                best_score = score
+                merge_idx = idx
+        left = out[merge_idx]
+        right = out[merge_idx + 1]
+        merged = {
+            "type": "merged",
+            "text": f"{left.get('text', '')} {right.get('text', '')}".strip(),
+            "speaker_ids": sorted(set(list(left.get("speaker_ids", [])) + list(right.get("speaker_ids", [])))),
+            "props": sorted(set(list(left.get("props", [])) + list(right.get("props", [])))),
+            "salience": max(int(left.get("salience", 2)), int(right.get("salience", 2))),
+        }
+        out = out[:merge_idx] + [merged] + out[merge_idx + 2 :]
+    return out
+
+
+def _normalize_units_for_shots(units: list[dict[str, object]]) -> list[dict[str, object]]:
+    expanded = _expand_units_to_min(units, MIN_SHOTS)
+    merged = _merge_units_to_max(expanded, MAX_SHOTS)
+    return merged[:MAX_SHOTS]
+
+
+def _build_shots(
+    scene: dict[str, object],
+    doc: dict[str, object],
+    duration_s: int,
+) -> tuple[list[dict[str, object]], list[dict[str, object]], list[str]]:
+    speaker_by_id = _speaker_lookup(doc)
+    units, transition_flags = _build_units(scene, speaker_by_id)
+    if not units:
+        heading = scene.get("heading", {})
+        heading_raw = heading.get("raw", "") if isinstance(heading, dict) else ""
+        units = [{"type": "action", "text": heading_raw, "speaker_ids": [], "props": [], "salience": 2}]
+    normalized_units = _normalize_units_for_shots(units)
+    shots: list[dict[str, object]] = []
+    for idx, unit in enumerate(normalized_units, start=1):
+        risk_flags = list(transition_flags)
+        shot = {
+            "shot_id": f"shot_{idx:03d}",
+            "duration_s": duration_s,
+            "framing": FRAMING_CYCLE[(idx - 1) % len(FRAMING_CYCLE)],
+            "beat": str(unit.get("text", "")).strip(),
+            "notes": str(unit.get("notes", "")).strip(),
+            "risk_flags": risk_flags,
+        }
+        shots.append(shot)
+    return shots, normalized_units, transition_flags
+
+
+def _character_ref_lookup(speaker_by_id: dict[str, str]) -> dict[str, str]:
+    counts: dict[str, int] = {}
+    out: dict[str, str] = {}
+    for speaker_id in sorted(speaker_by_id.keys()):
+        name = speaker_by_id[speaker_id]
+        initial_match = re.search(r"[A-Za-z]", name)
+        initial = initial_match.group(0).upper() if initial_match else "X"
+        counts[initial] = counts.get(initial, 0) + 1
+        suffix = f"_{counts[initial]:02d}" if counts[initial] > 1 else ""
+        out[speaker_id] = f"char_{initial}{suffix}_ref_01"
+    return out
+
+
+def _speakers_from_action(text: str, speaker_by_id: dict[str, str]) -> list[str]:
+    matches: list[str] = []
+    for speaker_id, name in sorted(speaker_by_id.items()):
+        if re.search(rf"\b{re.escape(name)}\b", text, re.IGNORECASE):
+            matches.append(speaker_id)
+    return matches
+
+
+def _build_bindings(
+    shots: list[dict[str, object]],
+    units: list[dict[str, object]],
+    doc: dict[str, object],
+) -> tuple[dict[str, dict[str, list[str]]], dict[str, list[str]]]:
+    speaker_by_id = _speaker_lookup(doc)
+    character_ref_by_speaker = _character_ref_lookup(speaker_by_id)
+
+    prop_order: list[str] = []
+    prop_lookup: dict[str, str] = {}
+    for unit in units:
+        for token in unit.get("props", []):
+            prop = str(token)
+            if prop not in prop_lookup:
+                prop_order.append(prop)
+                prop_lookup[prop] = f"prop_{len(prop_order):02d}_ref_01"
+
+    out: dict[str, dict[str, list[str]]] = {}
+    used_character_refs: set[str] = set()
+    used_prop_refs: set[str] = set()
+    for index, shot in enumerate(shots):
+        shot_id = str(shot["shot_id"])
+        unit = units[index]
+        direct_speakers = [str(s) for s in unit.get("speaker_ids", []) if str(s)]
+        inferred_speakers = _speakers_from_action(str(unit.get("text", "")), speaker_by_id)
+        speaker_ids = sorted(set(direct_speakers + inferred_speakers))
+        character_ref_ids = [character_ref_by_speaker[sid] for sid in speaker_ids if sid in character_ref_by_speaker]
+        prop_ref_ids = [prop_lookup[str(token)] for token in unit.get("props", []) if str(token) in prop_lookup]
+        used_character_refs.update(character_ref_ids)
+        used_prop_refs.update(prop_ref_ids)
+        out[shot_id] = {
+            "character_ref_ids": character_ref_ids,
+            "location_ref_ids": ["loc_01_ref_01"],
+            "style_ref_ids": ["style_01_ref_01"],
+            "prop_ref_ids": prop_ref_ids,
+        }
+    required_refs = {
+        "style_ref_ids": ["style_01_ref_01"],
+        "location_ref_ids": ["loc_01_ref_01"],
+        "character_ref_ids": sorted(used_character_refs),
+        "prop_ref_ids": sorted(used_prop_refs),
+    }
+    return out, required_refs
+
+
 def _render_prompts(shots: list[dict[str, object]], bindings: dict[str, dict[str, list[str]]]) -> str:
-    lines = ["# Runway Gen-4 Image References Prompts", ""]
+    lines = [
+        "# Runway Gen-4 Image References Prompts",
+        "",
+        "> Drift warning: outputs can still vary; review each shot for continuity.",
+        "",
+    ]
     for shot in shots:
         shot_id = str(shot["shot_id"])
         shot_bindings = bindings[shot_id]
-        lines.append(f"## {shot_id}")
+        lines.append(f"## {shot_id} ({shot['duration_s']}s)")
         lines.append("")
-        lines.append(f"Prompt: {shot['beat']}. {shot['notes']}.")
-        lines.append("Required references:")
-        lines.append(f"- character_ref_ids: {', '.join(shot_bindings['character_ref_ids']) or 'none'}")
-        lines.append(f"- location_ref_ids: {', '.join(shot_bindings['location_ref_ids']) or 'none'}")
-        lines.append(f"- style_ref_ids: {', '.join(shot_bindings['style_ref_ids']) or 'none'}")
-        lines.append(f"- prop_ref_ids: {', '.join(shot_bindings['prop_ref_ids']) or 'none'}")
+        lines.append(
+            "Apply references: "
+            f"character={', '.join(shot_bindings['character_ref_ids']) or 'none'}, "
+            f"location={', '.join(shot_bindings['location_ref_ids'])}, "
+            f"style={', '.join(shot_bindings['style_ref_ids'])}"
+        )
+        if shot_bindings["prop_ref_ids"]:
+            lines.append(f"Props references: {', '.join(shot_bindings['prop_ref_ids'])}")
+        lines.append(
+            "Prompt: "
+            f"{shot['beat']}. Framing {shot['framing']}. "
+            "Stay in this location. Do not invent new characters or props. Keep consistent look."
+        )
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
@@ -142,6 +395,7 @@ def _render_rpack_json(
     scene: dict[str, object],
     shots: list[dict[str, object]],
     bindings: dict[str, dict[str, list[str]]],
+    required_refs: dict[str, list[str]],
 ) -> str:
     heading = scene.get("heading", {})
     heading_raw = heading.get("raw", "") if isinstance(heading, dict) else ""
@@ -157,6 +411,7 @@ def _render_rpack_json(
         },
         "shots": shots,
         "bindings": bindings,
+        "required_references": required_refs,
         "risk_flags": [],
     }
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
@@ -179,6 +434,7 @@ def package_fountain_file(
     provider: str,
     provider_version: str = "",
     scene_ordinal: int | None = None,
+    duration_s: int = 3,
 ) -> None:
     if provider != SUPPORTED_PROVIDER:
         raise ValueError(f"Unsupported provider: {provider}. Supported providers: {SUPPORTED_PROVIDER}")
@@ -188,8 +444,8 @@ def package_fountain_file(
     source = doc.get("meta", {}).get("source", {}) if isinstance(doc.get("meta", {}), dict) else {}
     source_hash = source.get("hash", "") if isinstance(source, dict) else ""
     selected_scene = _extract_scene(doc, scene_ordinal)
-    shots = _build_shots(selected_scene)
-    bindings = _build_bindings(shots)
+    shots, shot_units, _ = _build_shots(selected_scene, doc=doc, duration_s=duration_s)
+    bindings, required_refs = _build_bindings(shots, units=shot_units, doc=doc)
 
     shot_rows = [
         [
@@ -225,9 +481,10 @@ def package_fountain_file(
             scene=selected_scene,
             shots=shots,
             bindings=bindings,
+            required_refs=required_refs,
         ),
         "README.md": _render_readme(),
-        "assets/ingredients_manifest.md": _render_ingredients_manifest(),
+        "assets/ingredients_manifest.md": _render_ingredients_manifest(required_refs),
         "shots/shot_list.csv": _to_csv(
             headers=["shot_id", "duration_s", "framing", "beat", "notes", "risk_flags"], rows=shot_rows
         ),
