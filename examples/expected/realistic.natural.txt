@@ -1,4 +1,4 @@
-Create a video that follows below faithfully.
+Create a short cinematic video that follows the screenplay faithfully.
 
 Constraints:
 - Follow events in order.

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .compiler import compile_file, compile_fountain_text, write_rscript
 from .prompt import render_prompt
+from .renderpackage import package_fountain_file
 from .validate import validate_document, validate_file
 
 
@@ -90,6 +91,13 @@ def build_parser() -> argparse.ArgumentParser:
     prompt_parser.add_argument("--mode", type=str, required=True)
     prompt_parser.add_argument("-o", "--output", type=Path, required=True)
 
+    package_parser = subparsers.add_parser("package")
+    package_parser.add_argument("input", type=Path)
+    package_parser.add_argument("--provider", type=str, required=True)
+    package_parser.add_argument("--provider-version", type=str, default="")
+    package_parser.add_argument("--scene", type=int)
+    package_parser.add_argument("-o", "--output", type=Path, required=True)
+
     return parser
 
 
@@ -127,6 +135,20 @@ def main() -> int:
             prompt_text = render_prompt(compiled, mode=args.mode)
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(prompt_text, encoding="utf-8")
+            return 0
+        except Exception as exc:
+            print(exc)
+            return 1
+
+    if args.command == "package":
+        try:
+            package_fountain_file(
+                input_path=args.input,
+                output_path=args.output,
+                provider=args.provider,
+                provider_version=args.provider_version,
+                scene_ordinal=args.scene,
+            )
             return 0
         except Exception as exc:
             print(exc)
