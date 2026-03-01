@@ -111,7 +111,7 @@ def test_package_generates_required_files_and_is_deterministic(
     for shot in rpack["shots"]:
         assert shot["shot_id"] in prompt_text
 
-    assert len(contents_one["CREATOR_GUIDE.pdf"]) > 2048
+    assert len(contents_one["CREATOR_GUIDE.pdf"]) > 5120
 
     for placeholder_path in [
         "assets/placeholder/characters/README.md",

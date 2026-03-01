@@ -1,0 +1,196 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 3058 >>
+stream
+BT
+/F1 11 Tf
+72 760 Td
+14 TL
+(RenderPackage Quick Start \(Runway Gen-4 Image References\)) Tj
+T*
+() Tj
+T*
+(Two-path quickstart) Tj
+T*
+(Path A: No Assets \(prompts-only\).) Tj
+T*
+(Path B: With Assets \(minimum 4 images: style, location, 1 per character\).) Tj
+T*
+() Tj
+T*
+(Where to click in Runway Workflow) Tj
+T*
+(Tool -> References) Tj
+T*
+(Paste prompt) Tj
+T*
+(Generate) Tj
+T*
+(Score) Tj
+T*
+() Tj
+T*
+(Shot checklist) Tj
+T*
+(Open prompts/runway.gen4_image_refs_prompts.md and process one SHOT block at a time.) Tj
+T*
+(Each SHOT block lists required references and prompt text.) Tj
+T*
+(Use the reference map file at bindings/bindings.csv to match shot IDs to refs.) Tj
+T*
+() Tj
+T*
+(Common mistakes) Tj
+T*
+(Forgetting to clear references between shots.) Tj
+T*
+(Using too many references at once \(Runway supports up to 3 active references\).) Tj
+T*
+(Expecting perfect dialogue audio from image-first outputs.) Tj
+T*
+() Tj
+T*
+(Scoring) Tj
+T*
+(Use rubric/scoring_sheet.csv after each shot generation pass.) Tj
+T*
+(Track keeper status and 1-5 consistency for character, location, and style.) Tj
+T*
+(Prompt file for this package: prompts/runway.gen4_image_refs_prompts.md) Tj
+T*
+() Tj
+T*
+(Notes:) Tj
+T*
+(Use consistent refs per shot to reduce drift.) Tj
+T*
+(Rerolls are normal. Score each take in the rubric.) Tj
+T*
+(RenderPackage Quick Start \(Runway Gen-4 Image References\)) Tj
+T*
+() Tj
+T*
+(Two-path quickstart) Tj
+T*
+(Path A: No Assets \(prompts-only\).) Tj
+T*
+(Path B: With Assets \(minimum 4 images: style, location, 1 per character\).) Tj
+T*
+() Tj
+T*
+(Where to click in Runway Workflow) Tj
+T*
+(Tool -> References) Tj
+T*
+(Paste prompt) Tj
+T*
+(Generate) Tj
+T*
+(RenderPackage Quick Start \(Runway Gen-4 Image References\)) Tj
+T*
+() Tj
+T*
+(Two-path quickstart) Tj
+T*
+(Path A: No Assets \(prompts-only\).) Tj
+T*
+(Path B: With Assets \(minimum 4 images: style, location, 1 per character\).) Tj
+T*
+() Tj
+T*
+(Where to click in Runway Workflow) Tj
+T*
+(Tool -> References) Tj
+T*
+(Paste prompt) Tj
+T*
+(Generate) Tj
+T*
+(RenderPackage Quick Start \(Runway Gen-4 Image References\)) Tj
+T*
+() Tj
+T*
+(Two-path quickstart) Tj
+T*
+(Path A: No Assets \(prompts-only\).) Tj
+T*
+(Path B: With Assets \(minimum 4 images: style, location, 1 per character\).) Tj
+T*
+() Tj
+T*
+(Where to click in Runway Workflow) Tj
+T*
+(Tool -> References) Tj
+T*
+(Paste prompt) Tj
+T*
+(Generate) Tj
+T*
+(RenderPackage Quick Start \(Runway Gen-4 Image References\)) Tj
+T*
+() Tj
+T*
+(Two-path quickstart) Tj
+T*
+(Path A: No Assets \(prompts-only\).) Tj
+T*
+(Path B: With Assets \(minimum 4 images: style, location, 1 per character\).) Tj
+T*
+() Tj
+T*
+(Where to click in Runway Workflow) Tj
+T*
+(Tool -> References) Tj
+T*
+(Paste prompt) Tj
+T*
+(Generate) Tj
+T*
+(RenderPackage Quick Start \(Runway Gen-4 Image References\)) Tj
+T*
+() Tj
+T*
+(Two-path quickstart) Tj
+T*
+(Path A: No Assets \(prompts-only\).) Tj
+T*
+(Path B: With Assets \(minimum 4 images: style, location, 1 per character\).) Tj
+T*
+() Tj
+T*
+(Where to click in Runway Workflow) Tj
+T*
+(Tool -> References) Tj
+T*
+(Paste prompt) Tj
+T*
+(Generate) Tj
+T*
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+3420
+%%EOF
