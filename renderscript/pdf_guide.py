@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from io import BytesIO
+from pathlib import Path
 
 
 def _page_one_lines(prompt_path: str) -> list[str]:
@@ -82,10 +83,26 @@ def _page_three_lines() -> list[str]:
     ]
 
 
-def _render_with_reportlab(prompt_path: str) -> bytes:
+def _render_with_reportlab(prompt_path: str, logo_path: Path | None = None) -> bytes:
     from reportlab.lib.pagesizes import LETTER
     from reportlab.lib.units import inch
+    from reportlab.lib.utils import ImageReader
     from reportlab.pdfgen.canvas import Canvas
+
+    def draw_logo_header(canvas: Canvas) -> None:
+        if logo_path is None or not logo_path.exists():
+            return
+        try:
+            width, height = LETTER
+            img = ImageReader(str(logo_path))
+            logo_w = 1.0 * inch
+            logo_h = 0.35 * inch
+            x = width - 0.8 * inch - logo_w
+            y = height - 0.8 * inch - logo_h + 2
+            canvas.drawImage(img, x, y, width=logo_w, height=logo_h, preserveAspectRatio=True, mask="auto")
+        except Exception:
+            # Silently skip logo rendering if the file is unreadable/invalid.
+            return
 
     def draw_wrapped(canvas: Canvas, text: str, x: float, y: float, max_width: float, font: str, size: int) -> float:
         canvas.setFont(font, size)
@@ -232,10 +249,13 @@ def _render_with_reportlab(prompt_path: str) -> bytes:
     canvas.setProducer("renderscript")
 
     # Deterministic fixed 3-page flow (no loop-based page breaks).
+    draw_logo_header(canvas)
     draw_page_one(canvas, prompt_path)
     canvas.showPage()
+    draw_logo_header(canvas)
     draw_lines(canvas, _page_two_lines(), title=False)
     canvas.showPage()
+    draw_logo_header(canvas)
     draw_lines(canvas, _page_three_lines(), title=False)
     canvas.save()
     return buffer.getvalue()
@@ -339,8 +359,8 @@ def _render_fallback_pdf(prompt_path: str) -> bytes:
     return bytes(out)
 
 
-def render_creator_guide_pdf(prompt_path: str) -> bytes:
+def render_creator_guide_pdf(prompt_path: str, logo_path: Path | None = None) -> bytes:
     try:
-        return _render_with_reportlab(prompt_path)
+        return _render_with_reportlab(prompt_path, logo_path=logo_path)
     except ModuleNotFoundError:
         return _render_fallback_pdf(prompt_path)

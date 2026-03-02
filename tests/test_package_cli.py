@@ -13,9 +13,11 @@ from renderscript import cli
 REQUIRED_PATHS = [
     "rpack.json",
     "rpack.schema.json",
+    "PACKAGE_MAP.md",
     "README.md",
     "CREATOR_GUIDE.pdf",
     "assets/ingredients_manifest.md",
+    "assets/asset_prompts.md",
     "assets/placeholder/characters/README.md",
     "assets/placeholder/locations/README.md",
     "assets/placeholder/styles/README.md",
@@ -110,6 +112,14 @@ def test_package_generates_required_files_and_is_deterministic(
 
     for shot in rpack["shots"]:
         assert shot["shot_id"] in prompt_text
+
+    package_map = contents_one["PACKAGE_MAP.md"].decode("utf-8")
+    assert "Start here: CREATOR_GUIDE.pdf" in package_map
+    assert "assets/asset_prompts.md" in package_map
+
+    asset_prompts = contents_one["assets/asset_prompts.md"].decode("utf-8")
+    assert "style_01_ref_01" in asset_prompts
+    assert "loc_01_ref_01" in asset_prompts
 
     assert len(contents_one["CREATOR_GUIDE.pdf"]) > 5120
 

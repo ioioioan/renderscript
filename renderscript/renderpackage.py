@@ -16,9 +16,11 @@ PROMPTS_FILENAME = "prompts/runway.gen4_image_refs_prompts.md"
 REQUIRED_FILES = [
     "rpack.json",
     "rpack.schema.json",
+    "PACKAGE_MAP.md",
     "README.md",
     "CREATOR_GUIDE.pdf",
     "assets/ingredients_manifest.md",
+    "assets/asset_prompts.md",
     "assets/placeholder/characters/README.md",
     "assets/placeholder/locations/README.md",
     "assets/placeholder/styles/README.md",
@@ -162,6 +164,68 @@ def _render_scoring_sheet(shots: list[dict[str, object]]) -> str:
         ],
         rows=rows,
     )
+
+
+def _render_package_map(prompt_path: str) -> str:
+    return (
+        "Start here: CREATOR_GUIDE.pdf\n\n"
+        "- If you want a fast creator walkthrough: open `CREATOR_GUIDE.pdf`.\n"
+        f"- If you want shot-by-shot prompts: open `{prompt_path}`.\n"
+        "- If you want the required references list: open `assets/ingredients_manifest.md`.\n"
+        "- If you want prompts to generate reference images: open `assets/asset_prompts.md`.\n"
+        "- If you want placeholder folders for assets: open `assets/placeholder/`.\n"
+        "- If you want durations and framing per shot: open `shots/shot_list.csv`.\n"
+        "- If you want the Reference Map per shot: open `bindings/bindings.csv`.\n"
+        "- If you want scoring and keeper tracking: open `rubric/scoring_sheet.csv`.\n"
+        "- If you want machine-readable package details: open `rpack.json`.\n"
+        "- If you want developer/operator instructions: open `README.md`.\n"
+    )
+
+
+def _render_asset_prompts(
+    scene: dict[str, object],
+    shots: list[dict[str, object]],
+    character_refs: list[tuple[str, str]],
+) -> str:
+    heading = scene.get("heading", {})
+    heading_raw = heading.get("raw", "") if isinstance(heading, dict) else ""
+    beat_samples = [str(shot.get("beat", "")).strip() for shot in shots[:3]]
+    beat_context = " | ".join(sample for sample in beat_samples if sample)
+
+    lines = [
+        "# Asset Prompts",
+        "",
+        "Use in any image generator.",
+        "Generate square or portrait images, consistent lighting, neutral background for characters.",
+        "",
+        f"Scene context: {heading_raw}",
+        f"Shot context: {beat_context}",
+        "",
+        "## Style Reference — style_01_ref_01",
+        (
+            "Create a single style board image for this scene context. Keep visual tone, color palette, and texture "
+            "consistent across shots. Avoid text overlays and logos."
+        ),
+        "",
+        "## Location Reference — loc_01_ref_01",
+        (
+            "Create one clean environment image for the scene location. Keep architectural cues and lighting consistent "
+            "with the scene context. No people in frame."
+        ),
+        "",
+    ]
+    for ref_id, character_name in character_refs:
+        lines.extend(
+            [
+                f"## Character Reference — {ref_id}",
+                (
+                    f"Create a neutral portrait reference of {character_name} for this scene context. Keep expression "
+                    "natural, wardrobe consistent, and background plain. No celebrity or real-person likeness."
+                ),
+                "",
+            ]
+        )
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def _render_ingredients_manifest(required_refs: dict[str, list[str]]) -> str:
@@ -570,6 +634,7 @@ def package_fountain_file(
     source = doc.get("meta", {}).get("source", {}) if isinstance(doc.get("meta", {}), dict) else {}
     source_hash = source.get("hash", "") if isinstance(source, dict) else ""
     selected_scene = _extract_scene(doc, scene_ordinal)
+    speaker_by_id = _speaker_lookup(doc)
     resolved_output_path = _resolve_output_path(
         output_path=output_path,
         project=project,
@@ -578,6 +643,14 @@ def package_fountain_file(
     )
     shots, shot_units, _ = _build_shots(selected_scene, doc=doc, duration_s=duration_s)
     bindings, required_refs = _build_bindings(shots, units=shot_units, doc=doc)
+    character_ref_by_speaker = _character_ref_lookup(speaker_by_id)
+    speaker_by_character_ref = {ref_id: speaker_id for speaker_id, ref_id in character_ref_by_speaker.items()}
+    character_refs_for_prompts: list[tuple[str, str]] = []
+    for ref_id in required_refs["character_ref_ids"]:
+        speaker_id = speaker_by_character_ref.get(ref_id, "")
+        speaker_name = speaker_by_id.get(speaker_id, speaker_id)
+        if speaker_name:
+            character_refs_for_prompts.append((ref_id, speaker_name))
 
     shot_rows = [
         [
@@ -616,9 +689,18 @@ def package_fountain_file(
             required_refs=required_refs,
         ),
         "rpack.schema.json": _render_rpack_schema_json(),
+        "PACKAGE_MAP.md": _render_package_map(PROMPTS_FILENAME),
         "README.md": _render_readme(),
-        "CREATOR_GUIDE.pdf": render_creator_guide_pdf(PROMPTS_FILENAME),
+        "CREATOR_GUIDE.pdf": render_creator_guide_pdf(
+            PROMPTS_FILENAME,
+            logo_path=Path("assets/branding/logo.png"),
+        ),
         "assets/ingredients_manifest.md": _render_ingredients_manifest(required_refs),
+        "assets/asset_prompts.md": _render_asset_prompts(
+            selected_scene,
+            shots=shots,
+            character_refs=character_refs_for_prompts,
+        ),
         "assets/placeholder/characters/README.md": _render_placeholder_readme("characters"),
         "assets/placeholder/locations/README.md": _render_placeholder_readme("locations"),
         "assets/placeholder/styles/README.md": _render_placeholder_readme("styles"),
