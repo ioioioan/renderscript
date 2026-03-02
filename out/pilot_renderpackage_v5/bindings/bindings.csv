@@ -1,0 +1,9 @@
+shot_id,character_ref_ids,location_ref_ids,style_ref_ids,prop_ref_ids
+shot_001,,loc_01_ref_01,style_01_ref_01,
+shot_002,char_M_ref_01,loc_01_ref_01,style_01_ref_01,prop_01_ref_01
+shot_003,char_J_ref_01,loc_01_ref_01,style_01_ref_01,prop_02_ref_01
+shot_004,char_M_ref_01,loc_01_ref_01,style_01_ref_01,
+shot_005,char_J_ref_01,loc_01_ref_01,style_01_ref_01,
+shot_006,char_M_ref_01,loc_01_ref_01,style_01_ref_01,
+shot_007,char_M_ref_01,loc_01_ref_01,style_01_ref_01,
+shot_008,char_M_ref_01,loc_01_ref_01,style_01_ref_01,
