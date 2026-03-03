@@ -4,47 +4,103 @@ from io import BytesIO
 from pathlib import Path
 
 
-def _page_one_lines(prompt_path: str) -> list[str]:
+RUNWAY_PROVIDER = "runway.gen4_image_refs"
+
+
+def _is_runway(provider: str) -> bool:
+    return provider == RUNWAY_PROVIDER
+
+
+def _title_for_provider(provider: str) -> str:
+    if _is_runway(provider):
+        return "RenderPackage Quick Start (Runway Gen-4 Image References)"
+    return "RenderPackage Quick Start (Universal)"
+
+
+def _subtitle_for_provider(provider: str) -> str:
+    if _is_runway(provider):
+        return "This package creates a shot-by-shot plan. You generate shots in Runway."
+    return "This package creates a shot-by-shot plan. You generate shots in your tool of choice."
+
+
+def _where_to_click_line(provider: str) -> str:
+    if _is_runway(provider):
+        return "Workflow -> Tool -> References -> Paste prompt -> Generate -> Score"
+    return "In your tool: attach references (if supported) -> paste prompt -> generate -> score"
+
+
+def _asset_callout_lines(provider: str, asset_prompts_path: str) -> list[str]:
+    if _is_runway(provider):
+        return [
+            f"Need assets? Open {asset_prompts_path} to generate the minimum set (style, location, characters), then save into assets/placeholder/* with the exact filenames listed in assets/ingredients_manifest.md for Runway references.",
+        ]
     return [
-        "RenderPackage Quick Start (Runway Gen-4 Image References)",
-        "This package creates a shot-by-shot plan. You generate shots in Runway.",
-        "",
-        "Quick Start: Choose Your Path",
-        "",
-        "PATH A - No Assets (10 minutes)",
+        f"Need assets? Open {asset_prompts_path} to generate the minimum set (style, location, characters), then save into assets/placeholder/* with the exact filenames listed in assets/ingredients_manifest.md.",
+    ]
+
+
+def _page_one_lines(prompt_path: str, asset_prompts_path: str, provider: str) -> list[str]:
+    title = _title_for_provider(provider)
+    subtitle = _subtitle_for_provider(provider)
+    path_a_lines = [
         f"1. Open {prompt_path}.",
-        "2. In Runway Workflow, open Gen-4 video generation.",
+        "2. Open your generation workflow.",
         "3. Do NOT add references.",
         "4. Copy/paste prompt for shot_001, generate.",
         "5. Repeat for shot_002, shot_003 (start with 3 shots).",
         "6. Score each shot in rubric/scoring_sheet.csv.",
-        "",
-        "PATH B - With Assets (30 minutes)",
+    ]
+    path_b_lines = [
         "Minimum 4 images:",
         "- style_01_ref_01",
         "- loc_01_ref_01",
         "- char_<X>_ref_01 (one per character)",
         f"1. Open {prompt_path}.",
-        "2. In Runway Workflow: Tool -> References.",
+        "2. Attach references for the current shot.",
         "3. Clear references before each shot.",
-        "4. Add refs listed for the shot (max 3 active at once).",
+        "4. Add refs listed for the shot.",
         "5. Paste prompt, generate.",
         "6. Score each shot in the rubric.",
+    ]
+    where_to_click_heading = "Where to click in your tool:"
+    if _is_runway(provider):
+        path_a_lines[1] = "2. In Runway Workflow, open Gen-4 video generation."
+        path_b_lines[5] = "2. In Runway Workflow: Tool -> References."
+        path_b_lines[7] = "4. Add refs listed for the shot (max 3 active at once)."
+        where_to_click_heading = "Where to click in Runway Workflow:"
+
+    return [
+        title,
+        subtitle,
         "",
-        "Where to click in Runway Workflow:",
-        "Workflow -> Tool -> References -> Paste prompt -> Generate -> Score",
+        "Quick Start: Choose Your Path",
+        "",
+        "PATH A - No Assets (10 minutes)",
+        *path_a_lines,
+        "",
+        "PATH B - With Assets (30 minutes)",
+        *path_b_lines,
+        "",
+        "Need assets?",
+        *_asset_callout_lines(provider, asset_prompts_path),
+        "",
+        where_to_click_heading,
+        _where_to_click_line(provider),
         "",
         f"Prompt file in this package: {prompt_path}",
     ]
 
 
-def _page_two_lines(prompt_path: str, asset_prompts_path: str) -> list[str]:
+def _page_two_lines(prompt_path: str, asset_prompts_path: str, provider: str) -> list[str]:
+    checklist_step_2 = "2. Add listed references (if using Path B)."
+    if _is_runway(provider):
+        checklist_step_2 = "2. Add listed references in Runway (if using Path B)."
     return [
         "For Each Shot (repeat this loop)",
         "",
         "Checklist",
         "1. Clear references.",
-        "2. Add listed references (if using Path B).",
+        checklist_step_2,
         "3. Paste the shot prompt.",
         "4. Set duration (use shots/shot_list.csv).",
         "5. Generate.",
@@ -67,7 +123,7 @@ def _page_two_lines(prompt_path: str, asset_prompts_path: str) -> list[str]:
         "- assets/placeholder/props/",
         "Use exact filenames listed in assets/ingredients_manifest.md",
         "(for example: char_A_ref_01.png, loc_01_ref_01.png, style_01_ref_01.png).",
-        "Some providers require at least one image. Path A (no assets) is valid for prompts-only testing.",
+        "Some tools require at least one image. Path A (no assets) is valid for prompts-only testing.",
         "",
         "What's in this package",
         "Start here: CREATOR_GUIDE.pdf",
@@ -81,13 +137,16 @@ def _page_two_lines(prompt_path: str, asset_prompts_path: str) -> list[str]:
     ]
 
 
-def _page_three_lines() -> list[str]:
+def _page_three_lines(provider: str) -> list[str]:
+    common_mistake_2 = "- using the wrong or stale references"
+    if _is_runway(provider):
+        common_mistake_2 = "- exceeding 3 active refs"
     return [
         "Common Mistakes + Scoring",
         "",
         "Common mistakes",
         "- forgetting to clear refs",
-        "- exceeding 3 active refs",
+        common_mistake_2,
         "- expecting perfect spoken dialogue/audio",
         "- changing style refs mid-pack",
         "",
@@ -130,6 +189,11 @@ def _render_with_reportlab(
             # Silently skip logo rendering if the file is unreadable/invalid.
             return
 
+    def draw_provider_header(canvas: Canvas) -> None:
+        width, height = LETTER
+        canvas.setFont("Helvetica", 9)
+        canvas.drawRightString(width - 58, height - 22, f"Provider: {provider}")
+
     def draw_footer(canvas: Canvas) -> None:
         canvas.setFont("Helvetica", 9)
         canvas.drawString(58, 18, f"RenderScript AI v{version} | Provider: {provider}")
@@ -161,16 +225,16 @@ def _render_with_reportlab(
                 continue
             cursor = draw_wrapped(canvas, line, x + 10, cursor, width - 20, "Helvetica", 11)
 
-    def draw_page_one(canvas: Canvas, prompt_file: str) -> None:
+    def draw_page_one(canvas: Canvas, prompt_file: str, asset_prompts_file: str, current_provider: str) -> None:
         width, height = LETTER
         x = 0.8 * inch
         y = height - 0.8 * inch
         canvas.setFont("Helvetica-Bold", 20)
-        canvas.drawString(x, y, "RenderPackage Quick Start (Runway Gen-4 Image References)")
+        canvas.drawString(x, y, _title_for_provider(current_provider))
         y -= 30
         y = draw_wrapped(
             canvas,
-            "This package creates a shot-by-shot plan. You generate shots in Runway.",
+            _subtitle_for_provider(current_provider),
             x,
             y,
             width - (1.6 * inch),
@@ -183,17 +247,39 @@ def _render_with_reportlab(
 
         box_width = width - (1.6 * inch)
         path_a_top = y - 12
+        path_a_lines = [
+            f"1. Open {prompt_file}.",
+            "2. Open your generation workflow.",
+            "3. Do NOT add references.",
+            "4. Copy/paste prompt for shot_001, generate.",
+            "5. Repeat for shot_002, shot_003 (start with 3 shots).",
+            "6. Score each shot in rubric/scoring_sheet.csv.",
+        ]
+        path_b_lines = [
+            "Minimum 4 images:",
+            "- style_01_ref_01",
+            "- loc_01_ref_01",
+            "- char_<X>_ref_01 (one per character)",
+            f"1. Open {prompt_file}.",
+            "2. Attach references for the current shot.",
+            "3. Clear references before each shot.",
+            "4. Add refs listed for the shot.",
+            "5. Paste prompt, generate.",
+            "6. Score each shot in the rubric.",
+        ]
+        where_to_click_heading = "Where to click in your tool:"
+        path_b_height = 185
+        if _is_runway(current_provider):
+            path_a_lines[1] = "2. In Runway Workflow, open Gen-4 video generation."
+            path_b_lines[5] = "2. In Runway Workflow: Tool -> References."
+            path_b_lines[7] = "4. Add refs listed for the shot (max 3 active at once)."
+            where_to_click_heading = "Where to click in Runway Workflow:"
+            path_b_height = 200
+
         draw_box(
             canvas,
             "PATH A - No Assets (10 minutes)",
-            [
-                f"1. Open {prompt_file}.",
-                "2. In Runway Workflow, open Gen-4 video generation.",
-                "3. Do NOT add references.",
-                "4. Copy/paste prompt for shot_001, generate.",
-                "5. Repeat for shot_002, shot_003 (start with 3 shots).",
-                "6. Score each shot in rubric/scoring_sheet.csv.",
-            ],
+            path_a_lines,
             x,
             path_a_top,
             box_width,
@@ -203,27 +289,26 @@ def _render_with_reportlab(
         draw_box(
             canvas,
             "PATH B - With Assets (30 minutes)",
-            [
-                "Minimum 4 images:",
-                "- style_01_ref_01",
-                "- loc_01_ref_01",
-                "- char_<X>_ref_01 (one per character)",
-                f"1. Open {prompt_file}.",
-                "2. In Runway Workflow: Tool -> References.",
-                "3. Clear references before each shot.",
-                "4. Add refs listed for the shot (max 3 active at once).",
-                "5. Paste prompt, generate.",
-                "6. Score each shot in the rubric.",
-            ],
+            path_b_lines,
             x,
             path_b_top,
             box_width,
-            210,
+            path_b_height,
         )
-        mini_strip_y = path_b_top - 224
+        callout_top = path_b_top - (path_b_height + 12)
+        draw_box(
+            canvas,
+            "Need assets?",
+            _asset_callout_lines(current_provider, asset_prompts_file),
+            x,
+            callout_top,
+            box_width,
+            78,
+        )
+        mini_strip_y = callout_top - 90
         draw_wrapped(
             canvas,
-            "Workflow -> Tool -> References -> Paste prompt -> Generate -> Score",
+            where_to_click_heading,
             x,
             mini_strip_y,
             box_width,
@@ -232,9 +317,18 @@ def _render_with_reportlab(
         )
         draw_wrapped(
             canvas,
+            _where_to_click_line(current_provider),
+            x,
+            mini_strip_y - 16,
+            box_width,
+            "Helvetica",
+            11,
+        )
+        draw_wrapped(
+            canvas,
             f"Prompt file in this package: {prompt_file}",
             x,
-            mini_strip_y - 18,
+            mini_strip_y - 34,
             box_width,
             "Helvetica",
             10,
@@ -262,6 +356,8 @@ def _render_with_reportlab(
                 "Team workflow",
                 "Minimum 4 images:",
                 "Where to click in Runway Workflow:",
+                "Where to click in your tool:",
+                "Need assets?",
             }:
                 font = "Helvetica-Bold"
                 size = 12
@@ -275,7 +371,8 @@ def _render_with_reportlab(
 
     buffer = BytesIO()
     canvas = Canvas(buffer, pagesize=LETTER, pageCompression=0, invariant=1)
-    canvas.setTitle("RenderPackage Quick Start (Runway Gen-4 Image References)")
+    title = _title_for_provider(provider)
+    canvas.setTitle(title)
     canvas.setAuthor("renderscript")
     canvas.setSubject("Creative-first runbook")
     canvas.setCreator("renderscript")
@@ -283,15 +380,18 @@ def _render_with_reportlab(
 
     # Deterministic fixed 3-page flow (no loop-based page breaks).
     draw_logo_header(canvas)
-    draw_page_one(canvas, prompt_path)
+    draw_provider_header(canvas)
+    draw_page_one(canvas, prompt_path, asset_prompts_path, provider)
     draw_footer(canvas)
     canvas.showPage()
     draw_logo_header(canvas)
-    draw_lines(canvas, _page_two_lines(prompt_path, asset_prompts_path), title=False)
+    draw_provider_header(canvas)
+    draw_lines(canvas, _page_two_lines(prompt_path, asset_prompts_path, provider), title=False)
     draw_footer(canvas)
     canvas.showPage()
     draw_logo_header(canvas)
-    draw_lines(canvas, _page_three_lines(), title=False)
+    draw_provider_header(canvas)
+    draw_lines(canvas, _page_three_lines(provider), title=False)
     draw_footer(canvas)
     canvas.save()
     return buffer.getvalue()
@@ -319,6 +419,8 @@ def _page_stream(lines: list[str], start_y: int = 760) -> bytes:
             "Team workflow",
             "Minimum 4 images:",
             "Where to click in Runway Workflow:",
+            "Where to click in your tool:",
+            "Need assets?",
         }:
             out.append("/F1 12 Tf")
         else:
@@ -332,9 +434,9 @@ def _page_stream(lines: list[str], start_y: int = 760) -> bytes:
 def _render_fallback_pdf(prompt_path: str, asset_prompts_path: str, provider: str, version: str) -> bytes:
     footer = f"RenderScript AI v{version} | Provider: {provider}"
     pages = [
-        _page_one_lines(prompt_path) + ["", footer],
-        _page_two_lines(prompt_path, asset_prompts_path) + ["", footer],
-        _page_three_lines() + ["", footer],
+        _page_one_lines(prompt_path, asset_prompts_path, provider) + ["", footer],
+        _page_two_lines(prompt_path, asset_prompts_path, provider) + ["", footer],
+        _page_three_lines(provider) + ["", footer],
     ]
     streams = [_page_stream(page) for page in pages]
 
@@ -367,10 +469,12 @@ def _render_fallback_pdf(prompt_path: str, asset_prompts_path: str, provider: st
     # Deterministic metadata padding so the guide is not tiny in minimal fallback mode.
     padding_tokens = " ".join(f"runbook_note_{idx:03d}" for idx in range(180))
     objects.append(f"<< /RPGuidePadding ({padding_tokens}) >>".encode("ascii"))
+    title = _title_for_provider(provider).replace("(", "\\(").replace(")", "\\)")
     # Info object to stabilize metadata
     objects.append(
-        b"<< /Title (RenderPackage Quick Start \\(Runway Gen-4 Image References\\)) "
-        b"/Author (renderscript) /Creator (renderscript) /Producer (renderscript) >>"
+        f"<< /Title ({title}) /Author (renderscript) /Creator (renderscript) /Producer (renderscript) >>".encode(
+            "ascii"
+        )
     )
 
     out = bytearray(b"%PDF-1.4\n")

@@ -12,4 +12,4 @@ assets/placeholder/props/README.md
 shots/shot_list.csv
 bindings/bindings.csv
 rubric/scoring_sheet.csv
-prompts/universal_prompts.md
+prompts/shot_prompts.md

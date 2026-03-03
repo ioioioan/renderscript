@@ -42,7 +42,7 @@ FRAMING_CYCLE = ("wide", "medium", "close")
 def _prompt_filename_for_provider(provider: str) -> str:
     if provider == RUNWAY_PROVIDER:
         return f"prompts/{RUNWAY_PROVIDER}_prompts.md"
-    return "prompts/universal_prompts.md"
+    return "prompts/shot_prompts.md"
 
 
 def _required_files(prompt_filename: str) -> list[str]:

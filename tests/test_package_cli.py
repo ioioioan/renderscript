@@ -49,6 +49,18 @@ def _rpack_without_generated_at(raw: bytes) -> dict[str, object]:
     return payload
 
 
+def _pdf_text(raw: bytes) -> str:
+    try:
+        from pypdf import PdfReader  # type: ignore[import-not-found]
+    except ModuleNotFoundError:
+        return raw.decode("latin-1", errors="ignore")
+    from io import BytesIO
+
+    # pypdf expects a binary stream; keep fallback above for environments without pypdf.
+    reader = PdfReader(BytesIO(raw))
+    return "\n".join((page.extract_text() or "") for page in reader.pages)
+
+
 def test_package_generates_required_files_and_is_deterministic(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -82,7 +94,7 @@ def test_package_generates_required_files_and_is_deterministic(
     assert cli.main() == 0
     assert out_two.exists()
 
-    required_paths = _required_paths("prompts/universal_prompts.md")
+    required_paths = _required_paths("prompts/shot_prompts.md")
     with ZipFile(out_one, "r") as zf:
         assert zf.namelist() == required_paths
 
@@ -108,7 +120,8 @@ def test_package_generates_required_files_and_is_deterministic(
     shot_rows = _csv_rows(contents_one["shots/shot_list.csv"])
     bindings_rows = _csv_rows(contents_one["bindings/bindings.csv"])
     rubric_rows = _csv_rows(contents_one["rubric/scoring_sheet.csv"])
-    prompt_text = contents_one["prompts/universal_prompts.md"].decode("utf-8")
+    prompt_text = contents_one["prompts/shot_prompts.md"].decode("utf-8")
+    assert "prompts/universal_prompts.md" not in contents_one
 
     assert len(shot_rows) == len(rpack["shots"])
     assert len(bindings_rows) == len(rpack["shots"])
@@ -140,6 +153,8 @@ def test_package_generates_required_files_and_is_deterministic(
     assert "assets/asset_prompts.md" not in contents_one
 
     assert len(contents_one["CREATOR_GUIDE.pdf"]) > 5120
+    universal_pdf_text = _pdf_text(contents_one["CREATOR_GUIDE.pdf"])
+    assert "Runway" not in universal_pdf_text
 
     for placeholder_path in [
         "assets/placeholder/characters/README.md",
@@ -294,10 +309,12 @@ def test_package_runway_provider_generates_runway_prompt_file(
     assert cli.main() == 0
     contents = _zip_contents(out_path)
     assert "prompts/runway.gen4_image_refs_prompts.md" in contents
-    assert "prompts/universal_prompts.md" not in contents
+    assert "prompts/shot_prompts.md" not in contents
     assert "prompts/asset_prompts.md" in contents
     rpack = json.loads(contents["rpack.json"].decode("utf-8"))
     assert rpack["target_provider"] == "runway.gen4_image_refs"
+    runway_pdf_text = _pdf_text(contents["CREATOR_GUIDE.pdf"])
+    assert "Runway" in runway_pdf_text
 
 
 def test_package_golden_expected_paths_universal_scene_one(
@@ -330,6 +347,7 @@ def test_package_golden_expected_paths_universal_scene_one(
         unpack_dir = tmp_path / "unpacked"
         zf.extractall(unpack_dir)
     assert (unpack_dir / "PACKAGE_MAP.md").read_text(encoding="utf-8").strip()
-    assert (unpack_dir / "prompts/universal_prompts.md").read_text(encoding="utf-8").strip()
+    assert (unpack_dir / "prompts/shot_prompts.md").read_text(encoding="utf-8").strip()
+    assert not (unpack_dir / "prompts/universal_prompts.md").exists()
     assert (unpack_dir / "prompts/asset_prompts.md").read_text(encoding="utf-8").strip()
     assert (unpack_dir / "CREATOR_GUIDE.pdf").stat().st_size > 5120
