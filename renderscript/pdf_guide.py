@@ -12,7 +12,7 @@ def _page_one_lines(prompt_path: str) -> list[str]:
         "Quick Start: Choose Your Path",
         "",
         "PATH A - No Assets (10 minutes)",
-        "1. Open prompts/runway.gen4_image_refs_prompts.md.",
+        f"1. Open {prompt_path}.",
         "2. In Runway Workflow, open Gen-4 video generation.",
         "3. Do NOT add references.",
         "4. Copy/paste prompt for shot_001, generate.",
@@ -24,7 +24,7 @@ def _page_one_lines(prompt_path: str) -> list[str]:
         "- style_01_ref_01",
         "- loc_01_ref_01",
         "- char_<X>_ref_01 (one per character)",
-        "1. Open prompts/runway.gen4_image_refs_prompts.md.",
+        f"1. Open {prompt_path}.",
         "2. In Runway Workflow: Tool -> References.",
         "3. Clear references before each shot.",
         "4. Add refs listed for the shot (max 3 active at once).",
@@ -38,7 +38,7 @@ def _page_one_lines(prompt_path: str) -> list[str]:
     ]
 
 
-def _page_two_lines() -> list[str]:
+def _page_two_lines(prompt_path: str, asset_prompts_path: str) -> list[str]:
     return [
         "For Each Shot (repeat this loop)",
         "",
@@ -55,9 +55,29 @@ def _page_two_lines() -> list[str]:
         "belong to each shot_id before you generate.",
         "",
         "Execution notes",
-        "- Process one shot block at a time from prompts/runway.gen4_image_refs_prompts.md.",
+        f"- Process one shot block at a time from {prompt_path}.",
         "- Keep location and look stable through the full pack.",
         "- If drift appears, reroll before changing the reference set.",
+        "",
+        "After you generate reference images",
+        "Save images into:",
+        "- assets/placeholder/characters/",
+        "- assets/placeholder/locations/",
+        "- assets/placeholder/styles/",
+        "- assets/placeholder/props/",
+        "Use exact filenames listed in assets/ingredients_manifest.md",
+        "(for example: char_A_ref_01.png, loc_01_ref_01.png, style_01_ref_01.png).",
+        "Some providers require at least one image. Path A (no assets) is valid for prompts-only testing.",
+        "",
+        "What's in this package",
+        "Start here: CREATOR_GUIDE.pdf",
+        f"Shot prompts: {prompt_path}",
+        f"Asset prompts: {asset_prompts_path}",
+        "Required assets list: assets/ingredients_manifest.md",
+        "Shot list: shots/shot_list.csv",
+        "Reference map: bindings/bindings.csv",
+        "Scoring: rubric/scoring_sheet.csv",
+        "Technical: rpack.json, README.md",
     ]
 
 
@@ -83,7 +103,11 @@ def _page_three_lines() -> list[str]:
     ]
 
 
-def _render_with_reportlab(prompt_path: str, logo_path: Path | None = None) -> bytes:
+def _render_with_reportlab(
+    prompt_path: str,
+    asset_prompts_path: str,
+    logo_path: Path | None = None,
+) -> bytes:
     from reportlab.lib.pagesizes import LETTER
     from reportlab.lib.units import inch
     from reportlab.lib.utils import ImageReader
@@ -157,7 +181,7 @@ def _render_with_reportlab(prompt_path: str, logo_path: Path | None = None) -> b
             canvas,
             "PATH A - No Assets (10 minutes)",
             [
-                "1. Open prompts/runway.gen4_image_refs_prompts.md.",
+                f"1. Open {prompt_file}.",
                 "2. In Runway Workflow, open Gen-4 video generation.",
                 "3. Do NOT add references.",
                 "4. Copy/paste prompt for shot_001, generate.",
@@ -178,7 +202,7 @@ def _render_with_reportlab(prompt_path: str, logo_path: Path | None = None) -> b
                 "- style_01_ref_01",
                 "- loc_01_ref_01",
                 "- char_<X>_ref_01 (one per character)",
-                "1. Open prompts/runway.gen4_image_refs_prompts.md.",
+                f"1. Open {prompt_file}.",
                 "2. In Runway Workflow: Tool -> References.",
                 "3. Clear references before each shot.",
                 "4. Add refs listed for the shot (max 3 active at once).",
@@ -224,6 +248,9 @@ def _render_with_reportlab(prompt_path: str, logo_path: Path | None = None) -> b
                 "Checklist",
                 "Reference Map",
                 "Execution notes",
+                "After you generate reference images",
+                "Save images into:",
+                "What's in this package",
                 "Common mistakes",
                 "Scoring",
                 "Team workflow",
@@ -253,7 +280,7 @@ def _render_with_reportlab(prompt_path: str, logo_path: Path | None = None) -> b
     draw_page_one(canvas, prompt_path)
     canvas.showPage()
     draw_logo_header(canvas)
-    draw_lines(canvas, _page_two_lines(), title=False)
+    draw_lines(canvas, _page_two_lines(prompt_path, asset_prompts_path), title=False)
     canvas.showPage()
     draw_logo_header(canvas)
     draw_lines(canvas, _page_three_lines(), title=False)
@@ -275,6 +302,9 @@ def _page_stream(lines: list[str], start_y: int = 760) -> bytes:
             "Checklist",
             "Reference Map",
             "Execution notes",
+            "After you generate reference images",
+            "Save images into:",
+            "What's in this package",
             "Common mistakes",
             "Scoring",
             "Team workflow",
@@ -290,10 +320,10 @@ def _page_stream(lines: list[str], start_y: int = 760) -> bytes:
     return ("\n".join(out) + "\n").encode("latin-1", errors="replace")
 
 
-def _render_fallback_pdf(prompt_path: str) -> bytes:
+def _render_fallback_pdf(prompt_path: str, asset_prompts_path: str) -> bytes:
     pages = [
         _page_one_lines(prompt_path),
-        _page_two_lines(),
+        _page_two_lines(prompt_path, asset_prompts_path),
         _page_three_lines(),
     ]
     streams = [_page_stream(page) for page in pages]
@@ -359,8 +389,12 @@ def _render_fallback_pdf(prompt_path: str) -> bytes:
     return bytes(out)
 
 
-def render_creator_guide_pdf(prompt_path: str, logo_path: Path | None = None) -> bytes:
+def render_creator_guide_pdf(
+    prompt_path: str,
+    asset_prompts_path: str,
+    logo_path: Path | None = None,
+) -> bytes:
     try:
-        return _render_with_reportlab(prompt_path, logo_path=logo_path)
+        return _render_with_reportlab(prompt_path, asset_prompts_path, logo_path=logo_path)
     except ModuleNotFoundError:
-        return _render_fallback_pdf(prompt_path)
+        return _render_fallback_pdf(prompt_path, asset_prompts_path)

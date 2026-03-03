@@ -93,7 +93,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     package_parser = subparsers.add_parser("package")
     package_parser.add_argument("input", type=Path)
-    package_parser.add_argument("--provider", type=str, required=True)
+    package_parser.add_argument("--provider", type=str, default="universal")
     package_parser.add_argument("--provider-version", type=str, default="")
     package_parser.add_argument("--scene", type=int)
     package_parser.add_argument("--duration-s", type=int, default=3)

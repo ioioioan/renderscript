@@ -11,16 +11,18 @@ from .compiler import compile_fountain_text
 from .pdf_guide import render_creator_guide_pdf
 
 
-SUPPORTED_PROVIDER = "runway.gen4_image_refs"
-PROMPTS_FILENAME = "prompts/runway.gen4_image_refs_prompts.md"
-REQUIRED_FILES = [
+DEFAULT_PROVIDER = "universal"
+RUNWAY_PROVIDER = "runway.gen4_image_refs"
+SUPPORTED_PROVIDERS = (DEFAULT_PROVIDER, RUNWAY_PROVIDER)
+ASSET_PROMPTS_FILENAME = "prompts/asset_prompts.md"
+BASE_REQUIRED_FILES = [
     "rpack.json",
     "rpack.schema.json",
     "PACKAGE_MAP.md",
     "README.md",
     "CREATOR_GUIDE.pdf",
     "assets/ingredients_manifest.md",
-    "assets/asset_prompts.md",
+    ASSET_PROMPTS_FILENAME,
     "assets/placeholder/characters/README.md",
     "assets/placeholder/locations/README.md",
     "assets/placeholder/styles/README.md",
@@ -28,7 +30,6 @@ REQUIRED_FILES = [
     "shots/shot_list.csv",
     "bindings/bindings.csv",
     "rubric/scoring_sheet.csv",
-    PROMPTS_FILENAME,
 ]
 ZIP_FIXED_DATETIME = (1980, 1, 1, 0, 0, 0)
 MIN_SHOTS = 8
@@ -36,25 +37,44 @@ MAX_SHOTS = 12
 FRAMING_CYCLE = ("wide", "medium", "close")
 
 
-def _render_readme() -> str:
+def _prompt_filename_for_provider(provider: str) -> str:
+    if provider == RUNWAY_PROVIDER:
+        return f"prompts/{RUNWAY_PROVIDER}_prompts.md"
+    return "prompts/universal_prompts.md"
+
+
+def _required_files(prompt_filename: str) -> list[str]:
+    return BASE_REQUIRED_FILES + [prompt_filename]
+
+
+def _render_readme(provider: str, prompt_filename: str) -> str:
+    if provider == RUNWAY_PROVIDER:
+        return (
+            "# How to run this RenderPackage in Runway Gen-4 Image References\n\n"
+            "This package is prepared for `runway.gen4_image_refs` workflows.\n\n"
+            "## Steps\n\n"
+            "1. Open Runway and start a Gen-4 image generation workflow.\n"
+            "2. Enable **References**.\n"
+            "3. Add references for the current shot (maximum 3 active at a time in Runway).\n"
+            "4. Read required references in `bindings/bindings.csv` for that shot.\n"
+            f"5. Paste the matching prompt from `{prompt_filename}`.\n"
+            "6. Set the shot duration from `shots/shot_list.csv`.\n"
+            "7. Generate output, then score it in `rubric/scoring_sheet.csv`.\n"
+            "8. Reroll as needed while keeping reference IDs and prompt intent unchanged.\n\n"
+            "## Limits & drift warnings\n\n"
+            "- Results are not deterministic, even with fixed prompts and references.\n"
+            "- Reference quality and consistency still depend on source image quality.\n"
+            "- Runway supports up to 3 active references per generation.\n"
+            "- Identity, wardrobe, and location drift can still occur and may require rerolls.\n"
+            "- Overly broad prompt edits can reduce visual continuity across shots.\n"
+        )
     return (
-        "# How to run this RenderPackage in Runway Gen-4 Image References\n\n"
-        "This package is prepared for `runway.gen4_image_refs` workflows.\n\n"
-        "## Steps\n\n"
-        "1. Open Runway and start a Gen-4 image generation workflow.\n"
-        "2. Enable **References**.\n"
-        "3. Add references for the current shot (maximum 3 active at a time in Runway).\n"
-        "4. Read required references in `bindings/bindings.csv` for that shot.\n"
-        "5. Paste the matching prompt from `prompts/runway.gen4_image_refs_prompts.md`.\n"
-        "6. Set the shot duration from `shots/shot_list.csv`.\n"
-        "7. Generate output, then score it in `rubric/scoring_sheet.csv`.\n"
-        "8. Reroll as needed while keeping reference IDs and prompt intent unchanged.\n\n"
-        "## Limits & drift warnings\n\n"
-        "- Results are not deterministic, even with fixed prompts and references.\n"
-        "- Reference quality and consistency still depend on source image quality.\n"
-        "- Runway supports up to 3 active references per generation.\n"
-        "- Identity, wardrobe, and location drift can still occur and may require rerolls.\n"
-        "- Overly broad prompt edits can reduce visual continuity across shots.\n"
+        "# RenderPackage Developer Notes\n\n"
+        f"Target provider: `{provider}`.\n\n"
+        "This package uses tool-agnostic prompts for broad compatibility.\n"
+        "Tool-specific generation steps are not included in this README.\n\n"
+        "Use `CREATOR_GUIDE.pdf` and `PACKAGE_MAP.md` for creator-first workflow guidance.\n"
+        f"Shot prompts are in `{prompt_filename}`.\n"
     )
 
 
@@ -166,13 +186,16 @@ def _render_scoring_sheet(shots: list[dict[str, object]]) -> str:
     )
 
 
-def _render_package_map(prompt_path: str) -> str:
+def _render_package_map(provider: str, prompt_path: str) -> str:
     return (
         "Start here: CREATOR_GUIDE.pdf\n\n"
+        f"- Package profile: `{provider}`.\n"
+        "- If you want broad compatibility: universal package works with tool-agnostic prompts.\n"
+        "- If you want Runway-specific reference steps: runway package includes them.\n"
         "- If you want a fast creator walkthrough: open `CREATOR_GUIDE.pdf`.\n"
         f"- If you want shot-by-shot prompts: open `{prompt_path}`.\n"
         "- If you want the required references list: open `assets/ingredients_manifest.md`.\n"
-        "- If you want prompts to generate reference images: open `assets/asset_prompts.md`.\n"
+        f"- If you want prompts to generate reference images: open `{ASSET_PROMPTS_FILENAME}`.\n"
         "- If you want placeholder folders for assets: open `assets/placeholder/`.\n"
         "- If you want durations and framing per shot: open `shots/shot_list.csv`.\n"
         "- If you want the Reference Map per shot: open `bindings/bindings.csv`.\n"
@@ -250,6 +273,8 @@ def _render_ingredients_manifest(required_refs: dict[str, list[str]]) -> str:
         "- Capture neutral, clean references with minimal motion blur.\n"
         "- Capture at least one fallback reference per critical entity.\n"
         "- Verify reference files are named consistently before packaging.\n\n"
+        "## Asset prompts\n\n"
+        f"- Use `{ASSET_PROMPTS_FILENAME}` to generate reference images.\n\n"
         "## Naming rules\n\n"
         "- `char_A_ref_01`\n"
         "- `char_A_02_ref_01` (for initial collisions)\n"
@@ -542,9 +567,18 @@ def _build_bindings(
     return out, required_refs
 
 
-def _render_prompts(shots: list[dict[str, object]], bindings: dict[str, dict[str, list[str]]]) -> str:
+def _render_prompts(
+    shots: list[dict[str, object]],
+    bindings: dict[str, dict[str, list[str]]],
+    provider: str,
+) -> str:
+    title = (
+        "# Runway Gen-4 Image References Prompts"
+        if provider == RUNWAY_PROVIDER
+        else "# Universal RenderPackage Prompts"
+    )
     lines = [
-        "# Runway Gen-4 Image References Prompts",
+        title,
         "",
         "> Drift warning: outputs can still vary; review each shot for continuity.",
         "",
@@ -554,12 +588,21 @@ def _render_prompts(shots: list[dict[str, object]], bindings: dict[str, dict[str
         shot_bindings = bindings[shot_id]
         lines.append(f"## {shot_id} ({shot['duration_s']}s)")
         lines.append("")
-        lines.append(
-            "Apply references: "
-            f"character={', '.join(shot_bindings['character_ref_ids']) or 'none'}, "
-            f"location={', '.join(shot_bindings['location_ref_ids'])}, "
-            f"style={', '.join(shot_bindings['style_ref_ids'])}"
-        )
+        if provider == RUNWAY_PROVIDER:
+            lines.append(
+                "Apply references: "
+                f"character={', '.join(shot_bindings['character_ref_ids']) or 'none'}, "
+                f"location={', '.join(shot_bindings['location_ref_ids'])}, "
+                f"style={', '.join(shot_bindings['style_ref_ids'])}"
+            )
+        else:
+            lines.append("Apply references: Attach style/location/character reference images if your tool supports them.")
+            lines.append(
+                "Required ref IDs: "
+                f"character={', '.join(shot_bindings['character_ref_ids']) or 'none'}, "
+                f"location={', '.join(shot_bindings['location_ref_ids'])}, "
+                f"style={', '.join(shot_bindings['style_ref_ids'])}"
+            )
         if shot_bindings["prop_ref_ids"]:
             lines.append(f"Props references: {', '.join(shot_bindings['prop_ref_ids'])}")
         lines.append(
@@ -601,10 +644,10 @@ def _render_rpack_json(
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
 
-def _write_deterministic_zip(output_path: Path, files: dict[str, str | bytes]) -> None:
+def _write_deterministic_zip(output_path: Path, files: dict[str, str | bytes], ordered_paths: list[str]) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(output_path, "w", compression=ZIP_STORED) as zf:
-        for path in REQUIRED_FILES:
+        for path in ordered_paths:
             info = ZipInfo(path)
             info.date_time = ZIP_FIXED_DATETIME
             info.compress_type = ZIP_STORED
@@ -620,20 +663,23 @@ def _write_deterministic_zip(output_path: Path, files: dict[str, str | bytes]) -
 def package_fountain_file(
     input_path: Path,
     output_path: Path,
-    provider: str,
+    provider: str = DEFAULT_PROVIDER,
     provider_version: str = "",
     scene_ordinal: int | None = None,
     duration_s: int = 3,
     project: str = "project",
 ) -> None:
-    if provider != SUPPORTED_PROVIDER:
-        raise ValueError(f"Unsupported provider: {provider}. Supported providers: {SUPPORTED_PROVIDER}")
+    if provider not in SUPPORTED_PROVIDERS:
+        supported_str = ", ".join(SUPPORTED_PROVIDERS)
+        raise ValueError(f"Unsupported provider: {provider}. Supported providers: {supported_str}")
 
     text = input_path.read_text(encoding="utf-8")
     doc = compile_fountain_text(text, source_name=input_path.name)
     source = doc.get("meta", {}).get("source", {}) if isinstance(doc.get("meta", {}), dict) else {}
     source_hash = source.get("hash", "") if isinstance(source, dict) else ""
     selected_scene = _extract_scene(doc, scene_ordinal)
+    prompt_filename = _prompt_filename_for_provider(provider)
+    ordered_paths = _required_files(prompt_filename)
     speaker_by_id = _speaker_lookup(doc)
     resolved_output_path = _resolve_output_path(
         output_path=output_path,
@@ -689,14 +735,15 @@ def package_fountain_file(
             required_refs=required_refs,
         ),
         "rpack.schema.json": _render_rpack_schema_json(),
-        "PACKAGE_MAP.md": _render_package_map(PROMPTS_FILENAME),
-        "README.md": _render_readme(),
+        "PACKAGE_MAP.md": _render_package_map(provider, prompt_filename),
+        "README.md": _render_readme(provider, prompt_filename),
         "CREATOR_GUIDE.pdf": render_creator_guide_pdf(
-            PROMPTS_FILENAME,
+            prompt_filename,
+            asset_prompts_path=ASSET_PROMPTS_FILENAME,
             logo_path=Path("assets/branding/logo.png"),
         ),
         "assets/ingredients_manifest.md": _render_ingredients_manifest(required_refs),
-        "assets/asset_prompts.md": _render_asset_prompts(
+        ASSET_PROMPTS_FILENAME: _render_asset_prompts(
             selected_scene,
             shots=shots,
             character_refs=character_refs_for_prompts,
@@ -719,6 +766,6 @@ def package_fountain_file(
             rows=bindings_rows,
         ),
         "rubric/scoring_sheet.csv": _render_scoring_sheet(shots),
-        PROMPTS_FILENAME: _render_prompts(shots, bindings),
+        prompt_filename: _render_prompts(shots, bindings, provider=provider),
     }
-    _write_deterministic_zip(resolved_output_path, files)
+    _write_deterministic_zip(resolved_output_path, files, ordered_paths=ordered_paths)

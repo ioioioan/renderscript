@@ -10,14 +10,14 @@ import pytest
 from renderscript import cli
 
 
-REQUIRED_PATHS = [
+BASE_REQUIRED_PATHS = [
     "rpack.json",
     "rpack.schema.json",
     "PACKAGE_MAP.md",
     "README.md",
     "CREATOR_GUIDE.pdf",
     "assets/ingredients_manifest.md",
-    "assets/asset_prompts.md",
+    "prompts/asset_prompts.md",
     "assets/placeholder/characters/README.md",
     "assets/placeholder/locations/README.md",
     "assets/placeholder/styles/README.md",
@@ -25,8 +25,11 @@ REQUIRED_PATHS = [
     "shots/shot_list.csv",
     "bindings/bindings.csv",
     "rubric/scoring_sheet.csv",
-    "prompts/runway.gen4_image_refs_prompts.md",
 ]
+
+
+def _required_paths(prompt_file: str) -> list[str]:
+    return BASE_REQUIRED_PATHS + [prompt_file]
 
 
 def _zip_contents(path: Path) -> dict[str, bytes]:
@@ -53,8 +56,6 @@ def test_package_generates_required_files_and_is_deterministic(
             "renderscript",
             "package",
             str(source),
-            "--provider",
-            "runway.gen4_image_refs",
             "-o",
             str(out_one),
         ],
@@ -68,8 +69,6 @@ def test_package_generates_required_files_and_is_deterministic(
             "renderscript",
             "package",
             str(source),
-            "--provider",
-            "runway.gen4_image_refs",
             "-o",
             str(out_two),
         ],
@@ -77,25 +76,26 @@ def test_package_generates_required_files_and_is_deterministic(
     assert cli.main() == 0
     assert out_two.exists()
 
+    required_paths = _required_paths("prompts/universal_prompts.md")
     with ZipFile(out_one, "r") as zf:
-        assert zf.namelist() == REQUIRED_PATHS
+        assert zf.namelist() == required_paths
 
     contents_one = _zip_contents(out_one)
     contents_two = _zip_contents(out_two)
-    assert set(contents_one.keys()) == set(REQUIRED_PATHS)
-    assert set(contents_two.keys()) == set(REQUIRED_PATHS)
+    assert set(contents_one.keys()) == set(required_paths)
+    assert set(contents_two.keys()) == set(required_paths)
 
-    for path in REQUIRED_PATHS:
+    for path in required_paths:
         assert contents_one[path] == contents_two[path]
 
     rpack = json.loads(contents_one["rpack.json"].decode("utf-8"))
-    assert rpack["target_provider"] == "runway.gen4_image_refs"
+    assert rpack["target_provider"] == "universal"
     assert 8 <= len(rpack["shots"]) <= 12
 
     shot_rows = _csv_rows(contents_one["shots/shot_list.csv"])
     bindings_rows = _csv_rows(contents_one["bindings/bindings.csv"])
     rubric_rows = _csv_rows(contents_one["rubric/scoring_sheet.csv"])
-    prompt_text = contents_one["prompts/runway.gen4_image_refs_prompts.md"].decode("utf-8")
+    prompt_text = contents_one["prompts/universal_prompts.md"].decode("utf-8")
 
     assert len(shot_rows) == len(rpack["shots"])
     assert len(bindings_rows) == len(rpack["shots"])
@@ -115,11 +115,12 @@ def test_package_generates_required_files_and_is_deterministic(
 
     package_map = contents_one["PACKAGE_MAP.md"].decode("utf-8")
     assert "Start here: CREATOR_GUIDE.pdf" in package_map
-    assert "assets/asset_prompts.md" in package_map
+    assert "prompts/asset_prompts.md" in package_map
 
-    asset_prompts = contents_one["assets/asset_prompts.md"].decode("utf-8")
+    asset_prompts = contents_one["prompts/asset_prompts.md"].decode("utf-8")
     assert "style_01_ref_01" in asset_prompts
     assert "loc_01_ref_01" in asset_prompts
+    assert "assets/asset_prompts.md" not in contents_one
 
     assert len(contents_one["CREATOR_GUIDE.pdf"]) > 5120
 
@@ -191,8 +192,6 @@ def test_package_duration_override_applies_to_all_shots(
             "renderscript",
             "package",
             str(source),
-            "--provider",
-            "runway.gen4_image_refs",
             "--duration-s",
             "7",
             "-o",
@@ -231,4 +230,30 @@ def test_package_output_directory_auto_names_zip(
     assert len(outputs) == 1
     assert outputs[0].name.startswith("pilot_scene_001_runway_gen4_image_refs_renderpackage_v1")
     contents = _zip_contents(outputs[0])
-    assert set(contents.keys()) == set(REQUIRED_PATHS)
+    assert set(contents.keys()) == set(_required_paths("prompts/runway.gen4_image_refs_prompts.md"))
+
+
+def test_package_runway_provider_generates_runway_prompt_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = Path("examples/t1_dialogue_attribution.fountain")
+    out_path = tmp_path / "out.zip"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "renderscript",
+            "package",
+            str(source),
+            "--provider",
+            "runway.gen4_image_refs",
+            "-o",
+            str(out_path),
+        ],
+    )
+    assert cli.main() == 0
+    contents = _zip_contents(out_path)
+    assert "prompts/runway.gen4_image_refs_prompts.md" in contents
+    assert "prompts/universal_prompts.md" not in contents
+    assert "prompts/asset_prompts.md" in contents
+    rpack = json.loads(contents["rpack.json"].decode("utf-8"))
+    assert rpack["target_provider"] == "runway.gen4_image_refs"
