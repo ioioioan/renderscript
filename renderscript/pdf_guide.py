@@ -106,6 +106,8 @@ def _page_three_lines() -> list[str]:
 def _render_with_reportlab(
     prompt_path: str,
     asset_prompts_path: str,
+    provider: str,
+    version: str,
     logo_path: Path | None = None,
 ) -> bytes:
     from reportlab.lib.pagesizes import LETTER
@@ -127,6 +129,10 @@ def _render_with_reportlab(
         except Exception:
             # Silently skip logo rendering if the file is unreadable/invalid.
             return
+
+    def draw_footer(canvas: Canvas) -> None:
+        canvas.setFont("Helvetica", 9)
+        canvas.drawString(58, 18, f"RenderScript AI v{version} | Provider: {provider}")
 
     def draw_wrapped(canvas: Canvas, text: str, x: float, y: float, max_width: float, font: str, size: int) -> float:
         canvas.setFont(font, size)
@@ -278,12 +284,15 @@ def _render_with_reportlab(
     # Deterministic fixed 3-page flow (no loop-based page breaks).
     draw_logo_header(canvas)
     draw_page_one(canvas, prompt_path)
+    draw_footer(canvas)
     canvas.showPage()
     draw_logo_header(canvas)
     draw_lines(canvas, _page_two_lines(prompt_path, asset_prompts_path), title=False)
+    draw_footer(canvas)
     canvas.showPage()
     draw_logo_header(canvas)
     draw_lines(canvas, _page_three_lines(), title=False)
+    draw_footer(canvas)
     canvas.save()
     return buffer.getvalue()
 
@@ -320,11 +329,12 @@ def _page_stream(lines: list[str], start_y: int = 760) -> bytes:
     return ("\n".join(out) + "\n").encode("latin-1", errors="replace")
 
 
-def _render_fallback_pdf(prompt_path: str, asset_prompts_path: str) -> bytes:
+def _render_fallback_pdf(prompt_path: str, asset_prompts_path: str, provider: str, version: str) -> bytes:
+    footer = f"RenderScript AI v{version} | Provider: {provider}"
     pages = [
-        _page_one_lines(prompt_path),
-        _page_two_lines(prompt_path, asset_prompts_path),
-        _page_three_lines(),
+        _page_one_lines(prompt_path) + ["", footer],
+        _page_two_lines(prompt_path, asset_prompts_path) + ["", footer],
+        _page_three_lines() + ["", footer],
     ]
     streams = [_page_stream(page) for page in pages]
 
@@ -392,9 +402,17 @@ def _render_fallback_pdf(prompt_path: str, asset_prompts_path: str) -> bytes:
 def render_creator_guide_pdf(
     prompt_path: str,
     asset_prompts_path: str,
+    provider: str,
+    version: str,
     logo_path: Path | None = None,
 ) -> bytes:
     try:
-        return _render_with_reportlab(prompt_path, asset_prompts_path, logo_path=logo_path)
+        return _render_with_reportlab(
+            prompt_path,
+            asset_prompts_path,
+            provider=provider,
+            version=version,
+            logo_path=logo_path,
+        )
     except ModuleNotFoundError:
-        return _render_fallback_pdf(prompt_path, asset_prompts_path)
+        return _render_fallback_pdf(prompt_path, asset_prompts_path, provider=provider, version=version)

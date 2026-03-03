@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import __version__
 from .compiler import compile_file, compile_fountain_text, write_rscript
 from .prompt import render_prompt
 from .renderpackage import package_fountain_file
@@ -70,7 +71,10 @@ def run_bench(input_dir: Path, out_csv: Path, label: str, emit_dir: Path | None 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="renderscript")
+    parser.add_argument("--version", action="version", version=f"RenderScript AI v{__version__}")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    subparsers.add_parser("version")
 
     compile_parser = subparsers.add_parser("compile")
     compile_parser.add_argument("input", type=Path)
@@ -159,6 +163,10 @@ def main() -> int:
         except Exception as exc:
             print(exc)
             return 1
+
+    if args.command == "version":
+        print(f"RenderScript AI v{__version__}")
+        return 0
 
     return 2
 

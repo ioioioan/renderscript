@@ -1,0 +1,15 @@
+rpack.json
+rpack.schema.json
+PACKAGE_MAP.md
+README.md
+CREATOR_GUIDE.pdf
+assets/ingredients_manifest.md
+prompts/asset_prompts.md
+assets/placeholder/characters/README.md
+assets/placeholder/locations/README.md
+assets/placeholder/styles/README.md
+assets/placeholder/props/README.md
+shots/shot_list.csv
+bindings/bindings.csv
+rubric/scoring_sheet.csv
+prompts/universal_prompts.md
