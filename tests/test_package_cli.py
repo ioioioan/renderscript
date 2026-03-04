@@ -163,7 +163,7 @@ def test_package_generates_required_files_and_is_deterministic(
     assert "loc_01_ref_01" in asset_prompts
     assert "assets/asset_prompts.md" not in contents_one
 
-    assert len(contents_one["CREATOR_GUIDE.pdf"]) > 20000
+    assert len(contents_one["CREATOR_GUIDE.pdf"]) > 35000
     universal_pdf_text = _pdf_text(contents_one["CREATOR_GUIDE.pdf"])
     assert "Runway" not in universal_pdf_text
     assert "Workflow: Picture First, Audio in Post" in universal_pdf_text
@@ -340,7 +340,7 @@ def test_package_runway_provider_generates_runway_prompt_file(
     assert runway_prompt_text.count("No on-screen text or subtitles.") == len(rpack["shots"])
     runway_pdf_text = _pdf_text(contents["CREATOR_GUIDE.pdf"])
     assert "Runway" in runway_pdf_text
-    assert len(contents["CREATOR_GUIDE.pdf"]) > 20000
+    assert len(contents["CREATOR_GUIDE.pdf"]) > 35000
 
 
 def test_package_golden_expected_paths_universal_scene_one(
@@ -376,4 +376,4 @@ def test_package_golden_expected_paths_universal_scene_one(
     assert (unpack_dir / "prompts/shot_prompts.md").read_text(encoding="utf-8").strip()
     assert not (unpack_dir / "prompts/universal_prompts.md").exists()
     assert (unpack_dir / "prompts/asset_prompts.md").read_text(encoding="utf-8").strip()
-    assert (unpack_dir / "CREATOR_GUIDE.pdf").stat().st_size > 20000
+    assert (unpack_dir / "CREATOR_GUIDE.pdf").stat().st_size > 35000

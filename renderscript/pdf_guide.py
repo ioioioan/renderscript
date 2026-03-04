@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 RUNWAY_PROVIDER = "runway.gen4_image_refs"
-PROGRESS_TEXT = "Start -> Refs -> Shots -> Edit/Audio -> Score"
+PROGRESS_TEXT = "Start \u2192 Refs \u2192 Shots \u2192 Edit/Audio \u2192 Score"
 
 
 def _is_runway(provider: str) -> bool:
@@ -48,7 +48,6 @@ def _render_with_reportlab(
 
     page_w, page_h = A4
     margin_x = 36.0
-    margin_bottom = 34.0
     header_h = 38.0
     top_gap = 12.0
     gutter = 12.0
@@ -77,7 +76,7 @@ def _render_with_reportlab(
             lines.append(current)
         return lines
 
-    def draw_wrapped(text: str, x: float, y: float, width: float, *, font: str = "Helvetica", size: float = 10.5, lead: float = 13.0) -> float:
+    def draw_wrapped(text: str, x: float, y: float, width: float, *, font: str = "Helvetica", size: float = 11.0, lead: float = 15.0) -> float:
         c.setFont(font, size)
         for line in wrap_text(text, width, font, size):
             c.drawString(x, y, line)
@@ -135,76 +134,76 @@ def _render_with_reportlab(
         fill, stroke, ink = style
         text_lines = 0
         for line in body:
-            text_lines += max(1, len(wrap_text(line, width - 18, "Helvetica", 9.5)))
-        box_h = 24 + (text_lines * 12)
+            text_lines += max(1, len(wrap_text(line, width - 24, "Helvetica", 11)))
+        box_h = 30 + (text_lines * 15)
         c.setFillColor(colors.HexColor(fill))
         c.setStrokeColor(colors.HexColor(stroke))
-        c.roundRect(x, y_top - box_h, width, box_h, 6, stroke=1, fill=1)
+        c.roundRect(x, y_top - box_h, width, box_h, 8, stroke=1, fill=1)
         c.setFillColor(colors.HexColor(ink))
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(x + 8, y_top - 14, title)
-        y = y_top - 28
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(x + 11, y_top - 18, title)
+        y = y_top - 36
         for line in body:
-            y = draw_wrapped(line, x + 8, y, width - 16, font="Helvetica", size=9.5, lead=12)
-        return y_top - box_h - 8
+            y = draw_wrapped(line, x + 11, y, width - 22, font="Helvetica", size=11, lead=15)
+        return y_top - box_h - 14
 
     def draw_step_card(x: float, y_top: float, width: float, title: str, bullets: list[str], done_when: str) -> float:
-        bullet_lines = sum(max(1, len(wrap_text(b, width - 26, "Helvetica", 10))) for b in bullets)
-        done_lines = max(1, len(wrap_text(done_when, width - 18, "Helvetica-Oblique", 9.5)))
-        box_h = 30 + (bullet_lines * 12) + (done_lines * 12) + 14
+        bullet_lines = sum(max(1, len(wrap_text(b, width - 30, "Helvetica", 11))) for b in bullets)
+        done_lines = max(1, len(wrap_text(done_when, width - 24, "Helvetica-Oblique", 11)))
+        box_h = 40 + (bullet_lines * 15) + (done_lines * 15) + 18
         c.setFillColor(colors.white)
         c.setStrokeColor(colors.HexColor("#D8DFE6"))
-        c.roundRect(x, y_top - box_h, width, box_h, 7, stroke=1, fill=1)
-        c.setFont("Helvetica-Bold", 11)
+        c.roundRect(x, y_top - box_h, width, box_h, 8, stroke=1, fill=1)
+        c.setFont("Helvetica-Bold", 15)
         c.setFillColor(colors.HexColor("#1F2933"))
-        c.drawString(x + 8, y_top - 16, title)
-        y = y_top - 30
+        c.drawString(x + 11, y_top - 20, title)
+        y = y_top - 40
         for bullet in bullets:
-            wrapped = wrap_text(bullet, width - 26, "Helvetica", 10)
+            wrapped = wrap_text(bullet, width - 30, "Helvetica", 11)
             for idx, line in enumerate(wrapped):
-                c.setFont("Helvetica", 10)
+                c.setFont("Helvetica", 11)
                 prefix = "- " if idx == 0 else "  "
-                c.drawString(x + 10, y, prefix + line)
-                y -= 12
-        y -= 2
-        c.setFont("Helvetica-Oblique", 9.5)
+                c.drawString(x + 12, y, prefix + line)
+                y -= 15
+        y -= 3
+        c.setFont("Helvetica-Oblique", 11)
         c.setFillColor(colors.HexColor("#384553"))
-        y = draw_wrapped(f"Done when: {done_when}", x + 8, y, width - 16, font="Helvetica-Oblique", size=9.5, lead=12)
-        return y_top - box_h - 8
+        y = draw_wrapped(f"Done when: {done_when}", x + 11, y, width - 22, font="Helvetica-Oblique", size=11, lead=15)
+        return y_top - box_h - 14
 
     def draw_file_tiles(x: float, y_top: float, width: float, files: list[str]) -> float:
-        c.setFont("Helvetica-Bold", 10)
+        c.setFont("Helvetica-Bold", 15)
         c.setFillColor(colors.HexColor("#243443"))
         c.drawString(x, y_top, "Open These Files")
-        y = y_top - 14
-        tile_h = 16
+        y = y_top - 18
+        tile_h = 20
         for file_name in files:
             c.setFillColor(colors.HexColor("#F7F9FB"))
             c.setStrokeColor(colors.HexColor("#D6DCE3"))
-            c.roundRect(x, y - tile_h + 3, width, tile_h, 4, stroke=1, fill=1)
+            c.roundRect(x, y - tile_h + 3, width, tile_h, 5, stroke=1, fill=1)
             c.setFillColor(colors.HexColor("#304255"))
-            c.setFont("Helvetica", 8.8)
-            c.drawString(x + 6, y - 7, file_name)
-            y -= 19
-        return y - 4
+            c.setFont("Helvetica", 10)
+            c.drawString(x + 8, y - 9, file_name)
+            y -= 24
+        return y - 8
 
     def draw_mini_table(x: float, y_top: float, width: float, title: str, rows: list[tuple[str, str]]) -> float:
         c.setFillColor(colors.white)
         c.setStrokeColor(colors.HexColor("#D8DFE6"))
-        box_h = 24 + (len(rows) * 15)
-        c.roundRect(x, y_top - box_h, width, box_h, 6, stroke=1, fill=1)
+        box_h = 30 + (len(rows) * 18)
+        c.roundRect(x, y_top - box_h, width, box_h, 8, stroke=1, fill=1)
         c.setFillColor(colors.HexColor("#1E2D3B"))
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(x + 8, y_top - 14, title)
-        y = y_top - 28
-        c.setFont("Helvetica", 9.2)
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(x + 11, y_top - 18, title)
+        y = y_top - 36
+        c.setFont("Helvetica", 11)
         for left, right in rows:
             c.setFillColor(colors.HexColor("#4A5A6A"))
-            c.drawString(x + 8, y, left)
+            c.drawString(x + 11, y, left)
             c.setFillColor(colors.HexColor("#233240"))
-            c.drawRightString(x + width - 8, y, right)
-            y -= 15
-        return y_top - box_h - 8
+            c.drawRightString(x + width - 11, y, right)
+            y -= 18
+        return y_top - box_h - 14
 
     def draw_arrow(x1: float, y1: float, x2: float, y2: float) -> None:
         c.setStrokeColor(colors.HexColor("#8191A3"))
@@ -234,13 +233,13 @@ def _render_with_reportlab(
         c.drawPath(p, stroke=0, fill=1)
 
     def draw_diagram_scene_to_finished(x: float, y_top: float, width: float) -> float:
-        c.setFont("Helvetica-Bold", 10)
+        c.setFont("Helvetica-Bold", 15)
         c.setFillColor(colors.HexColor("#203042"))
         c.drawString(x, y_top, "Diagram 1: Scene to finished cut")
         box_w = (width - 24) / 4
-        box_h = 28
-        top_y = y_top - 18
-        bot_y = top_y - 46
+        box_h = 38
+        top_y = y_top - 24
+        bot_y = top_y - 62
         labels = [
             "RenderPackage",
             "Reference images",
@@ -262,12 +261,12 @@ def _render_with_reportlab(
             c.setStrokeColor(colors.HexColor("#CBD6E1"))
             c.roundRect(bx, by - box_h, box_w, box_h, 4, stroke=1, fill=1)
             c.setFillColor(colors.HexColor("#2A3B4D"))
-            c.setFont("Helvetica", 8.6)
+            c.setFont("Helvetica", 10)
             tx = bx + 5
-            ty = by - 12
-            for line in wrap_text(labels[idx], box_w - 10, "Helvetica", 8.6):
+            ty = by - 14
+            for line in wrap_text(labels[idx], box_w - 10, "Helvetica", 10):
                 c.drawString(tx, ty, line)
-                ty -= 10
+                ty -= 12
 
         for i in range(3):
             x1 = positions[i][0] + box_w
@@ -285,27 +284,27 @@ def _render_with_reportlab(
 
         note_x = positions[2][0]
         note_y = positions[2][1] - box_h - 11
-        c.setFont("Helvetica-Oblique", 8.2)
+        c.setFont("Helvetica-Oblique", 10)
         c.setFillColor(colors.HexColor("#6A7785"))
         c.drawString(note_x, note_y, "Expect drift...")
-        return bot_y - box_h - 16
+        return bot_y - box_h - 24
 
     def draw_diagram_take_loop(x: float, y_top: float, width: float) -> float:
-        c.setFont("Helvetica-Bold", 10)
+        c.setFont("Helvetica-Bold", 15)
         c.setFillColor(colors.HexColor("#203042"))
         c.drawString(x, y_top, "Diagram 2: The take loop")
 
-        bx_w = 118
-        bx_h = 24
+        bx_w = 138
+        bx_h = 30
         cx = x + (width / 2)
-        cy = y_top - 64
+        cy = y_top - 80
         nodes = {
             "Pick shot": (cx - (bx_w / 2), cy + 44),
-            "Load refs": (cx + 74, cy + 14),
-            "Generate 3-6 takes": (cx + 74, cy - 26),
-            "Review fast": (cx - (bx_w / 2), cy - 56),
-            "Mark keeper": (cx - 192, cy - 26),
-            "If drift: tighten refs / simplify prompt / split shot": (cx - 224, cy + 14),
+            "Load refs": (cx + 94, cy + 14),
+            "Generate 3-6 takes": (cx + 94, cy - 34),
+            "Review fast": (cx - (bx_w / 2), cy - 68),
+            "Mark keeper": (cx - 232, cy - 34),
+            "If drift: tighten refs / simplify prompt / split shot": (cx - 254, cy + 14),
         }
 
         order = [
@@ -321,15 +320,15 @@ def _render_with_reportlab(
         for text, (bx, by) in nodes.items():
             c.setFillColor(colors.HexColor("#F8FBFF"))
             c.setStrokeColor(colors.HexColor("#C9D7E6"))
-            local_h = 34 if text.startswith("If drift") else bx_h
-            c.roundRect(bx, by - local_h, bx_w + (34 if text.startswith("If drift") else 0), local_h, 4, stroke=1, fill=1)
+            local_h = 42 if text.startswith("If drift") else bx_h
+            c.roundRect(bx, by - local_h, bx_w + (50 if text.startswith("If drift") else 0), local_h, 5, stroke=1, fill=1)
             c.setFillColor(colors.HexColor("#2C3D50"))
-            c.setFont("Helvetica", 8.3)
-            tw = bx_w + (22 if text.startswith("If drift") else 0)
-            ty = by - 11
-            for line in wrap_text(text, tw - 10, "Helvetica", 8.3):
+            c.setFont("Helvetica", 10)
+            tw = bx_w + (32 if text.startswith("If drift") else 0)
+            ty = by - 13
+            for line in wrap_text(text, tw - 10, "Helvetica", 10):
                 c.drawString(bx + 5, ty, line)
-                ty -= 9
+                ty -= 12
 
         for i in range(len(order) - 1):
             sx, sy = nodes[order[i]]
@@ -338,82 +337,75 @@ def _render_with_reportlab(
             tx += bx_w / 2
             draw_arrow(sx, sy - 12, tx, ty - 12)
 
-        return cy - 78
+        return cy - 96
 
     def draw_page_title(title: str, subtitle: str) -> float:
         c.setFillColor(colors.HexColor("#162534"))
-        c.setFont("Helvetica-Bold", 17)
+        c.setFont("Helvetica-Bold", 23)
         c.drawString(main_x, content_top, title)
-        y = content_top - 18
-        c.setFont("Helvetica", 10.5)
+        y = content_top - 28
+        c.setFont("Helvetica", 11)
         c.setFillColor(colors.HexColor("#4B5B6A"))
-        return draw_wrapped(subtitle, main_x, y, main_w - 4, font="Helvetica", size=10.5, lead=13)
+        return draw_wrapped(subtitle, main_x, y, main_w - 4, font="Helvetica", size=11, lead=15)
 
     def draw_page_1() -> None:
         y = draw_page_title(
-            "Page 1: Start here",
-            "Choose a fast path, know where files live, and keep the pipeline picture-first.",
+            "Start here: turn a scene into editable shots (without losing your look)",
+            "This guide is built for makers moving fast: get clean visuals first, then do sound in post where it belongs.",
+        )
+        y = draw_callout(
+            main_x,
+            y,
+            main_w,
+            "Golden rule",
+            [
+                "Picture-first. No burned-in subtitles, captions, on-screen text, watermarks, or logos.",
+                "If text appears in-frame, reroll the shot and keep moving.",
+                "Dialogue and audio are added in post.",
+            ],
+            "golden",
+        )
+        y = draw_step_card(
+            main_x,
+            y,
+            main_w,
+            "Path A - Universal (works with most tools)",
+            [
+                f"Open {prompt_path} and generate the first 3 shots as picture-only takes.",
+                "Use this when you need speed, rough pacing checks, and fast visual exploration.",
+                "Keep prompts focused and avoid editing too many variables at once.",
+            ],
+            "You can quickly choose a keeper direction for each opening shot.",
         )
         if _is_runway(provider):
-            y = draw_callout(
+            y = draw_step_card(
                 main_x,
-                y - 2,
+                y,
                 main_w,
-                "Runway click path",
-                ["Workflow -> Tool -> References -> Paste prompt -> Generate -> Score"],
-                "tip",
+                "Path B - Runway (image reference workflow)",
+                [
+                    "Workflow -> Tool -> References -> Paste prompt -> Generate -> Score",
+                    f"Create refs using {asset_prompts_path} and map them with bindings/bindings.csv.",
+                    "Use this path when continuity matters more than speed.",
+                ],
+                "Your character/location/style continuity is stable across shots.",
             )
-        y = draw_step_card(
-            main_x,
-            y,
-            main_w,
-            "Path A: Start without refs",
-            [
-                f"Open {prompt_path} and run shot_001 to shot_003 as picture-only.",
-                "Do not burn subtitles, text, logos, or watermarks into the frame.",
-                "Use this path to validate pacing and framing quickly.",
-            ],
-            "You have three visual takes and can pick one keeper per shot.",
-        )
-        y = draw_step_card(
-            main_x,
-            y,
-            main_w,
-            "Path B: Add refs for continuity",
-            [
-                f"Generate refs from {asset_prompts_path}.",
-                "Save assets using exact names from assets/ingredients_manifest.md.",
-                "Attach refs shot by shot from bindings/bindings.csv.",
-            ],
-            "Identity, location, and style drift are visibly reduced.",
-        )
         y = draw_file_tiles(
             main_x,
             y,
             main_w,
             [
+                "What's inside this package:",
                 f"Shot prompts: {prompt_path}",
-                "Reference checklist: assets/ingredients_manifest.md",
-                "Reference map: bindings/bindings.csv",
                 "Shot list: shots/shot_list.csv",
+                "Reference map: bindings/bindings.csv",
+                "Reference checklist: assets/ingredients_manifest.md",
                 "Scoring: rubric/scoring_sheet.csv",
             ],
         )
         draw_diagram_scene_to_finished(main_x, y - 2, main_w)
 
         sy = content_top
-        sy = draw_callout(
-            side_x,
-            sy,
-            side_w,
-            "Golden rule",
-            [
-                "Generate clean visuals only.",
-                "Audio and dialogue are handled in post.",
-                "If text appears on screen, reroll the take.",
-            ],
-            "golden",
-        )
         rows = _safe_scene_meta(scene_heading, scene_id, shot_count)
         if rows:
             sy = draw_mini_table(side_x, sy, side_w, "Scene snapshot", rows)
@@ -421,15 +413,18 @@ def _render_with_reportlab(
             side_x,
             sy,
             side_w,
-            "Heads-up",
-            ["Expect drift between takes. Keep prompts tight and refs stable."],
-            "headsup",
+            "Tip",
+            [
+                "Generate three to six takes before judging.",
+                "Fast loops beat perfect first attempts.",
+            ],
+            "tip",
         )
 
     def draw_page_2() -> None:
         y = draw_page_title(
-            "Page 2: Make reference images",
-            "Build the minimum style/location/character set before long generation runs.",
+            "Make your reference images (this is where consistency comes from)",
+            "Do this once, do it cleanly, and every downstream step gets easier.",
         )
         y = draw_step_card(
             main_x,
@@ -437,33 +432,34 @@ def _render_with_reportlab(
             main_w,
             "Generate the minimum set",
             [
-                "style_01_ref_01 for look and tone.",
-                "loc_01_ref_01 for environment continuity.",
-                "char_<X>_ref_01 per character appearing in scene.",
+                "Style: style_01_ref_01 to lock visual language.",
+                "Location: loc_01_ref_01 to keep geography coherent.",
+                "Characters: char_<X>_ref_01 for each speaking/on-camera role.",
+                "Props: prop_XX_ref_01 for recurring hero objects.",
             ],
-            "Every required id in assets/ingredients_manifest.md has a matching file.",
+            "Every required id in assets/ingredients_manifest.md has a real file.",
         )
         y = draw_step_card(
             main_x,
             y,
             main_w,
-            "Name and stage assets",
+            "Naming and organization",
             [
                 "Save into assets/placeholder/* folders.",
                 "Keep exact naming to avoid mismatched refs during shot generation.",
-                "Avoid stylized text in refs to reduce accidental on-screen text.",
+                "Keep references clean: no logos, no text overlays, no heavy filters.",
             ],
-            "Refs are clean, consistent, and easy to map into bindings/bindings.csv.",
+            "You can load references without guesswork during take generation.",
         )
         draw_mini_table(
             main_x,
             y,
             main_w,
-            "Inputs / Outputs",
+            "Capture checklist",
             [
-                ("Input", "prompts/asset_prompts.md"),
-                ("Checklist", "assets/ingredients_manifest.md"),
-                ("Output", "assets/placeholder/*"),
+                ("Input prompts", "prompts/asset_prompts.md"),
+                ("Required IDs", "assets/ingredients_manifest.md"),
+                ("Storage", "assets/placeholder/*"),
             ],
         )
 
@@ -473,35 +469,39 @@ def _render_with_reportlab(
             sy,
             side_w,
             "Tip",
-            ["Capture neutral, readable refs first; style variants can come later."],
+            ["Start neutral. Stylization can be layered in later without breaking continuity."],
             "tip",
         )
         sy = draw_callout(
             side_x,
             sy,
             side_w,
-            "Quick checklist",
-            ["No logos in refs", "No text overlays", "Consistent wardrobe and lighting"],
-            "golden",
+            "Heads-up",
+            ["Inconsistent lighting in refs causes fast identity drift."],
+            "headsup",
         )
         draw_callout(
             side_x,
             sy,
             side_w,
             "Glossary",
-            ["Ref ID: file handle used in bindings.", "Keeper: chosen take for edit."],
+            [
+                "Ref ID: stable filename used by bindings.",
+                "Keeper: best take selected for edit.",
+                "Drift: mismatch in identity/style/location over takes.",
+            ],
             "tip",
         )
 
     def draw_page_3() -> None:
         y = draw_page_title(
-            "Page 3: Generate shots",
-            "Run one shot at a time and use a quick loop to keep momentum while controlling drift.",
+            "Generate shots (repeat the take loop)",
+            "Run one shot at a time, stay focused, and make keeper decisions early.",
         )
         if _is_runway(provider):
             y = draw_callout(
                 main_x,
-                y - 2,
+                y,
                 main_w,
                 "Runway click path",
                 ["Workflow -> Tool -> References -> Paste prompt -> Generate -> Score"],
@@ -511,13 +511,25 @@ def _render_with_reportlab(
             main_x,
             y,
             main_w,
-            "Take loop per shot",
+            "Take loop instructions",
             [
                 "Pick shot_id from shots/shot_list.csv and load refs from bindings/bindings.csv.",
-                "Generate 3-6 visual takes before editing prompts.",
-                "Reject takes with on-screen text, subtitles, logos, or heavy drift.",
+                "Generate 3-6 takes before rewriting prompts.",
+                "Review fast, mark one keeper, and move to the next shot.",
             ],
             "One keeper is selected for each target shot.",
+        )
+        y = draw_step_card(
+            main_x,
+            y,
+            main_w,
+            "Fix drift without derailing momentum",
+            [
+                "If drift appears: tighten refs first.",
+                "Then simplify prompt intent or split the shot into smaller beats.",
+                "Avoid large style changes mid-pack.",
+            ],
+            "The next take wave improves without resetting your whole workflow.",
         )
         draw_diagram_take_loop(main_x, y - 2, main_w)
 
@@ -526,39 +538,57 @@ def _render_with_reportlab(
             side_x,
             sy,
             side_w,
-            "Heads-up",
-            ["If drift rises, tighten refs first. Prompt rewrites come second."],
+            "Heads-up: dialogue-heavy",
+            ["Dialogue-heavy shots need extra takes for timing and expression sync."],
             "headsup",
         )
-        draw_file_tiles(
+        sy = draw_callout(
             side_x,
             sy,
             side_w,
+            "Heads-up: multi-character",
+            ["For multi-character frames, lock composition first, then performance details."],
+            "headsup",
+        )
+        draw_callout(
+            side_x,
+            sy,
+            side_w,
+            "Heads-up: prop-dependent",
             [
-                f"Shot prompts: {prompt_path}",
-                "Reference map: bindings/bindings.csv",
-                "Shot list: shots/shot_list.csv",
+                "If a hero prop drifts, add dedicated prop refs before changing everything else."
             ],
+            "headsup",
         )
 
     def draw_page_4() -> None:
         y = draw_page_title(
-            "Page 4: Edit + Audio in post",
-            "Lock picture first, then build dialogue, ambience, SFX, and music as separate layers.",
+            "Edit first, then audio in post",
+            "Treat picture lock as the base layer; then build voice, ambience, SFX, and music on top.",
         )
         y = draw_step_card(
             main_x,
             y,
             main_w,
-            "Workflow: Picture First, Audio in Post",
+            "Rough cut workflow",
             [
-                "1. Generate shots (picture-only; no subtitles/text).",
-                "2. Assemble rough cut in shot_id order.",
-                "3. Add dialogue from audio/dialogue_script.txt.",
-                "4. Add ambience and SFX from audio/sfx_cue_sheet.md.",
-                "5. Add music and do a final mix.",
+                "Assemble shots in shot_id order first.",
+                "Trim for timing and continuity before touching audio polish.",
+                "Keep alternate takes nearby for quick replacement.",
             ],
-            "Exported timeline has clean visuals and fully post-produced audio.",
+            "Picture timing feels right before audio layering starts.",
+        )
+        y = draw_step_card(
+            main_x,
+            y,
+            main_w,
+            "Audio in post",
+            [
+                "Add ADR/VO using audio/dialogue_script.txt and voice notes from audio/voice_bible.md.",
+                "Layer ambience and SFX from audio/sfx_cue_sheet.md.",
+                "Add music, balance levels, and print a final mix.",
+            ],
+            "Your cut plays cleanly with intelligible dialogue and controlled dynamics.",
         )
         y = draw_callout(
             main_x,
@@ -566,9 +596,9 @@ def _render_with_reportlab(
             main_w,
             "Subtitle policy",
             [
-                "If your tool generates subtitles anyway, reroll that shot.",
+                "No burned-in text. If subtitles/captions appear in-frame, reroll the shot.",
                 "Do not rely on subtitle removal.",
-                "edit/subtitles.srt is optional editing guidance; disable before final export.",
+                "edit/subtitles.srt is optional editing guidance and should be disabled before final export.",
             ],
             "golden",
         )
@@ -591,7 +621,7 @@ def _render_with_reportlab(
             side_w,
             "Tip",
             [
-                "Keep dialogue edits in post so visual rerolls do not force subtitle clean-up.",
+                "Keep dialogue and subtitle decisions in post so visual rerolls stay clean.",
                 "Version audio mixes per cut iteration.",
             ],
             "tip",
@@ -599,14 +629,14 @@ def _render_with_reportlab(
 
     def draw_page_5() -> None:
         y = draw_page_title(
-            "Page 5: Score + iterate",
-            "Use consistent scoring to choose keepers and decide if you reroll, split, or move forward.",
+            "Score + iterate",
+            "A simple score pass keeps creative decisions consistent when you move from draft to final.",
         )
         y = draw_step_card(
             main_x,
             y,
             main_w,
-            "Score pass",
+            "Score pass (keeper map)",
             [
                 "Mark keeper per shot in rubric/scoring_sheet.csv.",
                 "Rate character, location, and style continuity.",
@@ -620,7 +650,7 @@ def _render_with_reportlab(
             main_w,
             "Iteration strategy",
             [
-                "If only one beat fails, reroll that shot first.",
+                "Reroll only failing beats first.",
                 "If continuity keeps failing, split the shot into simpler actions.",
                 "When score is stable, export final master.",
             ],
@@ -699,8 +729,10 @@ def _fallback_pages(prompt_path: str, asset_prompts_path: str, provider: str, sc
     runway_line = "Workflow -> Tool -> References -> Paste prompt -> Generate -> Score" if _is_runway(provider) else ""
     return [
         [
-            "Page 1: Start here",
-            "Path A and Path B",
+            "Start here: turn a scene into editable shots (without losing your look)",
+            "Picture-first. No burned-in subtitles/captions/on-screen text. Audio in post.",
+            "Path A - Universal (works with most tools)",
+            "Path B - Runway (image reference workflow)" if _is_runway(provider) else "",
             f"Shot prompts: {prompt_path}",
             "Reference checklist: assets/ingredients_manifest.md",
             "Reference map: bindings/bindings.csv",
@@ -713,20 +745,21 @@ def _fallback_pages(prompt_path: str, asset_prompts_path: str, provider: str, sc
             *meta_lines,
         ],
         [
-            "Page 2: Make reference images",
+            "Make your reference images (this is where consistency comes from)",
+            "Minimum set: style, location, characters, props",
             f"Asset prompts: {asset_prompts_path}",
             "Naming from assets/ingredients_manifest.md",
             "Checklist: no logos, no text overlays, consistent wardrobe.",
         ],
         [
-            "Page 3: Generate shots",
+            "Generate shots (repeat the take loop)",
             f"Shot prompts: {prompt_path}",
             "Diagram 2: The take loop",
             "Pick shot -> Load refs -> Generate 3-6 takes -> Review fast -> Mark keeper -> If drift: tighten refs / simplify prompt / split shot -> Generate",
             runway_line,
         ],
         [
-            "Page 4: Edit + Audio in post",
+            "Edit first, then audio in post",
             "Workflow: Picture First, Audio in Post",
             "1. Generate shots (picture-only; no subtitles/text)",
             "2. Assemble a rough cut (order shots by shot_id)",
@@ -738,7 +771,7 @@ def _fallback_pages(prompt_path: str, asset_prompts_path: str, provider: str, sc
             "Optional editing guide: edit/subtitles.srt (disable before final export)",
         ],
         [
-            "Page 5: Score + iterate",
+            "Score + iterate",
             "Scoring file: rubric/scoring_sheet.csv",
             "Keep criteria stable across reviewers.",
             "Reroll only failing beats, then export final.",
