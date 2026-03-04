@@ -9,6 +9,10 @@ assets/placeholder/characters/README.md
 assets/placeholder/locations/README.md
 assets/placeholder/styles/README.md
 assets/placeholder/props/README.md
+audio/voice_bible.md
+audio/dialogue_script.txt
+audio/sfx_cue_sheet.md
+edit/subtitles.srt
 shots/shot_list.csv
 bindings/bindings.csv
 rubric/scoring_sheet.csv

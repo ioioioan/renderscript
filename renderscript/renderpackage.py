@@ -17,6 +17,10 @@ DEFAULT_PROVIDER = "universal"
 RUNWAY_PROVIDER = "runway.gen4_image_refs"
 SUPPORTED_PROVIDERS = (DEFAULT_PROVIDER, RUNWAY_PROVIDER)
 ASSET_PROMPTS_FILENAME = "prompts/asset_prompts.md"
+VOICE_BIBLE_FILENAME = "audio/voice_bible.md"
+DIALOGUE_SCRIPT_FILENAME = "audio/dialogue_script.txt"
+SFX_CUE_SHEET_FILENAME = "audio/sfx_cue_sheet.md"
+SUBTITLES_FILENAME = "edit/subtitles.srt"
 BASE_REQUIRED_FILES = [
     "rpack.json",
     "rpack.schema.json",
@@ -29,6 +33,10 @@ BASE_REQUIRED_FILES = [
     "assets/placeholder/locations/README.md",
     "assets/placeholder/styles/README.md",
     "assets/placeholder/props/README.md",
+    VOICE_BIBLE_FILENAME,
+    DIALOGUE_SCRIPT_FILENAME,
+    SFX_CUE_SHEET_FILENAME,
+    SUBTITLES_FILENAME,
     "shots/shot_list.csv",
     "bindings/bindings.csv",
     "rubric/scoring_sheet.csv",
@@ -215,6 +223,10 @@ def _render_package_map(provider: str, prompt_path: str) -> str:
         "- If you want the required references list: open `assets/ingredients_manifest.md`.\n"
         f"- If you want prompts to generate reference images: open `{ASSET_PROMPTS_FILENAME}`.\n"
         "- If you want placeholder folders for assets: open `assets/placeholder/`.\n"
+        f"- If you want character voice guidance: open `{VOICE_BIBLE_FILENAME}`.\n"
+        f"- If you want dialogue lines for post audio: open `{DIALOGUE_SCRIPT_FILENAME}`.\n"
+        f"- If you want per-shot ambience/SFX cues: open `{SFX_CUE_SHEET_FILENAME}`.\n"
+        f"- If you want optional external subtitles for editing: open `{SUBTITLES_FILENAME}`.\n"
         "- If you want durations and framing per shot: open `shots/shot_list.csv`.\n"
         "- If you want the Reference Map per shot: open `bindings/bindings.csv`.\n"
         "- If you want scoring and keeper tracking: open `rubric/scoring_sheet.csv`.\n"
@@ -598,6 +610,9 @@ def _render_prompts(
     lines = [
         title,
         "",
+        "IMPORTANT: NO ON-SCREEN TEXT. NO SUBTITLES. NO CAPTIONS. NO WATERMARKS. NO LOGOS.",
+        "Generate picture-only shots. Audio/dialogue will be added in post.",
+        "",
         "> Drift warning: outputs can still vary; review each shot for continuity.",
         "",
     ]
@@ -606,6 +621,7 @@ def _render_prompts(
         shot_bindings = bindings[shot_id]
         lines.append(f"## {shot_id} ({shot['duration_s']}s)")
         lines.append("")
+        lines.append("No on-screen text or subtitles.")
         if provider == RUNWAY_PROVIDER:
             lines.append(
                 "Apply references: "
@@ -629,6 +645,161 @@ def _render_prompts(
             "Stay in this location. Do not invent new characters or props. Keep consistent look."
         )
         lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _extract_dialogue_pairs(text: str) -> list[tuple[str, str]]:
+    pattern = re.compile(r"([A-Za-z][A-Za-z0-9 _'().-]{0,40}):\s*([^:]+?)(?=(?:\s+[A-Za-z][A-Za-z0-9 _'().-]{0,40}:\s)|$)")
+    out: list[tuple[str, str]] = []
+    for speaker_raw, line_raw in pattern.findall(text):
+        speaker = re.sub(r"\s+", " ", speaker_raw).strip()
+        line = re.sub(r"\s+", " ", line_raw).strip()
+        if speaker and line:
+            out.append((speaker, line))
+    return out
+
+
+def _render_voice_bible(speaker_by_id: dict[str, str]) -> str:
+    lines = [
+        "# Voice Bible",
+        "",
+        "Audio post guidance only. Avoid personal likeness or impersonation.",
+        "",
+    ]
+    names = sorted(set(speaker_by_id.values()))
+    if not names:
+        lines.extend(["No named dialogue characters detected.", ""])
+        return "\n".join(lines).rstrip() + "\n"
+    for name in names:
+        lines.extend(
+            [
+                f"## {name}",
+                "- Tone: grounded and clear",
+                "- Pace: medium",
+                "- Energy: natural, controlled",
+                "- Likeness: no real-person mimicry",
+                "",
+            ]
+        )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _dialogue_lines_by_shot(
+    shots: list[dict[str, object]],
+    units: list[dict[str, object]],
+) -> list[tuple[str, list[tuple[str, str]]]]:
+    out: list[tuple[str, list[tuple[str, str]]]] = []
+    for index, shot in enumerate(shots):
+        shot_id = str(shot["shot_id"])
+        unit_text = str(units[index].get("text", "")).strip() if index < len(units) else ""
+        pairs = _extract_dialogue_pairs(unit_text)
+        if pairs:
+            out.append((shot_id, pairs))
+    return out
+
+
+def _render_dialogue_script(shots: list[dict[str, object]], units: list[dict[str, object]]) -> str:
+    shot_dialogue = _dialogue_lines_by_shot(shots, units)
+    lines = [
+        "Dialogue Script (Audio in Post)",
+        "External audio reference. Do not burn subtitles into picture.",
+        "",
+    ]
+    if not shot_dialogue:
+        lines.extend(["No dialogue lines detected in this package.", ""])
+        return "\n".join(lines).rstrip() + "\n"
+    for shot_id, pairs in shot_dialogue:
+        lines.append(shot_id)
+        for speaker, line in pairs:
+            lines.append(f"{speaker}: {line}")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_sfx_cue_sheet(shots: list[dict[str, object]], units: list[dict[str, object]]) -> str:
+    keyword_cues = [
+        ("server", "server hum"),
+        ("footstep", "footsteps"),
+        ("walk", "footsteps"),
+        ("keyboard", "keyboard taps"),
+        ("type", "keyboard taps"),
+        ("door", "door"),
+        ("breath", "breathing"),
+        ("sigh", "breathing"),
+        ("pant", "breathing"),
+        ("rain", "rain"),
+        ("wind", "wind"),
+        ("phone", "phone ring"),
+        ("alarm", "alarm"),
+        ("car", "engine rumble"),
+        ("engine", "engine rumble"),
+    ]
+    lines = ["# SFX Cue Sheet", "", "Conservative cues for post sound design.", ""]
+    for index, shot in enumerate(shots):
+        shot_id = str(shot["shot_id"])
+        text = str(units[index].get("text", "")).lower() if index < len(units) else ""
+        cues: list[str] = []
+        for keyword, cue in keyword_cues:
+            if keyword in text and cue not in cues:
+                cues.append(cue)
+        if not cues:
+            cues = ["ambient room tone"]
+        lines.append(f"## {shot_id}")
+        for cue in cues:
+            lines.append(f"- {cue}")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _format_srt_timestamp(seconds: float) -> str:
+    millis = max(int(round(seconds * 1000)), 0)
+    hours = millis // 3_600_000
+    millis %= 3_600_000
+    minutes = millis // 60_000
+    millis %= 60_000
+    secs = millis // 1000
+    millis %= 1000
+    return f"{hours:02d}:{minutes:02d}:{secs:02d},{millis:03d}"
+
+
+def _render_subtitles_srt(shots: list[dict[str, object]], units: list[dict[str, object]]) -> str:
+    shot_dialogue = _dialogue_lines_by_shot(shots, units)
+    lines: list[str] = []
+    cue_index = 1
+    elapsed = 0.0
+    dialogue_by_shot = {shot_id: pairs for shot_id, pairs in shot_dialogue}
+
+    for shot in shots:
+        shot_id = str(shot["shot_id"])
+        duration = float(shot.get("duration_s", 0) or 0)
+        window_start = elapsed
+        window_end = elapsed + max(duration, 0.1)
+        pairs = dialogue_by_shot.get(shot_id, [])
+        if pairs:
+            slot = (window_end - window_start) / len(pairs)
+            for i, (speaker, line) in enumerate(pairs):
+                start = window_start + (i * slot)
+                end = window_start + ((i + 1) * slot)
+                if i < len(pairs) - 1:
+                    end = max(start + 0.2, end - 0.05)
+                lines.extend(
+                    [
+                        str(cue_index),
+                        f"{_format_srt_timestamp(start)} --> {_format_srt_timestamp(end)}",
+                        f"{speaker}: {line}",
+                        "",
+                    ]
+                )
+                cue_index += 1
+        elapsed = window_end
+
+    if not lines:
+        lines = [
+            "1",
+            "00:00:00,000 --> 00:00:01,000",
+            "[No dialogue]",
+            "",
+        ]
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -777,6 +948,10 @@ def package_fountain_file(
         "assets/placeholder/locations/README.md": _render_placeholder_readme("locations"),
         "assets/placeholder/styles/README.md": _render_placeholder_readme("styles"),
         "assets/placeholder/props/README.md": _render_placeholder_readme("props"),
+        VOICE_BIBLE_FILENAME: _render_voice_bible(speaker_by_id),
+        DIALOGUE_SCRIPT_FILENAME: _render_dialogue_script(shots=shots, units=shot_units),
+        SFX_CUE_SHEET_FILENAME: _render_sfx_cue_sheet(shots=shots, units=shot_units),
+        SUBTITLES_FILENAME: _render_subtitles_srt(shots=shots, units=shot_units),
         "shots/shot_list.csv": _to_csv(
             headers=["shot_id", "duration_s", "framing", "beat", "notes", "risk_flags"], rows=shot_rows
         ),
