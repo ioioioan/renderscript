@@ -937,6 +937,11 @@ def package_fountain_file(
             provider=provider,
             version=__version__,
             logo_path=Path("assets/branding/logo.png"),
+            scene_heading=str(selected_scene.get("heading", {}).get("raw", ""))
+            if isinstance(selected_scene.get("heading", {}), dict)
+            else "",
+            scene_id=str(selected_scene.get("id", "")),
+            shot_count=len(shots),
         ),
         "assets/ingredients_manifest.md": _render_ingredients_manifest(required_refs),
         ASSET_PROMPTS_FILENAME: _render_asset_prompts(
