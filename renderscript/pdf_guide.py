@@ -4,7 +4,9 @@ import importlib
 import importlib.metadata
 import os
 import platform
+import re
 from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -120,13 +122,43 @@ def _weasyprint_status() -> str:
     return "available"
 
 
-def _build_debug_text(renderer_used: str, engine: str, error: str, chromium_launch_success: bool) -> str:
+def _chromium_installed() -> bool:
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception:
+        return False
+    try:
+        with sync_playwright() as playwright:
+            executable = Path(playwright.chromium.executable_path)
+            return executable.exists()
+    except Exception:
+        return False
+
+
+def _extract_pdf_text_for_guard(pdf_bytes: bytes) -> str:
+    try:
+        from pypdf import PdfReader  # type: ignore[import-not-found]
+    except ModuleNotFoundError:
+        return pdf_bytes.decode("latin-1", errors="ignore")
+    reader = PdfReader(BytesIO(pdf_bytes))
+    return "\n".join((page.extract_text() or "") for page in reader.pages)
+
+
+def _looks_like_fallback_pdf(pdf_bytes: bytes) -> bool:
+    text = _extract_pdf_text_for_guard(pdf_bytes)
+    normalized = re.sub(r"\s+", " ", text)
+    return ("Page 1:" in normalized) or ("Start -> Refs" in normalized)
+
+
+def _build_debug_text(renderer_used: str, engine: str, error: str, chromium_launch_success: bool, chromium_installed: bool) -> str:
     lines = [
         f"renderer_used={renderer_used}",
         f"engine={engine}",
         f"error={error}",
         f"playwright_version={_package_version('playwright')}",
         f"chromium_launch_success={'true' if chromium_launch_success else 'false'}",
+        f"chromium_installed={'true' if chromium_installed else 'false'}",
+        f"chromium installed = {'true' if chromium_installed else 'false'}",
         f"weasyprint_status={_weasyprint_status()}",
         f"python={platform.python_version()}",
         f"platform={platform.platform()}",
@@ -314,6 +346,7 @@ def render_creator_guide_pdf(
     strict_pdf = os.getenv(STRICT_PDF_ENV) == "1"
     errors: list[str] = []
     chromium_launch_success = False
+    chromium_installed = _chromium_installed()
     base_url = str((Path(__file__).resolve().parent / "templates").resolve())
 
     try:
@@ -336,6 +369,8 @@ def render_creator_guide_pdf(
             pdf = _render_with_playwright(html, base_url=base_url)
             chromium_launch_success = True
             pdf = _ensure_min_pdf_size(pdf)
+            if strict_pdf and _looks_like_fallback_pdf(pdf):
+                raise RuntimeError("Strict PDF mode: fallback-like PDF signature detected after Playwright render.")
             return CreatorGuideRenderResult(
                 pdf_bytes=pdf,
                 renderer_used="html",
@@ -345,6 +380,7 @@ def render_creator_guide_pdf(
                     engine="playwright",
                     error="",
                     chromium_launch_success=chromium_launch_success,
+                    chromium_installed=chromium_installed,
                 ),
             )
         except Exception as exc:
@@ -353,6 +389,8 @@ def render_creator_guide_pdf(
         try:
             pdf = _render_with_weasyprint(html, base_url=base_url)
             pdf = _ensure_min_pdf_size(pdf)
+            if strict_pdf and _looks_like_fallback_pdf(pdf):
+                raise RuntimeError("Strict PDF mode: fallback-like PDF signature detected after WeasyPrint render.")
             return CreatorGuideRenderResult(
                 pdf_bytes=pdf,
                 renderer_used="html",
@@ -362,6 +400,7 @@ def render_creator_guide_pdf(
                     engine="weasyprint",
                     error="",
                     chromium_launch_success=chromium_launch_success,
+                    chromium_installed=chromium_installed,
                 ),
             )
         except Exception as exc:
@@ -390,5 +429,6 @@ def render_creator_guide_pdf(
             engine="fallback",
             error=error,
             chromium_launch_success=chromium_launch_success,
+            chromium_installed=chromium_installed,
         ),
     )

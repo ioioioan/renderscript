@@ -202,6 +202,7 @@ def test_package_generates_required_files_and_is_deterministic(
     assert "engine=playwright" in debug_text
     assert "playwright_version=" in debug_text
     assert "chromium_launch_success=true" in debug_text
+    assert "chromium_installed=true" in debug_text
     assert "error=" in debug_text
     assert "weasyprint=" in debug_text
 
