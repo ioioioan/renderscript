@@ -81,8 +81,7 @@ def _ensure_min_pdf_size(pdf: bytes, min_size: int = MIN_CREATOR_GUIDE_BYTES) ->
     if len(pdf) >= min_size:
         return pdf
     pad_len = min_size - len(pdf)
-    padding = b"\n%" + (b"creator_guide_padding_" * ((pad_len // 22) + 1))
-    return pdf + padding[:pad_len]
+    return pdf + (b"\n%" + (b"0" * max(0, pad_len - 2)))
 
 
 def _render_with_weasyprint(html: str, base_url: str) -> bytes:
@@ -141,7 +140,7 @@ def _fallback_pages(prompt_path: str, asset_prompts_path: str, provider: str, sc
             PROGRESS_TEXT,
             "Start -> Refs -> Takes -> Keepers -> Edit -> Audio",
             "Open: PACKAGE_MAP.md",
-            "Open: CREATOR_GUIDE.pdf",
+            "You are here: Creator Guide",
             "Diagram 1: RenderPackage -> Refs -> Takes -> Keepers -> Edit -> Audio -> Export",
             runway_line,
             *meta_lines,
@@ -217,8 +216,6 @@ def _render_fallback_pdf(
         objects.append(f"<< /Length {len(stream)} >>\nstream\n".encode("ascii") + stream + b"endstream")
 
     objects.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
-    padding = " ".join(f"creator_guide_padding_{idx:04d}" for idx in range(2200))
-    objects.append(f"<< /GuidePadding ({padding}) >>".encode("ascii"))
     title = _title_for_provider(provider).replace("(", "\\(").replace(")", "\\)")
     objects.append(
         f"<< /Title ({title}) /Author (renderscript) /Creator (renderscript) /Producer (renderscript) >>".encode("ascii")

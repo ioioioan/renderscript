@@ -165,7 +165,7 @@ def main() -> int:
             return 1
 
     if args.command == "version":
-        print(f"RenderScript v{__version__}")
+        print(f"RenderScript AI v{__version__}")
         return 0
 
     return 2

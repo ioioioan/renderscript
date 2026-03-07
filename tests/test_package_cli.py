@@ -15,7 +15,7 @@ BASE_REQUIRED_PATHS = [
     "rpack.schema.json",
     "PACKAGE_MAP.md",
     "README.md",
-    "CREATOR_GUIDE.pdf",
+    "CREATOR_GUIDE(Start here).pdf",
     "assets/ingredients_manifest.md",
     "prompts/asset_prompts.md",
     "assets/placeholder/characters/README.md",
@@ -111,7 +111,7 @@ def test_package_generates_required_files_and_is_deterministic(
         if path == "rpack.json":
             assert _rpack_without_generated_at(contents_one[path]) == _rpack_without_generated_at(contents_two[path])
             continue
-        if path == "CREATOR_GUIDE.pdf":
+        if path == "CREATOR_GUIDE(Start here).pdf":
             assert len(contents_one[path]) > 50000
             assert len(contents_two[path]) > 50000
             assert _pdf_text(contents_one[path]) == _pdf_text(contents_two[path])
@@ -152,7 +152,7 @@ def test_package_generates_required_files_and_is_deterministic(
     assert prompt_text.count("No on-screen text or subtitles.") == len(rpack["shots"])
 
     package_map = contents_one["PACKAGE_MAP.md"].decode("utf-8")
-    assert "Start here: CREATOR_GUIDE.pdf" in package_map
+    assert "Start here: CREATOR_GUIDE(Start here).pdf" in package_map
     assert "prompts/asset_prompts.md" in package_map
     assert "audio/voice_bible.md" in package_map
     assert "audio/dialogue_script.txt" in package_map
@@ -168,9 +168,10 @@ def test_package_generates_required_files_and_is_deterministic(
     assert "loc_01_ref_01" in asset_prompts
     assert "assets/asset_prompts.md" not in contents_one
 
-    assert len(contents_one["CREATOR_GUIDE.pdf"]) > 50000
-    universal_pdf_text = _pdf_text(contents_one["CREATOR_GUIDE.pdf"])
+    assert len(contents_one["CREATOR_GUIDE(Start here).pdf"]) > 50000
+    universal_pdf_text = _pdf_text(contents_one["CREATOR_GUIDE(Start here).pdf"])
     assert "Runway" not in universal_pdf_text
+    assert "creator-guide-pad" not in universal_pdf_text
     assert "Keepers" in universal_pdf_text
     assert "Keeper Sheet" in universal_pdf_text
     assert (
@@ -347,14 +348,18 @@ def test_package_runway_provider_generates_runway_prompt_file(
     rpack = json.loads(contents["rpack.json"].decode("utf-8"))
     assert rpack["target_provider"] == "runway.gen4_image_refs"
     assert runway_prompt_text.count("No on-screen text or subtitles.") == len(rpack["shots"])
-    runway_pdf_text = _pdf_text(contents["CREATOR_GUIDE.pdf"])
+    runway_pdf_text = _pdf_text(contents["CREATOR_GUIDE(Start here).pdf"])
     assert "Runway" in runway_pdf_text
-    assert "Workflow -> Tool -> References -> Paste prompt -> Generate -> Mark keeper" in runway_pdf_text
+    assert (
+        "Workflow -> Tool -> References -> Paste prompt -> Generate -> Mark keeper" in runway_pdf_text
+        or "Workflow \u2192 Tool \u2192 References \u2192 Paste prompt \u2192 Generate \u2192 Mark keeper" in runway_pdf_text
+    )
     assert (
         "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in runway_pdf_text
         or "Start -> Refs -> Takes -> Keepers -> Edit -> Audio" in runway_pdf_text
     )
-    assert len(contents["CREATOR_GUIDE.pdf"]) > 50000
+    assert "creator-guide-pad" not in runway_pdf_text
+    assert len(contents["CREATOR_GUIDE(Start here).pdf"]) > 50000
 
 
 def test_package_golden_expected_paths_universal_scene_one(
@@ -390,4 +395,4 @@ def test_package_golden_expected_paths_universal_scene_one(
     assert (unpack_dir / "prompts/shot_prompts.md").read_text(encoding="utf-8").strip()
     assert not (unpack_dir / "prompts/universal_prompts.md").exists()
     assert (unpack_dir / "prompts/asset_prompts.md").read_text(encoding="utf-8").strip()
-    assert (unpack_dir / "CREATOR_GUIDE.pdf").stat().st_size > 50000
+    assert (unpack_dir / "CREATOR_GUIDE(Start here).pdf").stat().st_size > 50000

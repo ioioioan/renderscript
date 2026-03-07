@@ -21,12 +21,13 @@ VOICE_BIBLE_FILENAME = "audio/voice_bible.md"
 DIALOGUE_SCRIPT_FILENAME = "audio/dialogue_script.txt"
 SFX_CUE_SHEET_FILENAME = "audio/sfx_cue_sheet.md"
 SUBTITLES_FILENAME = "edit/subtitles.srt"
+CREATOR_GUIDE_FILENAME = "CREATOR_GUIDE(Start here).pdf"
 BASE_REQUIRED_FILES = [
     "rpack.json",
     "rpack.schema.json",
     "PACKAGE_MAP.md",
     "README.md",
-    "CREATOR_GUIDE.pdf",
+    CREATOR_GUIDE_FILENAME,
     "assets/ingredients_manifest.md",
     ASSET_PROMPTS_FILENAME,
     "assets/placeholder/characters/README.md",
@@ -91,7 +92,7 @@ def _render_readme(provider: str, prompt_filename: str) -> str:
         f"Provider: {provider}\n\n"
         "This package uses tool-agnostic prompts for broad compatibility.\n"
         "Tool-specific generation steps are not included in this README.\n\n"
-        "Use `CREATOR_GUIDE.pdf` and `PACKAGE_MAP.md` for creator-first workflow guidance.\n"
+        f"Use `{CREATOR_GUIDE_FILENAME}` and `PACKAGE_MAP.md` for creator-first workflow guidance.\n"
         f"Shot prompts are in `{prompt_filename}`.\n"
     )
 
@@ -214,11 +215,11 @@ def _render_scoring_sheet(shots: list[dict[str, object]]) -> str:
 
 def _render_package_map(provider: str, prompt_path: str) -> str:
     return (
-        "Start here: CREATOR_GUIDE.pdf\n\n"
+        f"Start here: {CREATOR_GUIDE_FILENAME}\n\n"
         f"- Package profile: `{provider}`.\n"
         "- If you want broad compatibility: universal package works with tool-agnostic prompts.\n"
         "- If you want Runway-specific reference steps: runway package includes them.\n"
-        "- If you want a fast creator walkthrough: open `CREATOR_GUIDE.pdf`.\n"
+        f"- If you want a fast creator walkthrough: open `{CREATOR_GUIDE_FILENAME}`.\n"
         f"- If you want shot-by-shot prompts: open `{prompt_path}`.\n"
         "- If you want the required references list: open `assets/ingredients_manifest.md`.\n"
         f"- If you want prompts to generate reference images: open `{ASSET_PROMPTS_FILENAME}`.\n"
@@ -931,7 +932,7 @@ def package_fountain_file(
         "rpack.schema.json": _render_rpack_schema_json(),
         "PACKAGE_MAP.md": _render_package_map(provider, prompt_filename),
         "README.md": _render_readme(provider, prompt_filename),
-        "CREATOR_GUIDE.pdf": render_creator_guide_pdf(
+        CREATOR_GUIDE_FILENAME: render_creator_guide_pdf(
             prompt_filename,
             asset_prompts_path=ASSET_PROMPTS_FILENAME,
             provider=provider,
