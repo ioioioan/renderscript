@@ -1,9 +1,7 @@
 {
   "bindings": {
     "shot_001": {
-      "character_ref_ids": [
-        "char_A_ref_01"
-      ],
+      "character_ref_ids": [],
       "location_ref_ids": [
         "loc_01_ref_01"
       ],
@@ -14,31 +12,35 @@
     },
     "shot_002": {
       "character_ref_ids": [
-        "char_B_ref_01"
+        "char_M_ref_01"
       ],
       "location_ref_ids": [
         "loc_01_ref_01"
       ],
-      "prop_ref_ids": [],
+      "prop_ref_ids": [
+        "prop_01_ref_01"
+      ],
       "style_ref_ids": [
         "style_01_ref_01"
       ]
     },
     "shot_003": {
       "character_ref_ids": [
-        "char_A_ref_01"
+        "char_J_ref_01"
       ],
       "location_ref_ids": [
         "loc_01_ref_01"
       ],
-      "prop_ref_ids": [],
+      "prop_ref_ids": [
+        "prop_02_ref_01"
+      ],
       "style_ref_ids": [
         "style_01_ref_01"
       ]
     },
     "shot_004": {
       "character_ref_ids": [
-        "char_A_ref_01"
+        "char_M_ref_01"
       ],
       "location_ref_ids": [
         "loc_01_ref_01"
@@ -50,7 +52,7 @@
     },
     "shot_005": {
       "character_ref_ids": [
-        "char_A_ref_01"
+        "char_J_ref_01"
       ],
       "location_ref_ids": [
         "loc_01_ref_01"
@@ -62,7 +64,7 @@
     },
     "shot_006": {
       "character_ref_ids": [
-        "char_A_ref_01"
+        "char_M_ref_01"
       ],
       "location_ref_ids": [
         "loc_01_ref_01"
@@ -74,7 +76,7 @@
     },
     "shot_007": {
       "character_ref_ids": [
-        "char_A_ref_01"
+        "char_M_ref_01"
       ],
       "location_ref_ids": [
         "loc_01_ref_01"
@@ -86,7 +88,7 @@
     },
     "shot_008": {
       "character_ref_ids": [
-        "char_A_ref_01"
+        "char_M_ref_01"
       ],
       "location_ref_ids": [
         "loc_01_ref_01"
@@ -97,20 +99,23 @@
       ]
     }
   },
-  "generated_at": "2026-03-07T02:40:41.629416Z",
+  "generated_at": "2026-03-07T02:26:06.921045Z",
   "generator": {
     "name": "RenderScript AI",
     "version": "0.1.0"
   },
   "required_references": {
     "character_ref_ids": [
-      "char_A_ref_01",
-      "char_B_ref_01"
+      "char_J_ref_01",
+      "char_M_ref_01"
     ],
     "location_ref_ids": [
       "loc_01_ref_01"
     ],
-    "prop_ref_ids": [],
+    "prop_ref_ids": [
+      "prop_01_ref_01",
+      "prop_02_ref_01"
+    ],
     "style_ref_ids": [
       "style_01_ref_01"
     ]
@@ -118,13 +123,13 @@
   "risk_flags": [],
   "rpack_version": "0.1",
   "scene": {
-    "heading_raw": "INT. SERVER ROOM - NIGHT",
+    "heading_raw": "INT. APARTMENT KITCHEN - MORNING",
     "ordinal": 1,
-    "scene_id": "scn_4ecc7d5506db"
+    "scene_id": "scn_49132c8a016b"
   },
   "shots": [
     {
-      "beat": "ALICE (whispering): Did you copy the drive?",
+      "beat": "A kettle clicks off on the stove.",
       "duration_s": 3,
       "framing": "wide",
       "notes": "",
@@ -132,7 +137,7 @@
       "shot_id": "shot_001"
     },
     {
-      "beat": "BOB: Yes.",
+      "beat": "MAYA folds a city map and slides it into a canvas tote.",
       "duration_s": 3,
       "framing": "medium",
       "notes": "",
@@ -140,7 +145,7 @@
       "shot_id": "shot_002"
     },
     {
-      "beat": "ALICE: Then move.",
+      "beat": "JONAH checks his watch near the doorway.",
       "duration_s": 3,
       "framing": "close",
       "notes": "",
@@ -148,31 +153,31 @@
       "shot_id": "shot_003"
     },
     {
-      "beat": "ALICE: Then move.",
+      "beat": "MAYA: Did you print the permit form?",
       "duration_s": 3,
       "framing": "wide",
-      "notes": "Pacing hold",
+      "notes": "",
       "risk_flags": [],
       "shot_id": "shot_004"
     },
     {
-      "beat": "ALICE: Then move.",
+      "beat": "JONAH: It's in the blue folder.",
       "duration_s": 3,
       "framing": "medium",
-      "notes": "Pacing hold",
+      "notes": "",
       "risk_flags": [],
       "shot_id": "shot_005"
     },
     {
-      "beat": "ALICE: Then move.",
+      "beat": "MAYA: Good. Grab the tape measure too.",
       "duration_s": 3,
       "framing": "close",
-      "notes": "Pacing hold",
+      "notes": "",
       "risk_flags": [],
       "shot_id": "shot_006"
     },
     {
-      "beat": "ALICE: Then move.",
+      "beat": "MAYA: Good. Grab the tape measure too.",
       "duration_s": 3,
       "framing": "wide",
       "notes": "Pacing hold",
@@ -180,7 +185,7 @@
       "shot_id": "shot_007"
     },
     {
-      "beat": "ALICE: Then move.",
+      "beat": "MAYA: Good. Grab the tape measure too.",
       "duration_s": 3,
       "framing": "medium",
       "notes": "Pacing hold",
@@ -189,8 +194,8 @@
     }
   ],
   "source": {
-    "filename": "t1_dialogue_attribution.fountain",
-    "hash": "c7d4934dd6b021f2b9524f7c59ac09f34f400e5143a8d68678ef932a1419a4f2"
+    "filename": "realistic.fountain",
+    "hash": "421d9831099e0540cc88c3a662d77b5a412d84f7ce573bfec68f902b03ededa4"
   },
   "target_provider": "universal",
   "target_provider_version": ""

@@ -1,17 +1,26 @@
 Dialogue Script (Audio in Post)
 External audio reference. Do not burn subtitles into picture.
 
+shot_001
+ALICE (whispering): Did you copy the drive?
+
+shot_002
+BOB: Yes.
+
+shot_003
+ALICE: Then move.
+
 shot_004
-MAYA: Did you print the permit form?
+ALICE: Then move.
 
 shot_005
-JONAH: It's in the blue folder.
+ALICE: Then move.
 
 shot_006
-MAYA: Good. Grab the tape measure too.
+ALICE: Then move.
 
 shot_007
-MAYA: Good. Grab the tape measure too.
+ALICE: Then move.
 
 shot_008
-MAYA: Good. Grab the tape measure too.
+ALICE: Then move.

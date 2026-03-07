@@ -4,8 +4,10 @@
 
 - `style_01_ref_01`
 - `loc_01_ref_01`
-- `char_A_ref_01`
-- `char_B_ref_01`
+- `char_J_ref_01`
+- `char_M_ref_01`
+- `prop_01_ref_01`
+- `prop_02_ref_01`
 
 ## Required asset categories
 

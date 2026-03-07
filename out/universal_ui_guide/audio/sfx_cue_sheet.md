@@ -9,7 +9,7 @@ Conservative cues for post sound design.
 - ambient room tone
 
 ## shot_003
-- ambient room tone
+- door
 
 ## shot_004
 - ambient room tone

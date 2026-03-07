@@ -1,19 +1,31 @@
 1
-00:00:09,000 --> 00:00:12,000
-MAYA: Did you print the permit form?
+00:00:00,000 --> 00:00:03,000
+ALICE (whispering): Did you copy the drive?
 
 2
-00:00:12,000 --> 00:00:15,000
-JONAH: It's in the blue folder.
+00:00:03,000 --> 00:00:06,000
+BOB: Yes.
 
 3
-00:00:15,000 --> 00:00:18,000
-MAYA: Good. Grab the tape measure too.
+00:00:06,000 --> 00:00:09,000
+ALICE: Then move.
 
 4
-00:00:18,000 --> 00:00:21,000
-MAYA: Good. Grab the tape measure too.
+00:00:09,000 --> 00:00:12,000
+ALICE: Then move.
 
 5
+00:00:12,000 --> 00:00:15,000
+ALICE: Then move.
+
+6
+00:00:15,000 --> 00:00:18,000
+ALICE: Then move.
+
+7
+00:00:18,000 --> 00:00:21,000
+ALICE: Then move.
+
+8
 00:00:21,000 --> 00:00:24,000
-MAYA: Good. Grab the tape measure too.
+ALICE: Then move.
