@@ -11,6 +11,10 @@ VERSION = "0.1.0"
 REQUIRES_PYTHON = ">=3.9"
 REQUIRES_DIST = [
     "jinja2>=3.1.0",
+    "fastapi>=0.115.0",
+    "httpx>=0.28.0",
+    "uvicorn>=0.30.0",
+    "python-multipart>=0.0.9",
     "pillow>=10.0.0",
     "pypdf>=5.0.0",
     "playwright>=1.58.0",

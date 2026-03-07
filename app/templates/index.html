@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RenderScript Studio</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <h1>RenderScript Studio</h1>
+    <p class="sub">Upload a screenplay and build a RenderPackage zip.</p>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form id="build-form" action="/build" method="post" enctype="multipart/form-data">
+      <label for="screenplay_file">Screenplay file</label>
+      <input id="screenplay_file" name="screenplay_file" type="file" accept=".fountain,.fnt,text/plain" required>
+
+      <label for="provider">Provider</label>
+      <select id="provider" name="provider">
+        {% for item in providers %}
+        <option value="{{ item }}" {% if provider == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+
+      <div id="scene-simple" class="hint">Single-scene files auto-build with scene 1.</div>
+
+      <div id="scene-advanced" class="hidden">
+        <label for="scene">Scene ordinal</label>
+        <select id="scene" name="scene"></select>
+      </div>
+      <input id="scene-hidden" type="hidden" name="scene" value="{{ scene }}">
+
+      <label for="project">Project name</label>
+      <input id="project" name="project" type="text" value="{{ project }}" required>
+
+      <button type="submit">Build RenderPackage</button>
+    </form>
+  </main>
+
+  <script>
+    const fileInput = document.getElementById("screenplay_file");
+    const sceneSimple = document.getElementById("scene-simple");
+    const sceneAdvanced = document.getElementById("scene-advanced");
+    const sceneSelect = document.getElementById("scene");
+    const sceneHidden = document.getElementById("scene-hidden");
+
+    function setSingleScene() {
+      sceneSimple.classList.remove("hidden");
+      sceneAdvanced.classList.add("hidden");
+      sceneHidden.disabled = false;
+      sceneHidden.value = "1";
+      sceneSelect.innerHTML = "";
+    }
+
+    function setMultiScene(options) {
+      sceneSimple.classList.add("hidden");
+      sceneAdvanced.classList.remove("hidden");
+      sceneHidden.disabled = true;
+      sceneSelect.innerHTML = "";
+      options.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item.ordinal;
+        option.textContent = `${item.ordinal} — ${item.label || "(no heading)"}`;
+        sceneSelect.appendChild(option);
+      });
+    }
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) {
+        setSingleScene();
+        return;
+      }
+      const body = new FormData();
+      body.append("screenplay_file", file);
+      const res = await fetch("/scenes", { method: "POST", body });
+      if (!res.ok) {
+        setSingleScene();
+        return;
+      }
+      const payload = await res.json();
+      if (payload.scene_count > 1) {
+        setMultiScene(payload.options || []);
+      } else {
+        setSingleScene();
+      }
+    });
+  </script>
+</body>
+</html>
