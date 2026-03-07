@@ -113,14 +113,6 @@ def _package_version(package_name: str) -> str:
         return "unavailable"
 
 
-def _weasyprint_status() -> str:
-    try:
-        importlib.import_module("weasyprint")
-    except Exception as exc:
-        return f"unavailable: {type(exc).__name__}: {exc}"
-    return "available"
-
-
 def _chromium_installed() -> bool:
     try:
         from playwright.sync_api import sync_playwright
@@ -158,21 +150,13 @@ def _build_debug_text(renderer_used: str, engine: str, error: str, chromium_laun
         f"chromium_launch_success={'true' if chromium_launch_success else 'false'}",
         f"chromium_installed={'true' if chromium_installed else 'false'}",
         f"chromium installed = {'true' if chromium_installed else 'false'}",
-        f"weasyprint_status={_weasyprint_status()}",
         f"python={platform.python_version()}",
         f"platform={platform.platform()}",
         f"jinja2={_module_version('jinja2')}",
-        f"weasyprint={_module_version('weasyprint')}",
         f"playwright={_module_version('playwright')}",
         f"strict_pdf_env={os.getenv(STRICT_PDF_ENV, '')}",
     ]
     return "\n".join(lines) + "\n"
-
-
-def _render_with_weasyprint(html: str, base_url: str) -> bytes:
-    from weasyprint import HTML
-
-    return HTML(string=html, base_url=base_url).write_pdf()
 
 
 def _render_with_playwright(html: str, base_url: str) -> bytes:
@@ -386,26 +370,6 @@ def render_creator_guide_pdf(
             )
         except Exception as exc:
             errors.append(f"Playwright render failed: {type(exc).__name__}: {exc}")
-
-        try:
-            pdf = _render_with_weasyprint(html, base_url=base_url)
-            pdf = _ensure_min_pdf_size(pdf)
-            if strict_pdf and _looks_like_fallback_pdf(pdf):
-                raise RuntimeError("Strict PDF mode: fallback-like PDF signature detected after WeasyPrint render.")
-            return CreatorGuideRenderResult(
-                pdf_bytes=pdf,
-                renderer_used="html",
-                error="",
-                debug_text=_build_debug_text(
-                    renderer_used="html",
-                    engine="weasyprint",
-                    error="",
-                    chromium_launch_success=chromium_launch_success,
-                    chromium_installed=chromium_installed,
-                ),
-            )
-        except Exception as exc:
-            errors.append(f"WeasyPrint not available; falling back. {type(exc).__name__}: {exc}")
 
     error = " | ".join(errors).strip()
     if strict_pdf:

@@ -11,7 +11,6 @@ VERSION = "0.1.0"
 REQUIRES_PYTHON = ">=3.9"
 REQUIRES_DIST = [
     "jinja2>=3.1.0",
-    "weasyprint>=62.0",
     "pypdf>=5.0.0",
     "playwright>=1.58.0",
 ]

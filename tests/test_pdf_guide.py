@@ -7,14 +7,13 @@ import pytest
 from renderscript import pdf_guide
 
 
-def test_strict_pdf_mode_raises_when_html_renderers_fail(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_strict_pdf_mode_raises_when_playwright_render_fails(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(pdf_guide.STRICT_PDF_ENV, "1")
     monkeypatch.setattr(pdf_guide, "_render_html", lambda **_: "<html><body>ok</body></html>")
 
     def fail_renderer(*args, **kwargs):
         raise RuntimeError("renderer failed")
 
-    monkeypatch.setattr(pdf_guide, "_render_with_weasyprint", fail_renderer)
     monkeypatch.setattr(pdf_guide, "_render_with_playwright", fail_renderer)
 
     with pytest.raises(RuntimeError):
@@ -30,17 +29,13 @@ def test_strict_pdf_mode_raises_when_html_renderers_fail(monkeypatch: pytest.Mon
         )
 
 
-def test_fallback_records_weasyprint_unavailable_message(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_fallback_records_playwright_error_message(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv(pdf_guide.STRICT_PDF_ENV, raising=False)
     monkeypatch.setattr(pdf_guide, "_render_html", lambda **_: "<html><body>ok</body></html>")
-
-    def no_weasy(*args, **kwargs):
-        raise ModuleNotFoundError("No module named 'weasyprint'")
 
     def no_playwright(*args, **kwargs):
         raise RuntimeError("playwright unavailable")
 
-    monkeypatch.setattr(pdf_guide, "_render_with_weasyprint", no_weasy)
     monkeypatch.setattr(pdf_guide, "_render_with_playwright", no_playwright)
 
     result = pdf_guide.render_creator_guide_pdf(
@@ -55,5 +50,5 @@ def test_fallback_records_weasyprint_unavailable_message(monkeypatch: pytest.Mon
     )
 
     assert result.renderer_used == "fallback"
-    assert "WeasyPrint not available; falling back." in result.error
-    assert "WeasyPrint not available; falling back." in result.debug_text
+    assert "Playwright render failed" in result.error
+    assert "Playwright render failed" in result.debug_text
