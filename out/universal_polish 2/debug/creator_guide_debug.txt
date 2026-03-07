@@ -1,0 +1,12 @@
+renderer_used=html
+engine=playwright
+error=
+playwright_version=1.58.0
+chromium_launch_success=true
+weasyprint_status=unavailable: OSError: cannot load library 'libpango-1.0-0': dlopen(libpango-1.0-0, 0x0002): tried: 'libpango-1.0-0' (no such file), '/System/Volumes/Preboot/Cryptexes/OSlibpango-1.0-0' (no such file), '/usr/local/lib/libpango-1.0-0' (no such file), '/System/Volumes/Preboot/Cryptexes/OS/usr/local/lib/libpango-1.0-0' (no such file), '/usr/lib/libpango-1.0-0' (no such file, not in dyld cache), 'libpango-1.0-0' (no such file).  Additionally, ctypes.util.find_library() did not manage to locate a library called 'libpango-1.0-0'
+python=3.13.2
+platform=macOS-14.6.1-x86_64-i386-64bit-Mach-O
+jinja2=3.1.6
+weasyprint=unavailable
+playwright=unknown
+strict_pdf_env=
