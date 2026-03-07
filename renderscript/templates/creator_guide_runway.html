@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="creator_guide.css">
+</head>
+<body>
+  <section class="page">
+    <div class="header">
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="Logo">{% endif %}</div>
+      <div class="progress-pill">{{ progress_text }}</div>
+      <div class="provider">{{ provider_label }}</div>
+    </div>
+    <h1>Start: choose path and open the package map</h1>
+    <p class="subtitle">Page 1 of 5. Runway path uses image references for continuity.</p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="where-to-click">Where to click: Workflow -&gt; Tool -&gt; References -&gt; Paste prompt -&gt; Generate -&gt; Mark keeper</div>
+        <h2 style="margin-top:8px;">Diagram 1: Scene to finished cut</h2>
+        <svg viewBox="0 0 780 170" role="img" aria-label="Diagram 1 Scene to finished cut">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <polygon points="0,0 8,4 0,8" fill="#5d7896"></polygon>
+            </marker>
+          </defs>
+          <rect x="10" y="22" width="90" height="34" rx="5" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="120" y="22" width="65" height="34" rx="5" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="205" y="22" width="70" height="34" rx="5" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="295" y="22" width="80" height="34" rx="5" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="395" y="22" width="65" height="34" rx="5" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="480" y="22" width="70" height="34" rx="5" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="570" y="22" width="65" height="34" rx="5" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="655" y="22" width="105" height="34" rx="5" fill="#f8fbff" stroke="#bfd2e7"></rect>
+
+          <text x="55" y="43" text-anchor="middle" font-size="11">RenderPackage</text>
+          <text x="152" y="43" text-anchor="middle" font-size="11">Refs</text>
+          <text x="240" y="43" text-anchor="middle" font-size="11">Takes</text>
+          <text x="335" y="43" text-anchor="middle" font-size="11">Keepers</text>
+          <text x="428" y="43" text-anchor="middle" font-size="11">Edit</text>
+          <text x="515" y="43" text-anchor="middle" font-size="11">Audio</text>
+          <text x="602" y="43" text-anchor="middle" font-size="11">QA</text>
+          <text x="708" y="43" text-anchor="middle" font-size="11">Export</text>
+
+          <line x1="100" y1="39" x2="118" y2="39" stroke="#5d7896" marker-end="url(#arrow)"></line>
+          <line x1="185" y1="39" x2="203" y2="39" stroke="#5d7896" marker-end="url(#arrow)"></line>
+          <line x1="275" y1="39" x2="293" y2="39" stroke="#5d7896" marker-end="url(#arrow)"></line>
+          <line x1="375" y1="39" x2="393" y2="39" stroke="#5d7896" marker-end="url(#arrow)"></line>
+          <line x1="460" y1="39" x2="478" y2="39" stroke="#5d7896" marker-end="url(#arrow)"></line>
+          <line x1="550" y1="39" x2="568" y2="39" stroke="#5d7896" marker-end="url(#arrow)"></line>
+          <line x1="635" y1="39" x2="653" y2="39" stroke="#5d7896" marker-end="url(#arrow)"></line>
+
+          <text x="12" y="84" font-size="11" fill="#3a536f">Diagram 1: Scene -&gt; finished cut pipeline</text>
+        </svg>
+      </div>
+      <div class="card">
+        <div class="open-label">Open:</div>
+        <div class="tile">PACKAGE_MAP.md</div>
+        <div class="tile">CREATOR_GUIDE.pdf</div>
+        {% if scene_meta %}
+          <h3>Scene snapshot</h3>
+          <table class="meta-table">
+            {% for key, value in scene_meta %}
+              <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+            {% endfor %}
+          </table>
+        {% endif %}
+      </div>
+    </div>
+    <div class="footer"><span>RenderScript AI v{{ version }}</span><span>Page 1/5</span></div>
+  </section>
+
+  <section class="page">
+    <div class="header">
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="Logo">{% endif %}</div>
+      <div class="progress-pill">{{ progress_text }}</div>
+      <div class="provider">{{ provider_label }}</div>
+    </div>
+    <h1>Refs: naming, minimal set, save structure</h1>
+    <p class="subtitle">Page 2 of 5. Stable references make Runway takes consistent.</p>
+
+    <div class="grid">
+      <div class="card">
+        <ul>
+          <li>Generate style, location, character, and recurring prop refs first.</li>
+          <li>Name exactly by ID and keep ref images clean.</li>
+          <li>Store refs in placeholder folders so loading is fast during takes.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="open-label">Open:</div>
+        <div class="tile">prompts/asset_prompts.md</div>
+        <div class="tile">assets/ingredients_manifest.md</div>
+        <div class="tile">assets/placeholder/*</div>
+      </div>
+    </div>
+    <div class="footer"><span>RenderScript AI v{{ version }}</span><span>Page 2/5</span></div>
+  </section>
+
+  <section class="page">
+    <div class="header">
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="Logo">{% endif %}</div>
+      <div class="progress-pill">{{ progress_text }}</div>
+      <div class="provider">{{ provider_label }}</div>
+    </div>
+    <h1>Takes: keeper loop and drift fixes</h1>
+    <p class="subtitle">Page 3 of 5. Generate multiple takes, mark one keeper, then iterate.</p>
+
+    <div class="where-to-click">Where to click: Workflow -&gt; Tool -&gt; References -&gt; Paste prompt -&gt; Generate -&gt; Mark keeper</div>
+
+    <div class="grid" style="margin-top:8px;">
+      <div class="card">
+        <h2>Diagram 2: Take loop</h2>
+        <svg viewBox="0 0 760 210" role="img" aria-label="Diagram 2 take loop">
+          <defs>
+            <marker id="arrow2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <polygon points="0,0 8,4 0,8" fill="#5d7896"></polygon>
+            </marker>
+          </defs>
+          <rect x="28" y="24" width="130" height="36" rx="6" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="204" y="24" width="130" height="36" rx="6" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="380" y="24" width="150" height="36" rx="6" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="580" y="24" width="130" height="36" rx="6" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="580" y="124" width="130" height="36" rx="6" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="380" y="124" width="150" height="36" rx="6" fill="#f8fbff" stroke="#bfd2e7"></rect>
+          <rect x="204" y="124" width="130" height="36" rx="6" fill="#f8fbff" stroke="#bfd2e7"></rect>
+
+          <text x="93" y="46" text-anchor="middle" font-size="11">Pick shot</text>
+          <text x="269" y="46" text-anchor="middle" font-size="11">Load refs</text>
+          <text x="455" y="46" text-anchor="middle" font-size="11">Generate takes</text>
+          <text x="645" y="46" text-anchor="middle" font-size="11">Review</text>
+          <text x="645" y="146" text-anchor="middle" font-size="11">Mark keeper</text>
+          <text x="455" y="146" text-anchor="middle" font-size="11">Fix drift</text>
+          <text x="269" y="146" text-anchor="middle" font-size="11">repeat</text>
+
+          <line x1="158" y1="42" x2="202" y2="42" stroke="#5d7896" marker-end="url(#arrow2)"></line>
+          <line x1="334" y1="42" x2="378" y2="42" stroke="#5d7896" marker-end="url(#arrow2)"></line>
+          <line x1="530" y1="42" x2="578" y2="42" stroke="#5d7896" marker-end="url(#arrow2)"></line>
+          <line x1="645" y1="60" x2="645" y2="122" stroke="#5d7896" marker-end="url(#arrow2)"></line>
+          <line x1="580" y1="142" x2="532" y2="142" stroke="#5d7896" marker-end="url(#arrow2)"></line>
+          <line x1="380" y1="142" x2="336" y2="142" stroke="#5d7896" marker-end="url(#arrow2)"></line>
+          <line x1="204" y1="142" x2="96" y2="142" stroke="#5d7896"></line>
+          <line x1="92" y1="142" x2="92" y2="62" stroke="#5d7896" marker-end="url(#arrow2)"></line>
+
+          <text x="26" y="188" font-size="11" fill="#3a536f">Diagram 2: Pick shot -&gt; Load refs -&gt; Generate takes -&gt; Review -&gt; Mark keeper -&gt; Fix drift -&gt; repeat</text>
+        </svg>
+
+        <div class="warn card" style="margin-top:6px; padding:6px;">
+          Heads-up tags: dialogue-heavy, multi-character, prop-dependent.
+        </div>
+      </div>
+      <div class="card">
+        <div class="open-label">Open:</div>
+        <div class="tile">{{ prompt_path }}</div>
+      </div>
+    </div>
+    <div class="footer"><span>RenderScript AI v{{ version }}</span><span>Page 3/5</span></div>
+  </section>
+
+  <section class="page">
+    <div class="header">
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="Logo">{% endif %}</div>
+      <div class="progress-pill">{{ progress_text }}</div>
+      <div class="provider">{{ provider_label }}</div>
+    </div>
+    <h1>Edit + Audio in post</h1>
+    <p class="subtitle">Page 4 of 5. Lock picture first, then do audio post.</p>
+
+    <div class="grid">
+      <div class="card warn">
+        <h3>Picture-first rule</h3>
+        <ul>
+          <li>No burned-in subtitles, captions, logos, or text overlays.</li>
+          <li>Reroll text-contaminated takes and continue.</li>
+          <li>Do dialogue, VO, ambience, SFX, and mix in post.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="open-label">Open:</div>
+        <div class="tile">shots/shot_list.csv</div>
+        <div class="tile">audio/dialogue_script.txt</div>
+        <div class="tile">audio/voice_bible.md</div>
+        <div class="tile">audio/sfx_cue_sheet.md</div>
+        <div class="tile">optional edit/subtitles.srt</div>
+      </div>
+    </div>
+    <div class="footer"><span>RenderScript AI v{{ version }}</span><span>Page 4/5</span></div>
+  </section>
+
+  <section class="page">
+    <div class="header">
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="Logo">{% endif %}</div>
+      <div class="progress-pill">{{ progress_text }}</div>
+      <div class="provider">{{ provider_label }}</div>
+    </div>
+    <h1>Keepers + iterate</h1>
+    <p class="subtitle">Page 5 of 5. Use the Keeper Sheet and reroll strategy to lock the cut.</p>
+
+    <div class="grid">
+      <div class="card">
+        <ul>
+          <li>Choose one keeper per shot using continuity and intent fit.</li>
+          <li>If keepers fail, reroll only failing beats and preserve good shots.</li>
+          <li>Once keeper map stabilizes, export the final cut.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="open-label">Open:</div>
+        <div class="tile">rubric/scoring_sheet.csv (Keeper Sheet)</div>
+      </div>
+    </div>
+    <div class="footer"><span>RenderScript AI v{{ version }}</span><span>Page 5/5</span></div>
+  </section>
+
+  <div class="hidden-pad">
+    creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad
+    creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad creator-guide-pad
+  </div>
+</body>
+</html>

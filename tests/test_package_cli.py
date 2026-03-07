@@ -111,6 +111,11 @@ def test_package_generates_required_files_and_is_deterministic(
         if path == "rpack.json":
             assert _rpack_without_generated_at(contents_one[path]) == _rpack_without_generated_at(contents_two[path])
             continue
+        if path == "CREATOR_GUIDE.pdf":
+            assert len(contents_one[path]) > 50000
+            assert len(contents_two[path]) > 50000
+            assert _pdf_text(contents_one[path]) == _pdf_text(contents_two[path])
+            continue
         assert contents_one[path] == contents_two[path]
 
     rpack = json.loads(contents_one["rpack.json"].decode("utf-8"))
@@ -163,11 +168,15 @@ def test_package_generates_required_files_and_is_deterministic(
     assert "loc_01_ref_01" in asset_prompts
     assert "assets/asset_prompts.md" not in contents_one
 
-    assert len(contents_one["CREATOR_GUIDE.pdf"]) > 35000
+    assert len(contents_one["CREATOR_GUIDE.pdf"]) > 50000
     universal_pdf_text = _pdf_text(contents_one["CREATOR_GUIDE.pdf"])
     assert "Runway" not in universal_pdf_text
-    assert "Workflow: Picture First, Audio in Post" in universal_pdf_text
-    assert "If your tool generates subtitles anyway, reroll that shot." in universal_pdf_text
+    assert "Keepers" in universal_pdf_text
+    assert "Keeper Sheet" in universal_pdf_text
+    assert (
+        "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in universal_pdf_text
+        or "Start -> Refs -> Takes -> Keepers -> Edit -> Audio" in universal_pdf_text
+    )
 
     assert contents_one["audio/voice_bible.md"].decode("utf-8").strip()
     dialogue_script = contents_one["audio/dialogue_script.txt"].decode("utf-8")
@@ -340,7 +349,12 @@ def test_package_runway_provider_generates_runway_prompt_file(
     assert runway_prompt_text.count("No on-screen text or subtitles.") == len(rpack["shots"])
     runway_pdf_text = _pdf_text(contents["CREATOR_GUIDE.pdf"])
     assert "Runway" in runway_pdf_text
-    assert len(contents["CREATOR_GUIDE.pdf"]) > 35000
+    assert "Workflow -> Tool -> References -> Paste prompt -> Generate -> Mark keeper" in runway_pdf_text
+    assert (
+        "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in runway_pdf_text
+        or "Start -> Refs -> Takes -> Keepers -> Edit -> Audio" in runway_pdf_text
+    )
+    assert len(contents["CREATOR_GUIDE.pdf"]) > 50000
 
 
 def test_package_golden_expected_paths_universal_scene_one(
@@ -376,4 +390,4 @@ def test_package_golden_expected_paths_universal_scene_one(
     assert (unpack_dir / "prompts/shot_prompts.md").read_text(encoding="utf-8").strip()
     assert not (unpack_dir / "prompts/universal_prompts.md").exists()
     assert (unpack_dir / "prompts/asset_prompts.md").read_text(encoding="utf-8").strip()
-    assert (unpack_dir / "CREATOR_GUIDE.pdf").stat().st_size > 35000
+    assert (unpack_dir / "CREATOR_GUIDE.pdf").stat().st_size > 50000
