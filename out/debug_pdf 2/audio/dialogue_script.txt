@@ -1,0 +1,17 @@
+Dialogue Script (Audio in Post)
+External audio reference. Do not burn subtitles into picture.
+
+shot_004
+MAYA: Did you print the permit form?
+
+shot_005
+JONAH: It's in the blue folder.
+
+shot_006
+MAYA: Good. Grab the tape measure too.
+
+shot_007
+MAYA: Good. Grab the tape measure too.
+
+shot_008
+MAYA: Good. Grab the tape measure too.

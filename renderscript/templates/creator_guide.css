@@ -34,15 +34,30 @@ body {
 }
 
 .page {
-  min-height: 242mm;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
+  position: relative;
+  height: 248mm;
+  display: block;
+  padding-bottom: 18mm;
+}
+
+.page > * + * {
+  margin-top: 28px;
+}
+
+.page-split {
+  height: 0;
   page-break-after: always;
+  break-after: page;
 }
 
 .page:last-child {
   page-break-after: auto;
+  break-after: auto;
+}
+
+.page + .page {
+  page-break-before: always;
+  break-before: page;
 }
 
 .header {
@@ -213,7 +228,10 @@ svg {
 }
 
 .footer {
-  margin-top: auto;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   border-top: 1px solid #e0e8f3;
   padding-top: 8px;
   display: flex;

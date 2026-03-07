@@ -8,7 +8,6 @@ import re
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 
 RUNWAY_PROVIDER = "runway.gen4_image_refs"
 PROGRESS_TEXT = "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio"
@@ -179,18 +178,20 @@ def _render_with_weasyprint(html: str, base_url: str) -> bytes:
 def _render_with_playwright(html: str, base_url: str) -> bytes:
     from playwright.sync_api import sync_playwright
 
+    css_path = Path(base_url) / "creator_guide.css"
+    css_text = css_path.read_text(encoding="utf-8")
+    html_for_browser = html.replace(
+        '<link rel="stylesheet" href="creator_guide.css">',
+        f"<style>\n{css_text}\n</style>",
+        1,
+    )
+
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
         try:
             page = browser.new_page()
-            with NamedTemporaryFile("w", suffix=".html", encoding="utf-8", delete=False) as tmp:
-                tmp.write(html)
-                html_path = Path(tmp.name)
-            try:
-                page.goto(html_path.resolve().as_uri(), wait_until="load")
-                return page.pdf(format="A4", print_background=True, prefer_css_page_size=True)
-            finally:
-                html_path.unlink(missing_ok=True)
+            page.set_content(html_for_browser, wait_until="load")
+            return page.pdf(format="A4", print_background=True, prefer_css_page_size=True)
         finally:
             browser.close()
 

@@ -67,6 +67,17 @@ def _pdf_text(raw: bytes) -> str:
     return "\n".join((page.extract_text() or "") for page in reader.pages)
 
 
+def _pdf_page_count(raw: bytes) -> int:
+    try:
+        from pypdf import PdfReader  # type: ignore[import-not-found]
+    except ModuleNotFoundError:
+        return 0
+    from io import BytesIO
+
+    reader = PdfReader(BytesIO(raw))
+    return len(reader.pages)
+
+
 def _has_pypdf() -> bool:
     try:
         import pypdf  # type: ignore[import-not-found]
@@ -197,6 +208,7 @@ def test_package_generates_required_files_and_is_deterministic(
         assert "rough cut" in normalized_universal_pdf_text
         assert "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_universal_pdf_text
         assert "v0.1.0Page" not in universal_pdf_text
+        assert _pdf_page_count(contents_one["CREATOR_GUIDE(Start here).pdf"]) == 5
     debug_text = contents_one["debug/creator_guide_debug.txt"].decode("utf-8")
     assert "renderer_used=html" in debug_text
     assert "engine=playwright" in debug_text
@@ -385,6 +397,7 @@ def test_package_runway_provider_generates_runway_prompt_file(
         assert "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_runway_pdf_text
         assert "rough cut" in normalized_runway_pdf_text
         assert "v0.1.0Page" not in runway_pdf_text
+        assert _pdf_page_count(contents["CREATOR_GUIDE(Start here).pdf"]) == 5
     runway_debug_text = contents["debug/creator_guide_debug.txt"].decode("utf-8")
     assert "engine=playwright" in runway_debug_text
     assert len(contents["CREATOR_GUIDE(Start here).pdf"]) > 80000
