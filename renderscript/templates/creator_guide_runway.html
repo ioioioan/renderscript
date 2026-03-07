@@ -8,224 +8,192 @@
 <body>
   <section class="page">
     <div class="header">
-      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="Logo">{% endif %}</div>
-      <div class="progress-pill">{{ progress_text }}</div>
-      <div class="provider">{{ provider_label }}</div>
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="RenderScript logo">{% endif %}</div>
+      <div>
+        <div class="progress">{{ progress_text }}</div>
+        <div class="provider">{{ provider_label }}</div>
+        <div class="kicker">RenderScript AI • Picture-first workflow (no burned-in text)</div>
+        <div class="page-num">Page 1</div>
+      </div>
     </div>
-    <p class="section-label">Page 1 of 5</p>
-    <h1 class="h1">Start with intent, then direct the loop</h1>
-    <p class="subtitle">This is a creator-first playbook for AI filmmaking: coherent takes, faster decisions, fewer resets.</p>
-    <div class="notice">Where to click: Workflow → Tool → References → Paste prompt → Generate → Mark keeper</div>
 
-    <div class="grid">
-      <div class="card">
-        <h2>Diagram 1: Scene to finished cut</h2>
-        <div class="diagram">
-          <svg viewBox="0 0 860 220" role="img" aria-label="Scene to finished cut">
-            <defs>
-              <marker id="r1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                <polygon points="0,0 8,4 0,8" fill="#5e7897"></polygon>
-              </marker>
-            </defs>
-            <g font-size="12" fill="#2b3a4f">
-              <rect x="12" y="34" width="116" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
-              <rect x="146" y="34" width="132" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
-              <rect x="296" y="34" width="90" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
-              <rect x="404" y="34" width="104" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
-              <rect x="526" y="34" width="84" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
-              <rect x="628" y="34" width="84" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
-              <rect x="730" y="34" width="116" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
-              <text x="70" y="60" text-anchor="middle">RenderPackage</text>
-              <text x="212" y="60" text-anchor="middle">Reference images</text>
-              <text x="341" y="60" text-anchor="middle">Takes</text>
-              <text x="456" y="60" text-anchor="middle">Keepers</text>
-              <text x="568" y="60" text-anchor="middle">Edit</text>
-              <text x="670" y="60" text-anchor="middle">Audio</text>
-              <text x="788" y="60" text-anchor="middle">Export</text>
-            </g>
-            <g stroke="#5e7897" marker-end="url(#r1)">
-              <line x1="128" y1="56" x2="144" y2="56"/>
-              <line x1="278" y1="56" x2="294" y2="56"/>
-              <line x1="386" y1="56" x2="402" y2="56"/>
-              <line x1="508" y1="56" x2="524" y2="56"/>
-              <line x1="610" y1="56" x2="626" y2="56"/>
-              <line x1="712" y1="56" x2="728" y2="56"/>
-            </g>
-          </svg>
-        </div>
-      </div>
-      <div class="card">
-        <h3>Package map</h3>
-        <div class="chips">
-          <div class="chip"><span class="chip-title">Package map</span><span class="chip-path">(PACKAGE_MAP.md)</span></div>
-          <div class="chip"><span class="chip-title">Creator guide</span><span class="chip-path">(you are here)</span></div>
-        </div>
-        <p class="subtitle" style="margin-top:12px;">Open the map once, then stay in motion. The package contract stays stable while your shots evolve.</p>
-        {% if scene_meta %}
-        <h3 style="margin-top:16px;">Scene snapshot</h3>
-        <table class="meta-table">
-          {% for key, value in scene_meta %}
-          <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
-          {% endfor %}
-        </table>
-        {% endif %}
-      </div>
+    <h1>RenderPackage Creator Guide (Start here)</h1>
+    <p><strong>Provider:</strong> Runway</p>
+
+    <h2>Golden rule</h2>
+    <p>Picture-first. No burned-in subtitles, captions, logos, watermarks, or on-screen text.</p>
+    <p>If text appears on screen, treat that take as unusable and reroll.</p>
+    <p>Audio comes later: ADR/VO + SFX + mix after the rough cut.</p>
+
+    <h2>Runway note</h2>
+    <p>Workflow: Tool → References → Paste prompt → Generate → Mark keeper.</p>
+
+    <h2>Choose your path</h2>
+    <p><strong>Path A — Prompts-only (fast test)</strong><br>Use when you don’t have reference images yet. Generate a few shots to check pacing and intent. Expect more drift — normal at this stage.</p>
+    <p><strong>Path B — References (best consistency)</strong><br>Use when you can supply reference images. References beat clever prompting for consistency. This package tells you which refs each shot expects.</p>
+
+    <h2>Open:</h2>
+    <div class="open-list">
+      <p>PACKAGE_MAP.md</p>
+      <p>Shot prompts: prompts/runway.gen4_image_refs_prompts.md</p>
+      <p>prompts/asset_prompts.md</p>
+      <p>assets/ingredients_manifest.md</p>
+      <p>bindings/bindings.csv</p>
+      <p>shots/shot_list.csv</p>
+      <p>rubric/scoring_sheet.csv</p>
     </div>
-    <div class="footer"><span>RenderScript AI v{{ version }}</span><span> Page 1/5</span></div>
+
+    <h2>What’s in this package (creator essentials)</h2>
+    <ul>
+      <li>Shot prompts (one block per shot)</li>
+      <li>Asset prompts (to generate your refs)</li>
+      <li>Reference checklist + Reference map</li>
+      <li>Shot list + Keeper Sheet</li>
+      <li>Audio toolkit (dialogue/voice/SFX) + optional subtitle guide</li>
+    </ul>
   </section>
   <div class="page-split"></div>
 
   <section class="page">
     <div class="header">
-      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="Logo">{% endif %}</div>
-      <div class="progress-pill">{{ progress_text }}</div>
-      <div class="provider">{{ provider_label }}</div>
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="RenderScript logo">{% endif %}</div>
+      <div>
+        <div class="progress">{{ progress_text }}</div>
+        <div class="provider">{{ provider_label }}</div>
+        <div class="kicker">RenderScript AI • Picture-first workflow (no burned-in text)</div>
+        <div class="page-num">Page 2</div>
+      </div>
     </div>
-    <p class="section-label">Page 2 of 5</p>
-    <h1 class="h1">References are your continuity anchor</h1>
-    <p class="subtitle">Drift is expected. Strong references will not eliminate drift, but they reduce expensive reroll cycles.</p>
 
-    <div class="grid">
-      <div class="card">
-        <ul>
-          <li>Start lean: cast, location look, style frame, and hero props.</li>
-          <li>Keep naming exact so reference loading stays predictable shot to shot.</li>
-          <li>Avoid overlays and heavy processing in source images.</li>
-          <li>Picture-first rule: no burned text, subtitle overlays, or watermarks in source refs.</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>Open</h3>
-        <div class="chips">
-          <div class="chip"><span class="chip-title">Asset prompts</span><span class="chip-path">(prompts/asset_prompts.md)</span></div>
-          <div class="chip"><span class="chip-title">Ingredients manifest</span><span class="chip-path">(assets/ingredients_manifest.md)</span></div>
-          <div class="chip"><span class="chip-title">Placeholder folders</span><span class="chip-path">(assets/placeholder/*)</span></div>
-        </div>
-      </div>
+    <h1>Refs: Reference images</h1>
+    <p>Consistency comes from references. Start minimal, then refine.</p>
+
+    <h2>Minimum reference set</h2>
+    <ul>
+      <li>Style (look reference)</li>
+      <li>Location</li>
+      <li>Characters (one per character in the scene)</li>
+      <li>Props (only if story-critical)</li>
+    </ul>
+
+    <h2>Open:</h2>
+    <div class="open-list">
+      <p>prompts/asset_prompts.md</p>
+      <p>assets/ingredients_manifest.md</p>
+      <p>assets/placeholder/*</p>
     </div>
-    <div class="footer"><span>RenderScript AI v{{ version }}</span><span> Page 2/5</span></div>
+
+    <h2>Where to save your images</h2>
+    <p>Save reference images into:</p>
+    <ul>
+      <li>assets/placeholder/styles/</li>
+      <li>assets/placeholder/locations/</li>
+      <li>assets/placeholder/characters/</li>
+      <li>assets/placeholder/props/</li>
+    </ul>
+    <p>Use the exact filenames listed in assets/ingredients_manifest.md (example: style_01_ref_01.png).</p>
   </section>
   <div class="page-split"></div>
 
   <section class="page">
     <div class="header">
-      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="Logo">{% endif %}</div>
-      <div class="progress-pill">{{ progress_text }}</div>
-      <div class="provider">{{ provider_label }}</div>
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="RenderScript logo">{% endif %}</div>
+      <div>
+        <div class="progress">{{ progress_text }}</div>
+        <div class="provider">{{ provider_label }}</div>
+        <div class="kicker">RenderScript AI • Picture-first workflow (no burned-in text)</div>
+        <div class="page-num">Page 3</div>
+      </div>
     </div>
-    <p class="section-label">Page 3 of 5</p>
-    <h1 class="h1">Run takes as a loop, not a one-shot bet</h1>
-    <p class="subtitle">Generate options, mark a keeper, then tune drift deliberately so the sequence keeps its visual intent.</p>
-    <div class="notice">Where to click: Workflow → Tool → References → Paste prompt → Generate → Mark keeper</div>
 
-    <div class="grid">
-      <div class="card">
-        <h2>Diagram 2: Take loop</h2>
-        <div class="diagram">
-          <svg viewBox="0 0 860 270" role="img" aria-label="Take loop">
-            <defs>
-              <marker id="r2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                <polygon points="0,0 8,4 0,8" fill="#5e7897"></polygon>
-              </marker>
-            </defs>
-            <g font-size="12" fill="#2b3a4f">
-              <rect x="26" y="30" width="170" height="42" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
-              <rect x="226" y="30" width="170" height="42" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
-              <rect x="426" y="30" width="170" height="42" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
-              <rect x="626" y="30" width="204" height="42" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
-              <rect x="626" y="174" width="204" height="52" rx="7" fill="#fff8ec" stroke="#dfc390"/>
-              <rect x="376" y="174" width="220" height="52" rx="7" fill="#fff8ec" stroke="#dfc390"/>
-              <text x="111" y="56" text-anchor="middle">Generate takes</text>
-              <text x="311" y="56" text-anchor="middle">Pick keeper</text>
-              <text x="511" y="56" text-anchor="middle">Review drift</text>
-              <text x="728" y="56" text-anchor="middle">Move to next shot</text>
-              <text x="728" y="198" text-anchor="middle">Heads-up tags</text>
-              <text x="486" y="198" text-anchor="middle">Adjust refs / prompt / split shot</text>
-            </g>
-            <g stroke="#5e7897" marker-end="url(#r2)">
-              <line x1="196" y1="51" x2="224" y2="51"/>
-              <line x1="396" y1="51" x2="424" y2="51"/>
-              <line x1="596" y1="51" x2="624" y2="51"/>
-              <line x1="728" y1="72" x2="728" y2="172"/>
-              <line x1="626" y1="200" x2="598" y2="200"/>
-              <line x1="376" y1="200" x2="111" y2="200"/>
-              <line x1="111" y1="200" x2="111" y2="74"/>
-            </g>
-          </svg>
-        </div>
-        <div class="notice warn" style="margin-top:12px;">Heads-up tags to watch: dialogue-heavy beats, multi-character blocking, hero-prop continuity, and complex motion.</div>
-      </div>
-      <div class="card">
-        <h3>Open</h3>
-        <div class="chips">
-          <div class="chip"><span class="chip-title">Shot prompts</span><span class="chip-path">(prompts/runway.gen4_image_refs_prompts.md)</span></div>
-        </div>
-      </div>
+    <h1>Takes: Generate shots</h1>
+    <p>This is your dailies stage: generate multiple takes per shot, then pick a keeper.</p>
+
+    <h2>Non-negotiable</h2>
+    <p>No burned-in subtitles or on-screen text. Keep picture clean.</p>
+    <p>If your tool adds text, reroll the take.</p>
+
+    <h2>Shot loop (repeat for each shot_###)</h2>
+    <ol>
+      <li>Open the shot prompt block</li>
+      <li>Apply refs (if using Path B)</li>
+      <li>Generate 3–6 takes</li>
+      <li>Review fast</li>
+      <li>Mark a keeper</li>
+    </ol>
+    <p>If drift rises: re-apply refs → simplify prompt → split the shot.</p>
+
+    <h2>Open:</h2>
+    <div class="open-list">
+      <p>Shot prompts: prompts/runway.gen4_image_refs_prompts.md</p>
+      <p>bindings/bindings.csv</p>
+      <p>shots/shot_list.csv</p>
     </div>
-    <div class="footer"><span>RenderScript AI v{{ version }}</span><span> Page 3/5</span></div>
   </section>
   <div class="page-split"></div>
 
   <section class="page">
     <div class="header">
-      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="Logo">{% endif %}</div>
-      <div class="progress-pill">{{ progress_text }}</div>
-      <div class="provider">{{ provider_label }}</div>
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="RenderScript logo">{% endif %}</div>
+      <div>
+        <div class="progress">{{ progress_text }}</div>
+        <div class="provider">{{ provider_label }}</div>
+        <div class="kicker">RenderScript AI • Picture-first workflow (no burned-in text)</div>
+        <div class="page-num">Page 4</div>
+      </div>
     </div>
-    <p class="section-label">Page 4 of 5</p>
-    <h1 class="h1">Cut picture first, then finish sound in post</h1>
-    <p class="subtitle">In AI production and traditional post alike: lock rough cut rhythm first, then ADR/VO, SFX, and final mix.</p>
 
-    <div class="grid">
-      <div class="card notice warn">
-        <h2>Picture-first policy</h2>
-        <ul>
-          <li>No burned-in text, subtitles, or captions in generated images.</li>
-          <li>If text appears in frame, reroll cleanly instead of repairing downstream.</li>
-          <li>Build ADR/VO, SFX, ambience, and mix after rough cut timing is stable.</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>Open</h3>
-        <div class="chips">
-          <div class="chip"><span class="chip-title">Shot list</span><span class="chip-path">(shots/shot_list.csv)</span></div>
-          <div class="chip"><span class="chip-title">Dialogue script</span><span class="chip-path">(audio/dialogue_script.txt)</span></div>
-          <div class="chip"><span class="chip-title">Voice bible</span><span class="chip-path">(audio/voice_bible.md)</span></div>
-          <div class="chip"><span class="chip-title">SFX cue sheet</span><span class="chip-path">(audio/sfx_cue_sheet.md)</span></div>
-          <div class="chip"><span class="chip-title">Optional subtitles</span><span class="chip-path">(edit/subtitles.srt)</span></div>
-        </div>
-      </div>
+    <h1>Edit → Audio (post)</h1>
+    <p>Cut the scene first. Then build audio like a normal production.</p>
+
+    <h2>Rough cut (picture)</h2>
+    <p>Assemble keepers, focus on timing and story. Don’t polish audio yet—get the scene working visually.</p>
+
+    <h2>Audio in post</h2>
+    <ul>
+      <li>Dialogue (ADR/VO): audio/dialogue_script.txt + audio/voice_bible.md</li>
+      <li>SFX/ambience: audio/sfx_cue_sheet.md</li>
+      <li>Mix: dialogue first, SFX second, music last</li>
+      <li>Optional: edit/subtitles.srt is an editing guide only; disable before final export</li>
+    </ul>
+
+    <h2>Open:</h2>
+    <div class="open-list">
+      <p>audio/dialogue_script.txt</p>
+      <p>audio/voice_bible.md</p>
+      <p>audio/sfx_cue_sheet.md</p>
+      <p>edit/subtitles.srt</p>
     </div>
-    <div class="footer"><span>RenderScript AI v{{ version }}</span><span> Page 4/5</span></div>
   </section>
   <div class="page-split"></div>
 
   <section class="page">
     <div class="header">
-      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="Logo">{% endif %}</div>
-      <div class="progress-pill">{{ progress_text }}</div>
-      <div class="provider">{{ provider_label }}</div>
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="RenderScript logo">{% endif %}</div>
+      <div>
+        <div class="progress">{{ progress_text }}</div>
+        <div class="provider">{{ provider_label }}</div>
+        <div class="kicker">RenderScript AI • Picture-first workflow (no burned-in text)</div>
+        <div class="page-num">Page 5</div>
+      </div>
     </div>
-    <p class="section-label">Page 5 of 5</p>
-    <h1 class="h1">Keepers turn taste into a repeatable system</h1>
-    <p class="subtitle">Judgment still leads. The Keeper Sheet structures that judgment so iteration stays sharp and efficient.</p>
 
-    <div class="grid">
-      <div class="card">
-        <ul>
-          <li>Mark one keeper per shot and log the reason it won.</li>
-          <li>If continuity drifts, adjust refs/prompt scope and reroll only the failing beat.</li>
-          <li>Protect what already works, then finish toward a confident export.</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>Open</h3>
-        <div class="chips">
-          <div class="chip"><span class="chip-title">Keeper Sheet</span><span class="chip-path">(rubric/scoring_sheet.csv)</span></div>
-        </div>
-      </div>
+    <h1>Keepers: Select, rate, iterate</h1>
+    <p>Keeper discipline keeps you moving: pick what cuts well, reroll only what fails.</p>
+
+    <h2>Keeper Sheet</h2>
+    <p>Open rubric/scoring_sheet.csv. For each shot: keeper 0/1, rate character/location/style (1–5), add a short note.</p>
+
+    <h2>Open:</h2>
+    <div class="open-list">
+      <p>rubric/scoring_sheet.csv</p>
     </div>
-    <div class="footer"><span>RenderScript AI v{{ version }}</span><span> Page 5/5</span></div>
+
+    <div class="final-note">
+      <h2>Final note</h2>
+      <p>This isn’t “one prompt makes a film.”</p>
+      <p>It’s a repeatable director workflow: references + shot intent + keepers → less rework.</p>
+    </div>
   </section>
 </body>
 </html>

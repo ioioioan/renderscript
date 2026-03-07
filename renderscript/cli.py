@@ -22,6 +22,7 @@ CSV_HEADERS = [
     "output_bytes",
     "schema_valid",
 ]
+DEFAULT_PACKAGE_OUTPUT_DIR = Path.home() / "renderscript_out"
 
 
 def _now_iso_utc() -> str:
@@ -102,7 +103,7 @@ def build_parser() -> argparse.ArgumentParser:
     package_parser.add_argument("--scene", type=int)
     package_parser.add_argument("--duration-s", type=int, default=3)
     package_parser.add_argument("--project", type=str, default="project")
-    package_parser.add_argument("-o", "--output", type=Path, required=True)
+    package_parser.add_argument("-o", "--output", type=Path, default=DEFAULT_PACKAGE_OUTPUT_DIR)
 
     return parser
 
