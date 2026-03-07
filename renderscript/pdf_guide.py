@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import importlib
 import importlib.metadata
+import base64
+import hashlib
 import os
 import platform
 import re
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
+from tempfile import gettempdir
 
 RUNWAY_PROVIDER = "runway.gen4_image_refs"
 PROGRESS_TEXT = "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio"
@@ -61,7 +64,37 @@ def _template_env():
 def _logo_uri(logo_path: Path | None) -> str | None:
     if logo_path is None or not logo_path.exists():
         return None
-    return logo_path.resolve().as_uri()
+
+    def _data_uri(png_bytes: bytes) -> str:
+        encoded = base64.b64encode(png_bytes).decode("ascii")
+        return f"data:image/png;base64,{encoded}"
+
+    try:
+        from PIL import Image, ImageChops
+    except Exception:
+        return _data_uri(logo_path.read_bytes())
+
+    try:
+        source = logo_path.resolve()
+        with Image.open(source) as raw:
+            image = raw.convert("RGBA")
+            bg = Image.new("RGBA", image.size, image.getpixel((0, 0)))
+            diff = ImageChops.difference(image, bg)
+            box = diff.getbbox()
+            if box is None:
+                return source.as_uri()
+            cropped = image.crop(box)
+            pad = max(8, int(max(cropped.size) * 0.08))
+            framed = Image.new("RGBA", (cropped.width + pad * 2, cropped.height + pad * 2), (255, 255, 255, 0))
+            framed.paste(cropped, (pad, pad), cropped)
+
+            stamp = f"{source}:{source.stat().st_mtime_ns}:{source.stat().st_size}"
+            digest = hashlib.sha256(stamp.encode("utf-8")).hexdigest()[:16]
+            out_path = Path(gettempdir()) / f"renderscript_logo_{digest}.png"
+            framed.save(out_path, format="PNG")
+            return _data_uri(out_path.read_bytes())
+    except Exception:
+        return _data_uri(logo_path.read_bytes())
 
 
 def _render_html(

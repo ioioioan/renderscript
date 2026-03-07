@@ -932,7 +932,7 @@ def package_fountain_file(
         asset_prompts_path=ASSET_PROMPTS_FILENAME,
         provider=provider,
         version=__version__,
-        logo_path=Path("assets/branding/logo.png"),
+        logo_path=Path(__file__).resolve().parent / "assets/branding/logo.png",
         scene_heading=str(selected_scene.get("heading", {}).get("raw", ""))
         if isinstance(selected_scene.get("heading", {}), dict)
         else "",

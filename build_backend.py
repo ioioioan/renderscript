@@ -11,6 +11,7 @@ VERSION = "0.1.0"
 REQUIRES_PYTHON = ">=3.9"
 REQUIRES_DIST = [
     "jinja2>=3.1.0",
+    "pillow>=10.0.0",
     "pypdf>=5.0.0",
     "playwright>=1.58.0",
 ]
@@ -61,7 +62,7 @@ def _package_files() -> list[Path]:
     for path in package_root.rglob("*"):
         if path.is_dir():
             continue
-        if path.suffix in {".py", ".html", ".css"}:
+        if path.suffix in {".py", ".html", ".css", ".png"}:
             files.append(path)
     return sorted(files)
 
