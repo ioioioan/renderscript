@@ -13,59 +13,51 @@
       <div class="provider universal">{{ provider_label }}</div>
     </div>
     <p class="section-label">Page 1 of 5</p>
-    <h1 class="h1">Start with a clear path from scene to export</h1>
-    <p class="subtitle">Choose the path, then move through refs, takes, keepers, edit, and audio.</p>
+    <h1 class="h1">Start with the package map, then move fast</h1>
+    <p class="subtitle">This guide is built for AI-savvy filmmakers. Here is the flow that keeps creative momentum without losing continuity.</p>
 
     <div class="grid">
       <div class="card">
         <h2>Diagram 1: Scene to finished cut</h2>
         <div class="diagram">
-          <svg viewBox="0 0 840 220" role="img" aria-label="Diagram 1">
+          <svg viewBox="0 0 860 220" role="img" aria-label="Scene to finished cut">
             <defs>
-              <marker id="a1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                <polygon points="0,0 8,4 0,8" fill="#5a7596"></polygon>
+              <marker id="u1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <polygon points="0,0 8,4 0,8" fill="#5e7897"></polygon>
               </marker>
             </defs>
             <g font-size="12" fill="#2b3a4f">
-              <rect x="12" y="32" width="118" height="44" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <rect x="146" y="32" width="82" height="44" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <rect x="244" y="32" width="82" height="44" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <rect x="342" y="32" width="96" height="44" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <rect x="454" y="32" width="82" height="44" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <rect x="552" y="32" width="82" height="44" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <rect x="650" y="32" width="82" height="44" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <rect x="748" y="32" width="82" height="44" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <text x="71" y="58" text-anchor="middle">RenderPackage</text>
-              <text x="187" y="58" text-anchor="middle">Refs</text>
-              <text x="285" y="58" text-anchor="middle">Takes</text>
-              <text x="390" y="58" text-anchor="middle">Keepers</text>
-              <text x="495" y="58" text-anchor="middle">Edit</text>
-              <text x="593" y="58" text-anchor="middle">Audio</text>
-              <text x="691" y="58" text-anchor="middle">QA</text>
-              <text x="789" y="58" text-anchor="middle">Export</text>
+              <rect x="12" y="34" width="116" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
+              <rect x="146" y="34" width="132" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
+              <rect x="296" y="34" width="90" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
+              <rect x="404" y="34" width="104" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
+              <rect x="526" y="34" width="84" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
+              <rect x="628" y="34" width="84" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
+              <rect x="730" y="34" width="116" height="44" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
+              <text x="70" y="60" text-anchor="middle">RenderPackage</text>
+              <text x="212" y="60" text-anchor="middle">Reference images</text>
+              <text x="341" y="60" text-anchor="middle">Takes</text>
+              <text x="456" y="60" text-anchor="middle">Keepers</text>
+              <text x="568" y="60" text-anchor="middle">Edit</text>
+              <text x="670" y="60" text-anchor="middle">Audio</text>
+              <text x="788" y="60" text-anchor="middle">Export</text>
             </g>
-            <g stroke="#5a7596" marker-end="url(#a1)">
-              <line x1="130" y1="54" x2="144" y2="54" />
-              <line x1="228" y1="54" x2="242" y2="54" />
-              <line x1="326" y1="54" x2="340" y2="54" />
-              <line x1="438" y1="54" x2="452" y2="54" />
-              <line x1="536" y1="54" x2="550" y2="54" />
-              <line x1="634" y1="54" x2="648" y2="54" />
-              <line x1="732" y1="54" x2="746" y2="54" />
+            <g stroke="#5e7897" marker-end="url(#u1)">
+              <line x1="128" y1="56" x2="144" y2="56"/>
+              <line x1="278" y1="56" x2="294" y2="56"/>
+              <line x1="386" y1="56" x2="402" y2="56"/>
+              <line x1="508" y1="56" x2="524" y2="56"/>
+              <line x1="610" y1="56" x2="626" y2="56"/>
+              <line x1="712" y1="56" x2="728" y2="56"/>
             </g>
           </svg>
         </div>
       </div>
       <div class="card">
-        <h3>Open</h3>
+        <h3>Package map</h3>
         <div class="chips">
-          <div class="chip">
-            <span class="chip-title">Package map</span>
-            <span class="chip-path">(PACKAGE_MAP.md)</span>
-          </div>
-          <div class="chip">
-            <span class="chip-title">You are here: creator guide</span>
-          </div>
+          <div class="chip"><span class="chip-title">Package map</span><span class="chip-path">(PACKAGE_MAP.md)</span></div>
+          <div class="chip"><span class="chip-title">Creator guide</span><span class="chip-path">(you are here)</span></div>
         </div>
         {% if scene_meta %}
         <h3 style="margin-top:16px;">Scene snapshot</h3>
@@ -77,7 +69,7 @@
         {% endif %}
       </div>
     </div>
-    <div class="footer"><span>RenderScript AI v{{ version }}</span><span>Page 1/5</span></div>
+    <div class="footer"><span>RenderScript AI v{{ version }}</span><span> Page 1/5</span></div>
   </section>
 
   <section class="page">
@@ -87,15 +79,15 @@
       <div class="provider universal">{{ provider_label }}</div>
     </div>
     <p class="section-label">Page 2 of 5</p>
-    <h1 class="h1">Build references with stable naming</h1>
-    <p class="subtitle">Create the minimum set, save to the right folders, and keep every ref clean.</p>
+    <h1 class="h1">References are where continuity starts</h1>
+    <p class="subtitle">Drift is normal in AI generation. Clean references do not remove it completely, but they reduce rework across the whole cut.</p>
 
     <div class="grid">
       <div class="card">
         <ul>
-          <li>Generate only what is required: style, location, speaking characters, and recurring props.</li>
-          <li>Keep IDs exact so bindings resolve without manual lookup.</li>
-          <li>Store assets in placeholder folders and avoid in-image text overlays.</li>
+          <li>Quick way to start: make a minimal set first, then expand only where the story needs it.</li>
+          <li>What works best: stable naming, neutral lighting, and no text overlays in source images.</li>
+          <li>Keep every reference where the package expects it, so shot generation stays friction-free.</li>
         </ul>
       </div>
       <div class="card">
@@ -107,7 +99,7 @@
         </div>
       </div>
     </div>
-    <div class="footer"><span>RenderScript AI v{{ version }}</span><span>Page 2/5</span></div>
+    <div class="footer"><span>RenderScript AI v{{ version }}</span><span> Page 2/5</span></div>
   </section>
 
   <section class="page">
@@ -117,57 +109,54 @@
       <div class="provider universal">{{ provider_label }}</div>
     </div>
     <p class="section-label">Page 3 of 5</p>
-    <h1 class="h1">Run the takes loop and fix drift early</h1>
-    <p class="subtitle">Generate several takes per shot, mark one keeper, then iterate only where needed.</p>
+    <h1 class="h1">Generate takes, lock keepers, keep moving</h1>
+    <p class="subtitle">The creative loop is simple: generate options, choose a keeper, and tune only what drifted.</p>
 
     <div class="grid">
       <div class="card">
         <h2>Diagram 2: Take loop</h2>
         <div class="diagram">
-          <svg viewBox="0 0 840 260" role="img" aria-label="Diagram 2">
+          <svg viewBox="0 0 860 270" role="img" aria-label="Take loop">
             <defs>
-              <marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                <polygon points="0,0 8,4 0,8" fill="#5a7596"></polygon>
+              <marker id="u2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <polygon points="0,0 8,4 0,8" fill="#5e7897"></polygon>
               </marker>
             </defs>
             <g font-size="12" fill="#2b3a4f">
-              <rect x="24" y="26" width="118" height="40" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <rect x="174" y="26" width="118" height="40" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <rect x="324" y="26" width="150" height="40" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <rect x="506" y="26" width="118" height="40" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <rect x="656" y="26" width="148" height="40" rx="7" fill="#f5f9ff" stroke="#bfd0e3" />
-              <rect x="656" y="154" width="148" height="40" rx="7" fill="#fff8ec" stroke="#dfc08a" />
-              <rect x="476" y="154" width="148" height="40" rx="7" fill="#fff8ec" stroke="#dfc08a" />
-              <text x="83" y="51" text-anchor="middle">Pick shot</text>
-              <text x="233" y="51" text-anchor="middle">Load refs</text>
-              <text x="399" y="51" text-anchor="middle">Generate takes</text>
-              <text x="565" y="51" text-anchor="middle">Review</text>
-              <text x="730" y="51" text-anchor="middle">Mark keeper</text>
-              <text x="730" y="179" text-anchor="middle">Heads-up tags</text>
-              <text x="550" y="179" text-anchor="middle">Fix drift, repeat</text>
+              <rect x="26" y="30" width="170" height="42" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
+              <rect x="226" y="30" width="170" height="42" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
+              <rect x="426" y="30" width="170" height="42" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
+              <rect x="626" y="30" width="204" height="42" rx="7" fill="#f5f9ff" stroke="#bfd1e4"/>
+              <rect x="626" y="174" width="204" height="52" rx="7" fill="#fff8ec" stroke="#dfc390"/>
+              <rect x="376" y="174" width="220" height="52" rx="7" fill="#fff8ec" stroke="#dfc390"/>
+              <text x="111" y="56" text-anchor="middle">Generate takes</text>
+              <text x="311" y="56" text-anchor="middle">Pick keeper</text>
+              <text x="511" y="56" text-anchor="middle">Review drift</text>
+              <text x="728" y="56" text-anchor="middle">Move to next shot</text>
+              <text x="728" y="198" text-anchor="middle">Heads-up tags</text>
+              <text x="486" y="198" text-anchor="middle">Adjust refs / prompt / split shot</text>
             </g>
-            <g stroke="#5a7596" marker-end="url(#a2)">
-              <line x1="142" y1="46" x2="172" y2="46" />
-              <line x1="292" y1="46" x2="322" y2="46" />
-              <line x1="474" y1="46" x2="504" y2="46" />
-              <line x1="624" y1="46" x2="654" y2="46" />
-              <line x1="730" y1="66" x2="730" y2="152" />
-              <line x1="656" y1="174" x2="626" y2="174" />
-              <line x1="476" y1="174" x2="84" y2="174" />
-              <line x1="84" y1="174" x2="84" y2="68" />
+            <g stroke="#5e7897" marker-end="url(#u2)">
+              <line x1="196" y1="51" x2="224" y2="51"/>
+              <line x1="396" y1="51" x2="424" y2="51"/>
+              <line x1="596" y1="51" x2="624" y2="51"/>
+              <line x1="728" y1="72" x2="728" y2="172"/>
+              <line x1="626" y1="200" x2="598" y2="200"/>
+              <line x1="376" y1="200" x2="111" y2="200"/>
+              <line x1="111" y1="200" x2="111" y2="74"/>
             </g>
           </svg>
         </div>
-        <div class="notice warn" style="margin-top:12px;">Heads-up tags: dialogue-heavy, multi-character, prop-dependent.</div>
+        <div class="notice warn" style="margin-top:12px;">Heads-up tags that usually need extra attention: dialogue-heavy, multi-character, prop-dependent.</div>
       </div>
       <div class="card">
         <h3>Open</h3>
         <div class="chips">
-          <div class="chip"><span class="chip-title">Shot prompts</span><span class="chip-path">({{ prompt_path }})</span></div>
+          <div class="chip"><span class="chip-title">Shot prompts</span><span class="chip-path">(prompts/shot_prompts.md)</span></div>
         </div>
       </div>
     </div>
-    <div class="footer"><span>RenderScript AI v{{ version }}</span><span>Page 3/5</span></div>
+    <div class="footer"><span>RenderScript AI v{{ version }}</span><span> Page 3/5</span></div>
   </section>
 
   <section class="page">
@@ -177,16 +166,16 @@
       <div class="provider universal">{{ provider_label }}</div>
     </div>
     <p class="section-label">Page 4 of 5</p>
-    <h1 class="h1">Edit picture first, then build audio in post</h1>
-    <p class="subtitle">Keep visuals text-free and complete dialogue, SFX, and mix after picture timing is locked.</p>
+    <h1 class="h1">Picture first, audio after rough cut</h1>
+    <p class="subtitle">Industry workflow still applies in the AI era: lock picture intent first, then finish ADR/VO, SFX, and the mix in post.</p>
 
     <div class="grid">
       <div class="card notice warn">
         <h2>Picture-first policy</h2>
         <ul>
-          <li>No burned-in subtitles, captions, logos, or other text in the generated frame.</li>
-          <li>Reroll contaminated takes instead of trying to remove text downstream.</li>
-          <li>Layer voice, ambience, SFX, and music only after picture decisions are stable.</li>
+          <li>No burned-in text, subtitles, or captions in generated shots.</li>
+          <li>If text appears in frame, reroll that take instead of cleaning it later.</li>
+          <li>Build ADR/VO, SFX, ambience, and music once the rough cut rhythm feels right.</li>
         </ul>
       </div>
       <div class="card">
@@ -200,7 +189,7 @@
         </div>
       </div>
     </div>
-    <div class="footer"><span>RenderScript AI v{{ version }}</span><span>Page 4/5</span></div>
+    <div class="footer"><span>RenderScript AI v{{ version }}</span><span> Page 4/5</span></div>
   </section>
 
   <section class="page">
@@ -210,25 +199,25 @@
       <div class="provider universal">{{ provider_label }}</div>
     </div>
     <p class="section-label">Page 5 of 5</p>
-    <h1 class="h1">Select keepers and reroll only where needed</h1>
-    <p class="subtitle">Use the Keeper Sheet to lock keeper choices and iterate failing beats only.</p>
+    <h1 class="h1">Use keepers to guide iteration, not guesswork</h1>
+    <p class="subtitle">RenderPackage will not make outputs deterministic, but it gives you a repeatable system for reducing unnecessary rerolls.</p>
 
     <div class="grid">
       <div class="card">
         <ul>
-          <li>Select one keeper per shot with continuity and intent as the decision rule.</li>
-          <li>When drift appears, tighten references first and reroll only failing beats.</li>
-          <li>Preserve passing shots and move quickly toward a stable final export.</li>
+          <li>Use the Keeper Sheet to mark one keeper per shot and track why it works.</li>
+          <li>If continuity slips, reroll only the failing beat instead of rebuilding the whole scene.</li>
+          <li>Keep what is already strong, then polish toward final export.</li>
         </ul>
       </div>
       <div class="card">
         <h3>Open</h3>
         <div class="chips">
-          <div class="chip"><span class="chip-title">Keeper sheet</span><span class="chip-path">(rubric/scoring_sheet.csv)</span></div>
+          <div class="chip"><span class="chip-title">Keeper Sheet</span><span class="chip-path">(rubric/scoring_sheet.csv)</span></div>
         </div>
       </div>
     </div>
-    <div class="footer"><span>RenderScript AI v{{ version }}</span><span>Page 5/5</span></div>
+    <div class="footer"><span>RenderScript AI v{{ version }}</span><span> Page 5/5</span></div>
   </section>
 </body>
 </html>

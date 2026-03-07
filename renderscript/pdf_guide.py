@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import importlib.metadata
 import os
 import platform
 from dataclasses import dataclass
@@ -104,10 +105,29 @@ def _module_version(module_name: str) -> str:
     return str(getattr(module, "__version__", "unknown"))
 
 
-def _build_debug_text(renderer_used: str, error: str) -> str:
+def _package_version(package_name: str) -> str:
+    try:
+        return importlib.metadata.version(package_name)
+    except Exception:
+        return "unavailable"
+
+
+def _weasyprint_status() -> str:
+    try:
+        importlib.import_module("weasyprint")
+    except Exception as exc:
+        return f"unavailable: {type(exc).__name__}: {exc}"
+    return "available"
+
+
+def _build_debug_text(renderer_used: str, engine: str, error: str, chromium_launch_success: bool) -> str:
     lines = [
         f"renderer_used={renderer_used}",
+        f"engine={engine}",
         f"error={error}",
+        f"playwright_version={_package_version('playwright')}",
+        f"chromium_launch_success={'true' if chromium_launch_success else 'false'}",
+        f"weasyprint_status={_weasyprint_status()}",
         f"python={platform.python_version()}",
         f"platform={platform.platform()}",
         f"jinja2={_module_version('jinja2')}",
@@ -293,6 +313,7 @@ def render_creator_guide_pdf(
 ) -> CreatorGuideRenderResult:
     strict_pdf = os.getenv(STRICT_PDF_ENV) == "1"
     errors: list[str] = []
+    chromium_launch_success = False
     base_url = str((Path(__file__).resolve().parent / "templates").resolve())
 
     try:
@@ -312,31 +333,39 @@ def render_creator_guide_pdf(
 
     if html is not None:
         try:
+            pdf = _render_with_playwright(html, base_url=base_url)
+            chromium_launch_success = True
+            pdf = _ensure_min_pdf_size(pdf)
+            return CreatorGuideRenderResult(
+                pdf_bytes=pdf,
+                renderer_used="html",
+                error="",
+                debug_text=_build_debug_text(
+                    renderer_used="html",
+                    engine="playwright",
+                    error="",
+                    chromium_launch_success=chromium_launch_success,
+                ),
+            )
+        except Exception as exc:
+            errors.append(f"Playwright render failed: {type(exc).__name__}: {exc}")
+
+        try:
             pdf = _render_with_weasyprint(html, base_url=base_url)
             pdf = _ensure_min_pdf_size(pdf)
             return CreatorGuideRenderResult(
                 pdf_bytes=pdf,
                 renderer_used="html",
                 error="",
-                debug_text=_build_debug_text(renderer_used="html", error=""),
+                debug_text=_build_debug_text(
+                    renderer_used="html",
+                    engine="weasyprint",
+                    error="",
+                    chromium_launch_success=chromium_launch_success,
+                ),
             )
         except Exception as exc:
-            if isinstance(exc, ModuleNotFoundError) and "weasyprint" in str(exc):
-                errors.append(f"WeasyPrint not available; falling back. {type(exc).__name__}: {exc}")
-            else:
-                errors.append(f"WeasyPrint render failed: {type(exc).__name__}: {exc}")
-
-        try:
-            pdf = _render_with_playwright(html, base_url=base_url)
-            pdf = _ensure_min_pdf_size(pdf)
-            return CreatorGuideRenderResult(
-                pdf_bytes=pdf,
-                renderer_used="html",
-                error="",
-                debug_text=_build_debug_text(renderer_used="html", error=""),
-            )
-        except Exception as exc:
-            errors.append(f"Playwright render failed: {type(exc).__name__}: {exc}")
+            errors.append(f"WeasyPrint not available; falling back. {type(exc).__name__}: {exc}")
 
     error = " | ".join(errors).strip()
     if strict_pdf:
@@ -356,5 +385,10 @@ def render_creator_guide_pdf(
         pdf_bytes=pdf,
         renderer_used="fallback",
         error=error,
-        debug_text=_build_debug_text(renderer_used="fallback", error=error),
+        debug_text=_build_debug_text(
+            renderer_used="fallback",
+            engine="fallback",
+            error=error,
+            chromium_launch_success=chromium_launch_success,
+        ),
     )

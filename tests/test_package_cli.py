@@ -126,8 +126,8 @@ def test_package_generates_required_files_and_is_deterministic(
             assert _rpack_without_generated_at(contents_one[path]) == _rpack_without_generated_at(contents_two[path])
             continue
         if path == "CREATOR_GUIDE(Start here).pdf":
-            assert len(contents_one[path]) > 50000
-            assert len(contents_two[path]) > 50000
+            assert len(contents_one[path]) > 80000
+            assert len(contents_two[path]) > 80000
             if _has_pypdf():
                 assert _pdf_text(contents_one[path]) == _pdf_text(contents_two[path])
             continue
@@ -185,7 +185,7 @@ def test_package_generates_required_files_and_is_deterministic(
     assert "loc_01_ref_01" in asset_prompts
     assert "assets/asset_prompts.md" not in contents_one
 
-    assert len(contents_one["CREATOR_GUIDE(Start here).pdf"]) > 50000
+    assert len(contents_one["CREATOR_GUIDE(Start here).pdf"]) > 80000
     universal_pdf_text = _pdf_text(contents_one["CREATOR_GUIDE(Start here).pdf"])
     normalized_universal_pdf_text = _normalize_ws(universal_pdf_text)
     assert "Runway" not in normalized_universal_pdf_text
@@ -194,13 +194,14 @@ def test_package_generates_required_files_and_is_deterministic(
     if _has_pypdf():
         assert "Keepers" in normalized_universal_pdf_text
         assert "Keeper Sheet" in normalized_universal_pdf_text
-        assert "Select keepers and reroll only where needed" in normalized_universal_pdf_text
-        assert (
-            "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_universal_pdf_text
-            or "Start -> Refs -> Takes -> Keepers -> Edit -> Audio" in normalized_universal_pdf_text
-        )
+        assert "rough cut" in normalized_universal_pdf_text
+        assert "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_universal_pdf_text
+        assert "v0.1.0Page" not in universal_pdf_text
     debug_text = contents_one["debug/creator_guide_debug.txt"].decode("utf-8")
     assert "renderer_used=html" in debug_text
+    assert "engine=playwright" in debug_text
+    assert "playwright_version=" in debug_text
+    assert "chromium_launch_success=true" in debug_text
     assert "error=" in debug_text
     assert "weasyprint=" in debug_text
 
@@ -380,12 +381,12 @@ def test_package_runway_provider_generates_runway_prompt_file(
     assert "creator-guide-pad" not in normalized_runway_pdf_text
     assert "Page 1:" not in normalized_runway_pdf_text
     if _has_pypdf():
-        assert (
-            "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_runway_pdf_text
-            or "Start -> Refs -> Takes -> Keepers -> Edit -> Audio" in normalized_runway_pdf_text
-        )
-        assert "Select keepers and reroll only where needed" in normalized_runway_pdf_text
-    assert len(contents["CREATOR_GUIDE(Start here).pdf"]) > 50000
+        assert "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_runway_pdf_text
+        assert "rough cut" in normalized_runway_pdf_text
+        assert "v0.1.0Page" not in runway_pdf_text
+    runway_debug_text = contents["debug/creator_guide_debug.txt"].decode("utf-8")
+    assert "engine=playwright" in runway_debug_text
+    assert len(contents["CREATOR_GUIDE(Start here).pdf"]) > 80000
 
 
 def test_package_golden_expected_paths_universal_scene_one(
@@ -421,4 +422,4 @@ def test_package_golden_expected_paths_universal_scene_one(
     assert (unpack_dir / "prompts/shot_prompts.md").read_text(encoding="utf-8").strip()
     assert not (unpack_dir / "prompts/universal_prompts.md").exists()
     assert (unpack_dir / "prompts/asset_prompts.md").read_text(encoding="utf-8").strip()
-    assert (unpack_dir / "CREATOR_GUIDE(Start here).pdf").stat().st_size > 50000
+    assert (unpack_dir / "CREATOR_GUIDE(Start here).pdf").stat().st_size > 80000
