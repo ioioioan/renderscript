@@ -11,6 +11,8 @@ requires-python = ">=3.9"
 dependencies = [
   "jinja2>=3.1.0",
   "weasyprint>=62.0",
+  "pypdf>=5.0.0",
+  "playwright>=1.58.0",
 ]
 
 [project.scripts]

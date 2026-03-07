@@ -3,6 +3,7 @@ rpack.schema.json
 PACKAGE_MAP.md
 README.md
 CREATOR_GUIDE(Start here).pdf
+debug/creator_guide_debug.txt
 assets/ingredients_manifest.md
 prompts/asset_prompts.md
 assets/placeholder/characters/README.md

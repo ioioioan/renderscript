@@ -22,12 +22,14 @@ DIALOGUE_SCRIPT_FILENAME = "audio/dialogue_script.txt"
 SFX_CUE_SHEET_FILENAME = "audio/sfx_cue_sheet.md"
 SUBTITLES_FILENAME = "edit/subtitles.srt"
 CREATOR_GUIDE_FILENAME = "CREATOR_GUIDE(Start here).pdf"
+CREATOR_GUIDE_DEBUG_FILENAME = "debug/creator_guide_debug.txt"
 BASE_REQUIRED_FILES = [
     "rpack.json",
     "rpack.schema.json",
     "PACKAGE_MAP.md",
     "README.md",
     CREATOR_GUIDE_FILENAME,
+    CREATOR_GUIDE_DEBUG_FILENAME,
     "assets/ingredients_manifest.md",
     ASSET_PROMPTS_FILENAME,
     "assets/placeholder/characters/README.md",
@@ -814,6 +816,8 @@ def _render_rpack_json(
     bindings: dict[str, dict[str, list[str]]],
     required_refs: dict[str, list[str]],
     generated_at: str,
+    creator_guide_renderer_used: str,
+    creator_guide_error: str,
 ) -> str:
     heading = scene.get("heading", {})
     heading_raw = heading.get("raw", "") if isinstance(heading, dict) else ""
@@ -833,6 +837,12 @@ def _render_rpack_json(
         "bindings": bindings,
         "required_references": required_refs,
         "risk_flags": [],
+        "debug": {
+            "creator_guide": {
+                "renderer_used": creator_guide_renderer_used,
+                "error": creator_guide_error,
+            }
+        },
     }
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
@@ -917,6 +927,19 @@ def package_fountain_file(
             ]
         )
 
+    guide_result = render_creator_guide_pdf(
+        prompt_filename,
+        asset_prompts_path=ASSET_PROMPTS_FILENAME,
+        provider=provider,
+        version=__version__,
+        logo_path=Path("assets/branding/logo.png"),
+        scene_heading=str(selected_scene.get("heading", {}).get("raw", ""))
+        if isinstance(selected_scene.get("heading", {}), dict)
+        else "",
+        scene_id=str(selected_scene.get("id", "")),
+        shot_count=len(shots),
+    )
+
     files: dict[str, str | bytes] = {
         "rpack.json": _render_rpack_json(
             source_name=input_path.name,
@@ -928,22 +951,14 @@ def package_fountain_file(
             bindings=bindings,
             required_refs=required_refs,
             generated_at=generated_at,
+            creator_guide_renderer_used=guide_result.renderer_used,
+            creator_guide_error=guide_result.error,
         ),
         "rpack.schema.json": _render_rpack_schema_json(),
         "PACKAGE_MAP.md": _render_package_map(provider, prompt_filename),
         "README.md": _render_readme(provider, prompt_filename),
-        CREATOR_GUIDE_FILENAME: render_creator_guide_pdf(
-            prompt_filename,
-            asset_prompts_path=ASSET_PROMPTS_FILENAME,
-            provider=provider,
-            version=__version__,
-            logo_path=Path("assets/branding/logo.png"),
-            scene_heading=str(selected_scene.get("heading", {}).get("raw", ""))
-            if isinstance(selected_scene.get("heading", {}), dict)
-            else "",
-            scene_id=str(selected_scene.get("id", "")),
-            shot_count=len(shots),
-        ),
+        CREATOR_GUIDE_FILENAME: guide_result.pdf_bytes,
+        CREATOR_GUIDE_DEBUG_FILENAME: guide_result.debug_text,
         "assets/ingredients_manifest.md": _render_ingredients_manifest(required_refs),
         ASSET_PROMPTS_FILENAME: _render_asset_prompts(
             selected_scene,

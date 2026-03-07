@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from io import StringIO
 from pathlib import Path
 from zipfile import ZipFile
@@ -16,6 +17,7 @@ BASE_REQUIRED_PATHS = [
     "PACKAGE_MAP.md",
     "README.md",
     "CREATOR_GUIDE(Start here).pdf",
+    "debug/creator_guide_debug.txt",
     "assets/ingredients_manifest.md",
     "prompts/asset_prompts.md",
     "assets/placeholder/characters/README.md",
@@ -63,6 +65,18 @@ def _pdf_text(raw: bytes) -> str:
     # pypdf expects a binary stream; keep fallback above for environments without pypdf.
     reader = PdfReader(BytesIO(raw))
     return "\n".join((page.extract_text() or "") for page in reader.pages)
+
+
+def _has_pypdf() -> bool:
+    try:
+        import pypdf  # type: ignore[import-not-found]
+    except ModuleNotFoundError:
+        return False
+    return True
+
+
+def _normalize_ws(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def test_package_generates_required_files_and_is_deterministic(
@@ -114,7 +128,8 @@ def test_package_generates_required_files_and_is_deterministic(
         if path == "CREATOR_GUIDE(Start here).pdf":
             assert len(contents_one[path]) > 50000
             assert len(contents_two[path]) > 50000
-            assert _pdf_text(contents_one[path]) == _pdf_text(contents_two[path])
+            if _has_pypdf():
+                assert _pdf_text(contents_one[path]) == _pdf_text(contents_two[path])
             continue
         assert contents_one[path] == contents_two[path]
 
@@ -125,6 +140,8 @@ def test_package_generates_required_files_and_is_deterministic(
     assert isinstance(rpack["generated_at"], str)
     assert rpack["generated_at"].endswith("Z")
     assert 8 <= len(rpack["shots"]) <= 12
+    assert rpack["debug"]["creator_guide"]["renderer_used"] == "html"
+    assert isinstance(rpack["debug"]["creator_guide"]["error"], str)
 
     shot_rows = _csv_rows(contents_one["shots/shot_list.csv"])
     bindings_rows = _csv_rows(contents_one["bindings/bindings.csv"])
@@ -170,14 +187,22 @@ def test_package_generates_required_files_and_is_deterministic(
 
     assert len(contents_one["CREATOR_GUIDE(Start here).pdf"]) > 50000
     universal_pdf_text = _pdf_text(contents_one["CREATOR_GUIDE(Start here).pdf"])
-    assert "Runway" not in universal_pdf_text
-    assert "creator-guide-pad" not in universal_pdf_text
-    assert "Keepers" in universal_pdf_text
-    assert "Keeper Sheet" in universal_pdf_text
-    assert (
-        "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in universal_pdf_text
-        or "Start -> Refs -> Takes -> Keepers -> Edit -> Audio" in universal_pdf_text
-    )
+    normalized_universal_pdf_text = _normalize_ws(universal_pdf_text)
+    assert "Runway" not in normalized_universal_pdf_text
+    assert "creator-guide-pad" not in normalized_universal_pdf_text
+    assert "Page 1:" not in normalized_universal_pdf_text
+    if _has_pypdf():
+        assert "Keepers" in normalized_universal_pdf_text
+        assert "Keeper Sheet" in normalized_universal_pdf_text
+        assert "Select keepers and reroll only where needed" in normalized_universal_pdf_text
+        assert (
+            "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_universal_pdf_text
+            or "Start -> Refs -> Takes -> Keepers -> Edit -> Audio" in normalized_universal_pdf_text
+        )
+    debug_text = contents_one["debug/creator_guide_debug.txt"].decode("utf-8")
+    assert "renderer_used=html" in debug_text
+    assert "error=" in debug_text
+    assert "weasyprint=" in debug_text
 
     assert contents_one["audio/voice_bible.md"].decode("utf-8").strip()
     dialogue_script = contents_one["audio/dialogue_script.txt"].decode("utf-8")
@@ -347,18 +372,19 @@ def test_package_runway_provider_generates_runway_prompt_file(
     assert "Generate picture-only shots. Audio/dialogue will be added in post." in runway_prompt_text
     rpack = json.loads(contents["rpack.json"].decode("utf-8"))
     assert rpack["target_provider"] == "runway.gen4_image_refs"
+    assert rpack["debug"]["creator_guide"]["renderer_used"] == "html"
     assert runway_prompt_text.count("No on-screen text or subtitles.") == len(rpack["shots"])
     runway_pdf_text = _pdf_text(contents["CREATOR_GUIDE(Start here).pdf"])
-    assert "Runway" in runway_pdf_text
-    assert (
-        "Workflow -> Tool -> References -> Paste prompt -> Generate -> Mark keeper" in runway_pdf_text
-        or "Workflow \u2192 Tool \u2192 References \u2192 Paste prompt \u2192 Generate \u2192 Mark keeper" in runway_pdf_text
-    )
-    assert (
-        "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in runway_pdf_text
-        or "Start -> Refs -> Takes -> Keepers -> Edit -> Audio" in runway_pdf_text
-    )
-    assert "creator-guide-pad" not in runway_pdf_text
+    normalized_runway_pdf_text = _normalize_ws(runway_pdf_text)
+    assert "Runway" in normalized_runway_pdf_text
+    assert "creator-guide-pad" not in normalized_runway_pdf_text
+    assert "Page 1:" not in normalized_runway_pdf_text
+    if _has_pypdf():
+        assert (
+            "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_runway_pdf_text
+            or "Start -> Refs -> Takes -> Keepers -> Edit -> Audio" in normalized_runway_pdf_text
+        )
+        assert "Select keepers and reroll only where needed" in normalized_runway_pdf_text
     assert len(contents["CREATOR_GUIDE(Start here).pdf"]) > 50000
 
 

@@ -1,0 +1,59 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from renderscript import pdf_guide
+
+
+def test_strict_pdf_mode_raises_when_html_renderers_fail(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(pdf_guide.STRICT_PDF_ENV, "1")
+    monkeypatch.setattr(pdf_guide, "_render_html", lambda **_: "<html><body>ok</body></html>")
+
+    def fail_renderer(*args, **kwargs):
+        raise RuntimeError("renderer failed")
+
+    monkeypatch.setattr(pdf_guide, "_render_with_weasyprint", fail_renderer)
+    monkeypatch.setattr(pdf_guide, "_render_with_playwright", fail_renderer)
+
+    with pytest.raises(RuntimeError):
+        pdf_guide.render_creator_guide_pdf(
+            prompt_path="prompts/shot_prompts.md",
+            asset_prompts_path="prompts/asset_prompts.md",
+            provider="universal",
+            version="0.1.0",
+            logo_path=Path("assets/branding/logo.png"),
+            scene_heading="",
+            scene_id="scene_001",
+            shot_count=8,
+        )
+
+
+def test_fallback_records_weasyprint_unavailable_message(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv(pdf_guide.STRICT_PDF_ENV, raising=False)
+    monkeypatch.setattr(pdf_guide, "_render_html", lambda **_: "<html><body>ok</body></html>")
+
+    def no_weasy(*args, **kwargs):
+        raise ModuleNotFoundError("No module named 'weasyprint'")
+
+    def no_playwright(*args, **kwargs):
+        raise RuntimeError("playwright unavailable")
+
+    monkeypatch.setattr(pdf_guide, "_render_with_weasyprint", no_weasy)
+    monkeypatch.setattr(pdf_guide, "_render_with_playwright", no_playwright)
+
+    result = pdf_guide.render_creator_guide_pdf(
+        prompt_path="prompts/shot_prompts.md",
+        asset_prompts_path="prompts/asset_prompts.md",
+        provider="universal",
+        version="0.1.0",
+        logo_path=Path("assets/branding/logo.png"),
+        scene_heading="",
+        scene_id="scene_001",
+        shot_count=8,
+    )
+
+    assert result.renderer_used == "fallback"
+    assert "WeasyPrint not available; falling back." in result.error
+    assert "WeasyPrint not available; falling back." in result.debug_text

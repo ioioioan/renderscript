@@ -8,6 +8,13 @@ import zipfile
 
 NAME = "renderscript"
 VERSION = "0.1.0"
+REQUIRES_PYTHON = ">=3.9"
+REQUIRES_DIST = [
+    "jinja2>=3.1.0",
+    "weasyprint>=62.0",
+    "pypdf>=5.0.0",
+    "playwright>=1.58.0",
+]
 
 
 def _dist_info_dir() -> str:
@@ -19,11 +26,14 @@ def _wheel_name() -> str:
 
 
 def _metadata() -> str:
+    requires_dist_lines = "".join(f"Requires-Dist: {dep}\n" for dep in REQUIRES_DIST)
     return (
         "Metadata-Version: 2.1\n"
         f"Name: {NAME}\n"
         f"Version: {VERSION}\n"
         "Summary: RenderScript Phase 1A bootstrap\n"
+        f"Requires-Python: {REQUIRES_PYTHON}\n"
+        f"{requires_dist_lines}"
     )
 
 
@@ -47,7 +57,14 @@ def _record_line(path: str, data: bytes) -> str:
 
 
 def _package_files() -> list[Path]:
-    return sorted(Path("renderscript").rglob("*.py"))
+    package_root = Path("renderscript")
+    files: list[Path] = []
+    for path in package_root.rglob("*"):
+        if path.is_dir():
+            continue
+        if path.suffix in {".py", ".html", ".css"}:
+            files.append(path)
+    return sorted(files)
 
 
 def _build(wheel_directory: str) -> str:

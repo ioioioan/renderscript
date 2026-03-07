@@ -1,12 +1,24 @@
 from __future__ import annotations
 
-from io import BytesIO
+import importlib
+import os
+import platform
+from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 RUNWAY_PROVIDER = "runway.gen4_image_refs"
 PROGRESS_TEXT = "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio"
 MIN_CREATOR_GUIDE_BYTES = 50_001
+STRICT_PDF_ENV = "RENDERSCRIPT_STRICT_PDF"
+
+
+@dataclass(frozen=True)
+class CreatorGuideRenderResult:
+    pdf_bytes: bytes
+    renderer_used: str
+    error: str
+    debug_text: str
 
 
 def _is_runway(provider: str) -> bool:
@@ -82,6 +94,28 @@ def _ensure_min_pdf_size(pdf: bytes, min_size: int = MIN_CREATOR_GUIDE_BYTES) ->
         return pdf
     pad_len = min_size - len(pdf)
     return pdf + (b"\n%" + (b"0" * max(0, pad_len - 2)))
+
+
+def _module_version(module_name: str) -> str:
+    try:
+        module = importlib.import_module(module_name)
+    except Exception:
+        return "unavailable"
+    return str(getattr(module, "__version__", "unknown"))
+
+
+def _build_debug_text(renderer_used: str, error: str) -> str:
+    lines = [
+        f"renderer_used={renderer_used}",
+        f"error={error}",
+        f"python={platform.python_version()}",
+        f"platform={platform.platform()}",
+        f"jinja2={_module_version('jinja2')}",
+        f"weasyprint={_module_version('weasyprint')}",
+        f"playwright={_module_version('playwright')}",
+        f"strict_pdf_env={os.getenv(STRICT_PDF_ENV, '')}",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def _render_with_weasyprint(html: str, base_url: str) -> bytes:
@@ -256,7 +290,11 @@ def render_creator_guide_pdf(
     scene_heading: str | None = None,
     scene_id: str | None = None,
     shot_count: int | None = None,
-) -> bytes:
+) -> CreatorGuideRenderResult:
+    strict_pdf = os.getenv(STRICT_PDF_ENV) == "1"
+    errors: list[str] = []
+    base_url = str((Path(__file__).resolve().parent / "templates").resolve())
+
     try:
         html = _render_html(
             prompt_path=prompt_path,
@@ -268,21 +306,41 @@ def render_creator_guide_pdf(
             scene_id=scene_id,
             shot_count=shot_count,
         )
-        base_url = str((Path(__file__).resolve().parent / "templates").resolve())
+    except Exception as exc:
+        errors.append(f"HTML template render failed: {type(exc).__name__}: {exc}")
+        html = None
 
+    if html is not None:
         try:
             pdf = _render_with_weasyprint(html, base_url=base_url)
-            return _ensure_min_pdf_size(pdf)
-        except Exception:
-            pass
+            pdf = _ensure_min_pdf_size(pdf)
+            return CreatorGuideRenderResult(
+                pdf_bytes=pdf,
+                renderer_used="html",
+                error="",
+                debug_text=_build_debug_text(renderer_used="html", error=""),
+            )
+        except Exception as exc:
+            if isinstance(exc, ModuleNotFoundError) and "weasyprint" in str(exc):
+                errors.append(f"WeasyPrint not available; falling back. {type(exc).__name__}: {exc}")
+            else:
+                errors.append(f"WeasyPrint render failed: {type(exc).__name__}: {exc}")
 
         try:
             pdf = _render_with_playwright(html, base_url=base_url)
-            return _ensure_min_pdf_size(pdf)
-        except Exception:
-            pass
-    except Exception:
-        pass
+            pdf = _ensure_min_pdf_size(pdf)
+            return CreatorGuideRenderResult(
+                pdf_bytes=pdf,
+                renderer_used="html",
+                error="",
+                debug_text=_build_debug_text(renderer_used="html", error=""),
+            )
+        except Exception as exc:
+            errors.append(f"Playwright render failed: {type(exc).__name__}: {exc}")
+
+    error = " | ".join(errors).strip()
+    if strict_pdf:
+        raise RuntimeError(error or "Strict PDF mode enabled and HTML PDF renderer failed.")
 
     pdf = _render_fallback_pdf(
         prompt_path=prompt_path,
@@ -293,4 +351,10 @@ def render_creator_guide_pdf(
         scene_id=scene_id,
         shot_count=shot_count,
     )
-    return _ensure_min_pdf_size(pdf)
+    pdf = _ensure_min_pdf_size(pdf)
+    return CreatorGuideRenderResult(
+        pdf_bytes=pdf,
+        renderer_used="fallback",
+        error=error,
+        debug_text=_build_debug_text(renderer_used="fallback", error=error),
+    )
