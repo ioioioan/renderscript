@@ -1,0 +1,8 @@
+renderer_used=html
+error=
+python=3.13.2
+platform=macOS-14.6.1-x86_64-i386-64bit-Mach-O
+jinja2=3.1.6
+weasyprint=unavailable
+playwright=unknown
+strict_pdf_env=
