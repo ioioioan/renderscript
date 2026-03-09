@@ -204,13 +204,24 @@ def _render_with_playwright(html: str, base_url: str) -> bytes:
     )
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
-        try:
-            page = browser.new_page()
-            page.set_content(html_for_browser, wait_until="load")
-            return page.pdf(format="A4", print_background=True, prefer_css_page_size=True)
-        finally:
-            browser.close()
+        launch_errors: list[str] = []
+        launch_variants = [
+            {},
+            {"executable_path": playwright.chromium.executable_path, "args": ["--no-sandbox"]},
+        ]
+        for launch_kwargs in launch_variants:
+            browser = None
+            try:
+                browser = playwright.chromium.launch(**launch_kwargs)
+                page = browser.new_page()
+                page.set_content(html_for_browser, wait_until="load")
+                return page.pdf(format="A4", print_background=True, prefer_css_page_size=True)
+            except Exception as exc:
+                launch_errors.append(f"{type(exc).__name__}: {exc}")
+            finally:
+                if browser is not None:
+                    browser.close()
+        raise RuntimeError("Playwright launch attempts failed: " + " | ".join(launch_errors))
 
 
 def _pdf_escape(text: str) -> str:

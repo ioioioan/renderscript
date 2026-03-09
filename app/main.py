@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import hashlib
 import re
+from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
+from zipfile import ZipFile
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.concurrency import run_in_threadpool
 
 from renderscript.compiler import compile_fountain_text
 from renderscript.renderpackage import SUPPORTED_PROVIDERS, package_fountain_file
@@ -19,6 +23,7 @@ ALLOWED_SUFFIXES = {".fountain", ".fnt"}
 DEFAULT_PROVIDER = "universal"
 DEFAULT_PROJECT = "project"
 APP_DIR = Path(__file__).resolve().parent
+BRANDING_LOGO_PATH = Path(__file__).resolve().parent.parent / "renderscript" / "assets" / "branding" / "logo.png"
 
 app = FastAPI(title="RenderScript Studio UI")
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
@@ -52,6 +57,30 @@ def _friendly_error_message(message: str) -> str:
     return message
 
 
+def _processed_logo_png(path: Path) -> bytes:
+    if not path.exists():
+        raise FileNotFoundError("Logo file not found.")
+    try:
+        from PIL import Image, ImageChops
+    except Exception:
+        return path.read_bytes()
+
+    with Image.open(path) as raw:
+        image = raw.convert("RGBA")
+        bg = Image.new("RGBA", image.size, image.getpixel((0, 0)))
+        diff = ImageChops.difference(image, bg)
+        box = diff.getbbox()
+        if box is None:
+            return path.read_bytes()
+        cropped = image.crop(box)
+        pad = max(8, int(max(cropped.size) * 0.08))
+        framed = Image.new("RGBA", (cropped.width + pad * 2, cropped.height + pad * 2), (255, 255, 255, 0))
+        framed.paste(cropped, (pad, pad), cropped)
+        out = BytesIO()
+        framed.save(out, format="PNG")
+        return out.getvalue()
+
+
 def _render_index(
     request: Request,
     *,
@@ -70,6 +99,7 @@ def _render_index(
             "provider": provider,
             "project": project,
             "scene": scene,
+            "logo_version": str(BRANDING_LOGO_PATH.stat().st_mtime_ns) if BRANDING_LOGO_PATH.exists() else "0",
             "scene_options": options,
             "show_scene_dropdown": len(options) > 1,
             "providers": list(SUPPORTED_PROVIDERS),
@@ -100,6 +130,17 @@ def _validate_upload_type(upload: UploadFile, data: bytes) -> str:
 @app.get("/")
 async def index(request: Request) -> Any:
     return _render_index(request)
+
+
+@app.get("/brand/logo.png")
+async def brand_logo() -> Response:
+    logo_bytes = await run_in_threadpool(_processed_logo_png, BRANDING_LOGO_PATH)
+    etag = hashlib.sha256(logo_bytes).hexdigest()
+    return Response(
+        content=logo_bytes,
+        media_type="image/png",
+        headers={"Cache-Control": "no-store, max-age=0", "ETag": etag},
+    )
 
 
 @app.post("/scenes")
@@ -153,7 +194,8 @@ async def build(
             source_path.write_text(text, encoding="utf-8")
             output_path = tmp_dir / "renderpackage.zip"
 
-            package_fountain_file(
+            await run_in_threadpool(
+                package_fountain_file,
                 input_path=source_path,
                 output_path=output_path,
                 provider=provider_value,
@@ -161,6 +203,10 @@ async def build(
                 project=project_safe,
             )
             zip_bytes = output_path.read_bytes()
+            with ZipFile(BytesIO(zip_bytes), "r") as zf:
+                debug_text = zf.read("debug/creator_guide_debug.txt").decode("utf-8", errors="replace")
+            if "renderer_used=fallback" in debug_text:
+                raise ValueError("Creator Guide PDF failed to generate via HTML renderer. Check Playwright/Chromium.")
 
         filename = f"{project_safe}_scene_{scene}_{provider_value.replace('.', '_')}_renderpackage_v1.zip"
         return Response(

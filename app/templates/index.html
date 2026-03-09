@@ -4,42 +4,154 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RenderScript Studio</title>
+  <link rel="icon" type="image/png" href="/static/favicon.png?v={{ logo_version }}">
   <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-  <main class="shell">
-    <h1>RenderScript Studio</h1>
-    <p class="sub">Upload a screenplay and build a RenderPackage zip.</p>
-
-    {% if error %}
-    <div class="error">{{ error }}</div>
-    {% endif %}
-
-    <form id="build-form" action="/build" method="post" enctype="multipart/form-data">
-      <label for="screenplay_file">Screenplay file</label>
-      <input id="screenplay_file" name="screenplay_file" type="file" accept=".fountain,.fnt,text/plain" required>
-
-      <label for="provider">Provider</label>
-      <select id="provider" name="provider">
-        {% for item in providers %}
-        <option value="{{ item }}" {% if provider == item %}selected{% endif %}>{{ item }}</option>
-        {% endfor %}
-      </select>
-
-      <div id="scene-simple" class="hint">Single-scene files auto-build with scene 1.</div>
-
-      <div id="scene-advanced" class="hidden">
-        <label for="scene">Scene ordinal</label>
-        <select id="scene" name="scene"></select>
+  <header class="topbar">
+    <div class="brand">
+      <img src="/brand/logo.png?v={{ logo_version }}" alt="RenderScript Studio logo">
+    </div>
+    <section class="hero-inline">
+      <h1>Screenplay in. RenderPackage out.</h1>
+      <p>Upload a Fountain screenplay, choose provider + scene, and export a zip with shot list, asset bindings, provider prompts, and run instructions.</p>
+      <div class="hero-actions">
+        <a href="/static/sample_RenderPackage.zip" class="secondary" download="sample_RenderPackage.zip">View sample package</a>
       </div>
-      <input id="scene-hidden" type="hidden" name="scene" value="{{ scene }}">
+    </section>
+  </header>
 
-      <label for="project">Project name</label>
-      <input id="project" name="project" type="text" value="{{ project }}" required>
+  <main class="workspace">
+    <section id="app-panel" class="panel app-panel">
+      <h2>Build a RenderPackage</h2>
+      {% if error %}
+      <div class="error">{{ error }}</div>
+      {% endif %}
 
-      <button type="submit">Build RenderPackage</button>
-    </form>
+      <form id="build-form" action="/build" method="post" enctype="multipart/form-data">
+        <label for="screenplay_file">Screenplay file</label>
+        <input id="screenplay_file" name="screenplay_file" type="file" accept=".fountain,.fnt,text/plain" required>
+        <div class="hint">Accepted screenplay format: <strong>.fountain</strong> (also supports <strong>.fnt</strong>).</div>
+        <div id="file-picked" class="meta hidden"></div>
+
+        <label for="provider">Provider</label>
+        <select id="provider" name="provider">
+          {% for item in providers %}
+          <option value="{{ item }}" {% if provider == item %}selected{% endif %}>
+            {% if item == "universal" %}Universal - Any AI Video Tool{% elif item == "runway.gen4_image_refs" %}Runway{% else %}{{ item }}{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+
+        <div id="scene-simple" class="hint">Single-scene scripts default to scene 1.</div>
+        <div id="scene-advanced" class="hidden">
+          <label for="scene">Scene ordinal</label>
+          <select id="scene" name="scene"></select>
+        </div>
+        <input id="scene-hidden" type="hidden" name="scene" value="{{ scene }}">
+
+        <label for="project">Project name</label>
+        <input id="project" name="project" type="text" value="{{ project if project != 'project' else '' }}" placeholder="project" required>
+
+        <button id="submit-btn" type="submit">Build RenderPackage</button>
+      </form>
+    </section>
+
+    <aside class="panel info-panel">
+      <nav class="topnav in-panel">
+        <button class="tab-btn active" data-tab="app" type="button">App</button>
+        <button class="tab-btn" data-tab="creators" type="button">Creators</button>
+        <button class="tab-btn" data-tab="developers" type="button">Developers</button>
+      </nav>
+
+      <section class="tab-pane active" data-pane="app">
+        <h3>App</h3>
+        <p>
+          This app packages one screenplay scene into a RenderPackage: a practical workflow for AI video generation.
+          You export a single downloadable file in <code>.zip</code> format containing a structured production kit.
+        </p>
+        <ul>
+          <li>
+            Upload a screenplay file in <code>.fountain</code> format.
+            Fountain is a plain-text screenplay format used by writers and developers because it is easy to read,
+            version, and convert from script tools.
+          </li>
+          <li>
+            If your script has multiple scenes, choose the scene number you want to package.
+            (If it has one scene, the app auto-selects scene 1.)
+          </li>
+          <li>
+            Select your provider and build the RenderPackage for that scene.
+          </li>
+          <li>
+            Output format is a <code>.zip</code> file containing your RenderPackage, including shot planning files,
+            provider-ready prompts, Keeper Sheet, and audio post-production docs (dialogue, voice, and SFX cue sheets).
+          </li>
+        </ul>
+      </section>
+
+      <section class="tab-pane" data-pane="creators">
+        <h3>Creators</h3>
+        <p>
+          RenderScript is built for writer-directors and small teams who want to move fast in AI filmmaking without
+          losing control of the cut. Instead of treating each generation as a one-off prompt, it gives you a repeatable
+          production flow from shots and takes to keepers and edit.
+        </p>
+        <p>
+          The picture-first approach is central: focus on visual continuity first, then handle ADR/VO, SFX, and mix in
+          post. That principle is used in professional workflows broadly, but RenderScript makes it explicit inside the
+          package so teams can apply it consistently with AI-generated footage.
+        </p>
+        <p>
+          The result is fewer random rerolls, clearer creative decisions, and a cleaner path from screenplay scene to
+          rough cut.
+        </p>
+        <p>
+          Under the hood, the AI-assisted RenderScript compiler turns screenplay structure into a stable package
+          contract, so creators and developers can work from the same source of truth across prompts, shots, keepers,
+          and post.
+        </p>
+      </section>
+
+      <section class="tab-pane" data-pane="developers">
+        <h3>Developers</h3>
+        <p>
+          RenderScript gives you a reliable packaging layer between screenplay text and AI video tooling. The goal is
+          simple: make creative intent machine-usable without locking teams to one provider or internal pipeline.
+        </p>
+        <p>
+          For product and pipeline teams, this means a stable handoff format you can validate, version, and automate in
+          CI while creators keep working in familiar script language.
+        </p>
+        <p><strong>CLI quick start</strong></p>
+        <ul>
+          <li><code>python3 -m pip install -e .</code></li>
+          <li><code>renderscript package path/to/script.fountain --scene 1 --provider universal -o ./out/package.zip</code></li>
+          <li>Provider options: <code>universal</code>, <code>runway.gen4_image_refs</code></li>
+        </ul>
+        <p><strong>What you can build on top</strong></p>
+        <ul>
+          <li>Core contract: <code>rpack.json</code> + stable package file map</li>
+          <li>Provider adapters, internal QA checks, and custom orchestration wrappers</li>
+          <li>Studio UI: <code>renderscript.studio</code> (placeholder)</li>
+          <li>GitHub: <code>https://github.com/your-org/renderscript</code> (placeholder)</li>
+        </ul>
+      </section>
+    </aside>
   </main>
+
+  <footer class="site-footer">
+    <div class="footer-links" aria-label="RenderScript social links">
+      <span class="footer-link" aria-label="YouTube placeholder">
+        <img src="/static/icons/youtube.svg" alt="" aria-hidden="true">
+        <span>YouTube</span>
+      </span>
+      <span class="footer-link" aria-label="X placeholder">
+        <img src="/static/icons/x.svg" alt="" aria-hidden="true">
+        <span>X</span>
+      </span>
+    </div>
+  </footer>
 
   <script>
     const fileInput = document.getElementById("screenplay_file");
@@ -47,6 +159,10 @@
     const sceneAdvanced = document.getElementById("scene-advanced");
     const sceneSelect = document.getElementById("scene");
     const sceneHidden = document.getElementById("scene-hidden");
+    const filePicked = document.getElementById("file-picked");
+    const submitBtn = document.getElementById("submit-btn");
+    const form = document.getElementById("build-form");
+    const projectInput = document.getElementById("project");
 
     function setSingleScene() {
       sceneSimple.classList.remove("hidden");
@@ -73,8 +189,18 @@
       const file = fileInput.files && fileInput.files[0];
       if (!file) {
         setSingleScene();
+        filePicked.classList.add("hidden");
+        filePicked.textContent = "";
         return;
       }
+
+      filePicked.classList.remove("hidden");
+      filePicked.textContent = `Selected: ${file.name}`;
+      const stem = file.name.replace(/\.[^/.]+$/, "");
+      if (!projectInput.value || projectInput.value.trim() === "" || projectInput.value.trim() === "project") {
+        projectInput.placeholder = stem || "project";
+      }
+
       const body = new FormData();
       body.append("screenplay_file", file);
       const res = await fetch("/scenes", { method: "POST", body });
@@ -88,6 +214,24 @@
       } else {
         setSingleScene();
       }
+    });
+
+    form.addEventListener("submit", () => {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Building...";
+    });
+
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const panes = document.querySelectorAll(".tab-pane");
+    tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.tab;
+        tabButtons.forEach((x) => x.classList.remove("active"));
+        panes.forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        const pane = document.querySelector(`[data-pane="${key}"]`);
+        if (pane) pane.classList.add("active");
+      });
     });
   </script>
 </body>
