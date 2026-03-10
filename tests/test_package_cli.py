@@ -12,30 +12,31 @@ from renderscript import cli
 
 
 BASE_REQUIRED_PATHS = [
-    "rpack.json",
-    "rpack.schema.json",
+    "START_HERE.txt",
+    "CREATOR_GUIDE.pdf",
     "PACKAGE_MAP.md",
-    "README.md",
-    "CREATOR_GUIDE(Start here).pdf",
-    "debug/creator_guide_debug.txt",
-    "assets/ingredients_manifest.md",
+    "shots/shot_list.csv",
+    "shots/bindings.csv",
+    "prompts/shot_prompts.md",
+    "prompts/runway.gen4_image_refs_prompts.md",
     "prompts/asset_prompts.md",
-    "assets/placeholder/characters/README.md",
-    "assets/placeholder/locations/README.md",
-    "assets/placeholder/styles/README.md",
-    "assets/placeholder/props/README.md",
+    "assets/ingredients_manifest.md",
+    "assets/refs/styles/",
+    "assets/refs/characters/",
+    "assets/refs/locations/",
+    "assets/refs/props/",
+    "keepers/scoring_sheet.csv",
     "audio/voice_bible.md",
     "audio/dialogue_script.txt",
     "audio/sfx_cue_sheet.md",
-    "edit/subtitles.srt",
-    "shots/shot_list.csv",
-    "bindings/bindings.csv",
-    "rubric/scoring_sheet.csv",
+    "edit_guide/subtitles.srt",
+    "dev/rpack.json",
+    "dev/provenance.json",
 ]
 
 
-def _required_paths(prompt_file: str) -> list[str]:
-    return BASE_REQUIRED_PATHS + [prompt_file]
+def _required_paths() -> list[str]:
+    return BASE_REQUIRED_PATHS
 
 
 def _zip_contents(path: Path) -> dict[str, bytes]:
@@ -50,6 +51,12 @@ def _csv_rows(raw: bytes) -> list[dict[str, str]]:
 
 
 def _rpack_without_generated_at(raw: bytes) -> dict[str, object]:
+    payload = json.loads(raw.decode("utf-8"))
+    payload.pop("generated_at", None)
+    return payload
+
+
+def _provenance_without_generated_at(raw: bytes) -> dict[str, object]:
     payload = json.loads(raw.decode("utf-8"))
     payload.pop("generated_at", None)
     return payload
@@ -123,7 +130,7 @@ def test_package_generates_required_files_and_is_deterministic(
     assert cli.main() == 0
     assert out_two.exists()
 
-    required_paths = _required_paths("prompts/shot_prompts.md")
+    required_paths = _required_paths()
     with ZipFile(out_one, "r") as zf:
         assert zf.namelist() == required_paths
 
@@ -133,10 +140,15 @@ def test_package_generates_required_files_and_is_deterministic(
     assert set(contents_two.keys()) == set(required_paths)
 
     for path in required_paths:
-        if path == "rpack.json":
+        if path == "dev/rpack.json":
             assert _rpack_without_generated_at(contents_one[path]) == _rpack_without_generated_at(contents_two[path])
             continue
-        if path == "CREATOR_GUIDE(Start here).pdf":
+        if path == "dev/provenance.json":
+            assert _provenance_without_generated_at(contents_one[path]) == _provenance_without_generated_at(
+                contents_two[path]
+            )
+            continue
+        if path == "CREATOR_GUIDE.pdf":
             assert len(contents_one[path]) > 80000
             assert len(contents_two[path]) > 80000
             if _has_pypdf():
@@ -144,7 +156,8 @@ def test_package_generates_required_files_and_is_deterministic(
             continue
         assert contents_one[path] == contents_two[path]
 
-    rpack = json.loads(contents_one["rpack.json"].decode("utf-8"))
+    rpack = json.loads(contents_one["dev/rpack.json"].decode("utf-8"))
+    provenance = json.loads(contents_one["dev/provenance.json"].decode("utf-8"))
     assert rpack["target_provider"] == "universal"
     assert rpack["generator"]["name"] == "RenderScript AI"
     assert "version" in rpack["generator"]
@@ -155,10 +168,9 @@ def test_package_generates_required_files_and_is_deterministic(
     assert isinstance(rpack["debug"]["creator_guide"]["error"], str)
 
     shot_rows = _csv_rows(contents_one["shots/shot_list.csv"])
-    bindings_rows = _csv_rows(contents_one["bindings/bindings.csv"])
-    rubric_rows = _csv_rows(contents_one["rubric/scoring_sheet.csv"])
+    bindings_rows = _csv_rows(contents_one["shots/bindings.csv"])
+    rubric_rows = _csv_rows(contents_one["keepers/scoring_sheet.csv"])
     prompt_text = contents_one["prompts/shot_prompts.md"].decode("utf-8")
-    assert "prompts/universal_prompts.md" not in contents_one
 
     assert len(shot_rows) == len(rpack["shots"])
     assert len(bindings_rows) == len(rpack["shots"])
@@ -180,24 +192,28 @@ def test_package_generates_required_files_and_is_deterministic(
     assert prompt_text.count("No on-screen text or subtitles.") == len(rpack["shots"])
 
     package_map = contents_one["PACKAGE_MAP.md"].decode("utf-8")
-    assert "Start here: CREATOR_GUIDE(Start here).pdf" in package_map
+    assert "Start here: CREATOR_GUIDE.pdf" in package_map
     assert "prompts/asset_prompts.md" in package_map
     assert "audio/voice_bible.md" in package_map
     assert "audio/dialogue_script.txt" in package_map
     assert "audio/sfx_cue_sheet.md" in package_map
-    assert "edit/subtitles.srt" in package_map
+    assert "edit_guide/subtitles.srt" in package_map
+    start_here = contents_one["START_HERE.txt"].decode("utf-8")
+    assert "1. Read CREATOR_GUIDE.pdf" in start_here
+    assert "2. Generate reference images in assets/refs" in start_here
+    assert "3. Use prompts/shot_prompts.md to generate shots" in start_here
+    assert "4. Track keepers in keepers/scoring_sheet.csv" in start_here
 
-    readme = contents_one["README.md"].decode("utf-8")
-    assert "Generated by RenderScript AI v" in readme
-    assert "Provider: universal" in readme
+    assert provenance["provider"] == "universal"
+    assert provenance["creator_guide"]["renderer_used"] == "html"
 
     asset_prompts = contents_one["prompts/asset_prompts.md"].decode("utf-8")
     assert "style_01_ref_01" in asset_prompts
     assert "loc_01_ref_01" in asset_prompts
     assert "assets/asset_prompts.md" not in contents_one
 
-    assert len(contents_one["CREATOR_GUIDE(Start here).pdf"]) > 80000
-    universal_pdf_text = _pdf_text(contents_one["CREATOR_GUIDE(Start here).pdf"])
+    assert len(contents_one["CREATOR_GUIDE.pdf"]) > 80000
+    universal_pdf_text = _pdf_text(contents_one["CREATOR_GUIDE.pdf"])
     normalized_universal_pdf_text = _normalize_ws(universal_pdf_text)
     assert "Runway" not in normalized_universal_pdf_text
     assert "creator-guide-pad" not in normalized_universal_pdf_text
@@ -208,32 +224,17 @@ def test_package_generates_required_files_and_is_deterministic(
         assert "rough cut" in normalized_universal_pdf_text
         assert "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_universal_pdf_text
         assert "v0.1.0Page" not in universal_pdf_text
-        assert _pdf_page_count(contents_one["CREATOR_GUIDE(Start here).pdf"]) == 5
-    debug_text = contents_one["debug/creator_guide_debug.txt"].decode("utf-8")
-    assert "renderer_used=html" in debug_text
-    assert "engine=playwright" in debug_text
-    assert "playwright_version=" in debug_text
-    assert "chromium_launch_success=true" in debug_text
-    assert "chromium_installed=true" in debug_text
-    assert "error=" in debug_text
+        assert _pdf_page_count(contents_one["CREATOR_GUIDE.pdf"]) == 5
+    assert provenance["creator_guide"]["engine"] == "playwright"
+    assert isinstance(provenance["creator_guide"]["error"], str)
 
     assert contents_one["audio/voice_bible.md"].decode("utf-8").strip()
     dialogue_script = contents_one["audio/dialogue_script.txt"].decode("utf-8")
     assert "Dialogue Script (Audio in Post)" in dialogue_script
     sfx_sheet = contents_one["audio/sfx_cue_sheet.md"].decode("utf-8")
     assert "# SFX Cue Sheet" in sfx_sheet
-    subtitles = contents_one["edit/subtitles.srt"].decode("utf-8")
+    subtitles = contents_one["edit_guide/subtitles.srt"].decode("utf-8")
     assert subtitles.lstrip().startswith("1")
-
-    for placeholder_path in [
-        "assets/placeholder/characters/README.md",
-        "assets/placeholder/locations/README.md",
-        "assets/placeholder/styles/README.md",
-        "assets/placeholder/props/README.md",
-    ]:
-        text = contents_one[placeholder_path].decode("utf-8")
-        assert "char_A_ref_01" in text
-        assert "Runway Gen-4 Image References supports up to 3 active references." in text
 
 
 def test_package_errors_for_multi_scene_without_scene_selection(
@@ -331,7 +332,7 @@ def test_package_output_directory_auto_names_zip(
     assert len(outputs) == 1
     assert outputs[0].name.startswith("pilot_scene_001_runway_gen4_image_refs_renderpackage_v1")
     contents = _zip_contents(outputs[0])
-    assert set(contents.keys()) == set(_required_paths("prompts/runway.gen4_image_refs_prompts.md"))
+    assert set(contents.keys()) == set(_required_paths())
 
 
 def test_package_output_directory_auto_names_zip_for_universal(
@@ -378,16 +379,17 @@ def test_package_runway_provider_generates_runway_prompt_file(
     assert cli.main() == 0
     contents = _zip_contents(out_path)
     assert "prompts/runway.gen4_image_refs_prompts.md" in contents
-    assert "prompts/shot_prompts.md" not in contents
+    assert "prompts/shot_prompts.md" in contents
     assert "prompts/asset_prompts.md" in contents
     runway_prompt_text = contents["prompts/runway.gen4_image_refs_prompts.md"].decode("utf-8")
     assert "IMPORTANT: NO ON-SCREEN TEXT. NO SUBTITLES. NO CAPTIONS. NO WATERMARKS. NO LOGOS." in runway_prompt_text
     assert "Generate picture-only shots. Audio/dialogue will be added in post." in runway_prompt_text
-    rpack = json.loads(contents["rpack.json"].decode("utf-8"))
+    rpack = json.loads(contents["dev/rpack.json"].decode("utf-8"))
+    provenance = json.loads(contents["dev/provenance.json"].decode("utf-8"))
     assert rpack["target_provider"] == "runway.gen4_image_refs"
     assert rpack["debug"]["creator_guide"]["renderer_used"] == "html"
     assert runway_prompt_text.count("No on-screen text or subtitles.") == len(rpack["shots"])
-    runway_pdf_text = _pdf_text(contents["CREATOR_GUIDE(Start here).pdf"])
+    runway_pdf_text = _pdf_text(contents["CREATOR_GUIDE.pdf"])
     normalized_runway_pdf_text = _normalize_ws(runway_pdf_text)
     assert "Runway" in normalized_runway_pdf_text
     assert "creator-guide-pad" not in normalized_runway_pdf_text
@@ -396,10 +398,9 @@ def test_package_runway_provider_generates_runway_prompt_file(
         assert "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_runway_pdf_text
         assert "rough cut" in normalized_runway_pdf_text
         assert "v0.1.0Page" not in runway_pdf_text
-        assert _pdf_page_count(contents["CREATOR_GUIDE(Start here).pdf"]) == 5
-    runway_debug_text = contents["debug/creator_guide_debug.txt"].decode("utf-8")
-    assert "engine=playwright" in runway_debug_text
-    assert len(contents["CREATOR_GUIDE(Start here).pdf"]) > 80000
+        assert _pdf_page_count(contents["CREATOR_GUIDE.pdf"]) == 5
+    assert provenance["creator_guide"]["engine"] == "playwright"
+    assert len(contents["CREATOR_GUIDE.pdf"]) > 80000
 
 
 def test_package_golden_expected_paths_universal_scene_one(
@@ -432,7 +433,8 @@ def test_package_golden_expected_paths_universal_scene_one(
         unpack_dir = tmp_path / "unpacked"
         zf.extractall(unpack_dir)
     assert (unpack_dir / "PACKAGE_MAP.md").read_text(encoding="utf-8").strip()
+    assert (unpack_dir / "START_HERE.txt").read_text(encoding="utf-8").strip()
     assert (unpack_dir / "prompts/shot_prompts.md").read_text(encoding="utf-8").strip()
-    assert not (unpack_dir / "prompts/universal_prompts.md").exists()
+    assert (unpack_dir / "prompts/runway.gen4_image_refs_prompts.md").read_text(encoding="utf-8").strip()
     assert (unpack_dir / "prompts/asset_prompts.md").read_text(encoding="utf-8").strip()
-    assert (unpack_dir / "CREATOR_GUIDE(Start here).pdf").stat().st_size > 80000
+    assert (unpack_dir / "CREATOR_GUIDE.pdf").stat().st_size > 80000

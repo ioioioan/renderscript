@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from io import BytesIO
 from pathlib import Path
@@ -23,7 +24,10 @@ ALLOWED_SUFFIXES = {".fountain", ".fnt"}
 DEFAULT_PROVIDER = "universal"
 DEFAULT_PROJECT = "project"
 APP_DIR = Path(__file__).resolve().parent
-BRANDING_LOGO_PATH = Path(__file__).resolve().parent.parent / "renderscript" / "assets" / "branding" / "logo.png"
+STYLES_PATH = APP_DIR / "static" / "styles.css"
+BRANDING_DIR = Path(__file__).resolve().parent.parent / "renderscript" / "assets" / "branding"
+BRANDING_UI_LOGO_PATH = BRANDING_DIR / "renderscript_logo_horizontal_mark_left_text_right_pad5_v3.png"
+BRANDING_MARK_LOGO_PATH = BRANDING_DIR / "renderscript_logo_mark_blue_pad5.png"
 
 app = FastAPI(title="RenderScript Studio UI")
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
@@ -57,28 +61,10 @@ def _friendly_error_message(message: str) -> str:
     return message
 
 
-def _processed_logo_png(path: Path) -> bytes:
+def _read_logo_png(path: Path) -> bytes:
     if not path.exists():
         raise FileNotFoundError("Logo file not found.")
-    try:
-        from PIL import Image, ImageChops
-    except Exception:
-        return path.read_bytes()
-
-    with Image.open(path) as raw:
-        image = raw.convert("RGBA")
-        bg = Image.new("RGBA", image.size, image.getpixel((0, 0)))
-        diff = ImageChops.difference(image, bg)
-        box = diff.getbbox()
-        if box is None:
-            return path.read_bytes()
-        cropped = image.crop(box)
-        pad = max(8, int(max(cropped.size) * 0.08))
-        framed = Image.new("RGBA", (cropped.width + pad * 2, cropped.height + pad * 2), (255, 255, 255, 0))
-        framed.paste(cropped, (pad, pad), cropped)
-        out = BytesIO()
-        framed.save(out, format="PNG")
-        return out.getvalue()
+    return path.read_bytes()
 
 
 def _render_index(
@@ -90,7 +76,12 @@ def _render_index(
     scene: int = 1,
     scene_options: list[dict[str, str]] | None = None,
 ) -> Any:
+    version_paths = [p for p in (BRANDING_UI_LOGO_PATH, BRANDING_MARK_LOGO_PATH) if p.exists()]
+    logo_version = "0"
+    if version_paths:
+        logo_version = str(max(p.stat().st_mtime_ns for p in version_paths))
     options = scene_options or []
+    styles_version = str(STYLES_PATH.stat().st_mtime_ns) if STYLES_PATH.exists() else "0"
     return templates.TemplateResponse(
         request=request,
         name="index.html",
@@ -99,10 +90,11 @@ def _render_index(
             "provider": provider,
             "project": project,
             "scene": scene,
-            "logo_version": str(BRANDING_LOGO_PATH.stat().st_mtime_ns) if BRANDING_LOGO_PATH.exists() else "0",
+            "logo_version": logo_version,
             "scene_options": options,
             "show_scene_dropdown": len(options) > 1,
             "providers": list(SUPPORTED_PROVIDERS),
+            "styles_version": styles_version,
         },
         status_code=400 if error else 200,
     )
@@ -134,10 +126,21 @@ async def index(request: Request) -> Any:
 
 @app.get("/brand/logo.png")
 async def brand_logo() -> Response:
-    logo_bytes = await run_in_threadpool(_processed_logo_png, BRANDING_LOGO_PATH)
+    logo_bytes = await run_in_threadpool(_read_logo_png, BRANDING_UI_LOGO_PATH)
     etag = hashlib.sha256(logo_bytes).hexdigest()
     return Response(
         content=logo_bytes,
+        media_type="image/png",
+        headers={"Cache-Control": "no-store, max-age=0", "ETag": etag},
+    )
+
+
+@app.get("/brand/favicon.png")
+async def brand_favicon() -> Response:
+    favicon_bytes = await run_in_threadpool(_read_logo_png, BRANDING_MARK_LOGO_PATH)
+    etag = hashlib.sha256(favicon_bytes).hexdigest()
+    return Response(
+        content=favicon_bytes,
         media_type="image/png",
         headers={"Cache-Control": "no-store, max-age=0", "ETag": etag},
     )
@@ -204,8 +207,17 @@ async def build(
             )
             zip_bytes = output_path.read_bytes()
             with ZipFile(BytesIO(zip_bytes), "r") as zf:
-                debug_text = zf.read("debug/creator_guide_debug.txt").decode("utf-8", errors="replace")
-            if "renderer_used=fallback" in debug_text:
+                renderer_used = ""
+                if "dev/provenance.json" in zf.namelist():
+                    provenance = json.loads(zf.read("dev/provenance.json").decode("utf-8", errors="replace"))
+                    creator_guide = provenance.get("creator_guide", {}) if isinstance(provenance, dict) else {}
+                    if isinstance(creator_guide, dict):
+                        renderer_used = str(creator_guide.get("renderer_used", ""))
+                elif "debug/creator_guide_debug.txt" in zf.namelist():
+                    debug_text = zf.read("debug/creator_guide_debug.txt").decode("utf-8", errors="replace")
+                    if "renderer_used=fallback" in debug_text:
+                        renderer_used = "fallback"
+            if renderer_used == "fallback":
                 raise ValueError("Creator Guide PDF failed to generate via HTML renderer. Check Playwright/Chromium.")
 
         filename = f"{project_safe}_scene_{scene}_{provider_value.replace('.', '_')}_renderpackage_v1.zip"

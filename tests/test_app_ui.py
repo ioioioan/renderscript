@@ -20,9 +20,12 @@ def test_ui_get_root_returns_200() -> None:
 def test_ui_build_returns_zip_for_one_scene_example(monkeypatch) -> None:
     def fake_package_fountain_file(*, input_path, output_path, provider, scene_ordinal, project, provider_version=""):
         with ZipFile(output_path, "w", compression=ZIP_STORED) as zf:
-            zf.writestr("debug/creator_guide_debug.txt", "renderer_used=html\nengine=playwright\n")
-            zf.writestr("CREATOR_GUIDE(Start here).pdf", b"%PDF-1.4\n%%EOF\n")
-            zf.writestr("rpack.json", b"{}\n")
+            zf.writestr(
+                "dev/provenance.json",
+                b'{"creator_guide":{"renderer_used":"html","engine":"playwright","error":""}}\n',
+            )
+            zf.writestr("CREATOR_GUIDE.pdf", b"%PDF-1.4\n%%EOF\n")
+            zf.writestr("dev/rpack.json", b"{}\n")
 
     monkeypatch.setattr("app.main.package_fountain_file", fake_package_fountain_file)
 

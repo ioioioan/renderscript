@@ -17,16 +17,24 @@
     </div>
 
     <h1>RenderPackage Creator Guide (Start here)</h1>
+    <p>A RenderPackage is a scene-level production kit for AI video generation.</p>
     <p><strong>Provider:</strong> Universal</p>
 
     <h2>Golden rule</h2>
-    <p>Picture-first. No burned-in subtitles, captions, logos, watermarks, or on-screen text.</p>
-    <p>If text appears on screen, treat that take as unusable and reroll.</p>
-    <p>Audio comes later: ADR/VO + SFX + mix after the rough cut.</p>
+    <p>Picture-first.</p>
+    <p>No burned-in subtitles, captions, logos, watermarks, or on-screen text.</p>
+    <p>If text appears in a generated shot, discard that take and generate again.</p>
+    <p>Audio comes later: ADR / VO, sound effects, and mix are added after the rough cut.</p>
 
-    <h2>Choose your path</h2>
-    <p><strong>Path A — Prompts-only (fast test)</strong><br>Use when you don’t have reference images yet. Generate a few shots to check pacing and intent. Expect more drift — normal at this stage.</p>
-    <p><strong>Path B — References (best consistency)</strong><br>Use when you can supply reference images. References beat clever prompting for consistency. This package tells you which refs each shot expects.</p>
+    <h2>Choose your starting workflow</h2>
+    <p><strong>Path A — Prompts-only (quick test)</strong></p>
+    <p>Use this when you don’t have reference images yet.</p>
+    <p>Generate a few shots to test pacing and visual intent.</p>
+    <p>Expect more drift at this stage — this is normal.</p>
+    <p><strong>Path B — References (best consistency)</strong></p>
+    <p>Use this when you can provide reference images.</p>
+    <p>References improve consistency more than complex prompts.</p>
+    <p>This package shows which references each shot expects.</p>
 
     <h2>Open:</h2>
     <div class="open-list">
@@ -34,17 +42,18 @@
       <p>Shot prompts: prompts/shot_prompts.md</p>
       <p>prompts/asset_prompts.md</p>
       <p>assets/ingredients_manifest.md</p>
-      <p>bindings/bindings.csv</p>
+      <p>shots/bindings.csv</p>
       <p>shots/shot_list.csv</p>
-      <p>rubric/scoring_sheet.csv</p>
+      <p>keepers/scoring_sheet.csv</p>
     </div>
 
-    <h2>What’s in this package (creator essentials)</h2>
+    <h2>What this package includes</h2>
     <p>• Shot prompts (one block per shot)</p>
-    <p>• Asset prompts (to generate your refs)</p>
-    <p>• Reference checklist + Reference map</p>
-    <p>• Shot list + Keeper Sheet</p>
-    <p>• Audio toolkit (dialogue/voice/SFX) + optional subtitle guide</p>
+    <p>• Asset prompts for generating reference images</p>
+    <p>• Reference checklist and reference map</p>
+    <p>• Shot list and Keeper Sheet</p>
+    <p>• Audio toolkit (dialogue, voice, SFX)</p>
+    <p>• Optional subtitle guide for editing</p>
   </section>
   <div class="page-split"></div>
 
@@ -71,15 +80,15 @@
     <div class="open-list">
       <p>prompts/asset_prompts.md</p>
       <p>assets/ingredients_manifest.md</p>
-      <p>assets/placeholder/*</p>
+      <p>assets/refs/*</p>
     </div>
 
     <h2>Where to save your images</h2>
     <p>Save reference images into:</p>
-    <p>• assets/placeholder/styles/</p>
-    <p>• assets/placeholder/locations/</p>
-    <p>• assets/placeholder/characters/</p>
-    <p>• assets/placeholder/props/</p>
+    <p>• assets/refs/styles/</p>
+    <p>• assets/refs/locations/</p>
+    <p>• assets/refs/characters/</p>
+    <p>• assets/refs/props/</p>
     <p>Use the exact filenames listed in assets/ingredients_manifest.md (example: style_01_ref_01.png).</p>
   </section>
   <div class="page-split"></div>
@@ -112,7 +121,7 @@
     <h2>Open:</h2>
     <div class="open-list">
       <p>Shot prompts: prompts/shot_prompts.md</p>
-      <p>bindings/bindings.csv</p>
+      <p>shots/bindings.csv</p>
       <p>shots/shot_list.csv</p>
     </div>
   </section>
@@ -132,11 +141,11 @@
     <p>Keeper discipline keeps you moving: pick what cuts well, reroll only what fails.</p>
 
     <h2>Keeper Sheet</h2>
-    <p>Open rubric/scoring_sheet.csv. For each shot: keeper 0/1, rate character/location/style (1–5), add a short note.</p>
+    <p>Open keepers/scoring_sheet.csv. For each shot: keeper 0/1, rate character/location/style (1–5), add a short note.</p>
 
     <h2>Open:</h2>
     <div class="open-list">
-      <p>rubric/scoring_sheet.csv</p>
+      <p>keepers/scoring_sheet.csv</p>
     </div>
 
     <div class="final-note">
@@ -167,14 +176,14 @@
     <p>• Dialogue (ADR/VO): audio/dialogue_script.txt + audio/voice_bible.md</p>
     <p>• SFX/ambience: audio/sfx_cue_sheet.md</p>
     <p>• Mix: dialogue first, SFX second, music last</p>
-    <p>• Optional: edit/subtitles.srt is an editing guide only; disable before final export</p>
+    <p>• Optional: edit_guide/subtitles.srt is an editing guide only; disable before final export</p>
 
     <h2>Open:</h2>
     <div class="open-list">
       <p>audio/dialogue_script.txt</p>
       <p>audio/voice_bible.md</p>
       <p>audio/sfx_cue_sheet.md</p>
-      <p>edit/subtitles.srt</p>
+      <p>edit_guide/subtitles.srt</p>
     </div>
   </section>
 </body>

@@ -3,14 +3,12 @@ from __future__ import annotations
 import importlib
 import importlib.metadata
 import base64
-import hashlib
 import os
 import platform
 import re
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
-from tempfile import gettempdir
 
 RUNWAY_PROVIDER = "runway.gen4_image_refs"
 PROGRESS_TEXT = "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio"
@@ -69,32 +67,7 @@ def _logo_uri(logo_path: Path | None) -> str | None:
         encoded = base64.b64encode(png_bytes).decode("ascii")
         return f"data:image/png;base64,{encoded}"
 
-    try:
-        from PIL import Image, ImageChops
-    except Exception:
-        return _data_uri(logo_path.read_bytes())
-
-    try:
-        source = logo_path.resolve()
-        with Image.open(source) as raw:
-            image = raw.convert("RGBA")
-            bg = Image.new("RGBA", image.size, image.getpixel((0, 0)))
-            diff = ImageChops.difference(image, bg)
-            box = diff.getbbox()
-            if box is None:
-                return source.as_uri()
-            cropped = image.crop(box)
-            pad = max(8, int(max(cropped.size) * 0.08))
-            framed = Image.new("RGBA", (cropped.width + pad * 2, cropped.height + pad * 2), (255, 255, 255, 0))
-            framed.paste(cropped, (pad, pad), cropped)
-
-            stamp = f"{source}:{source.stat().st_mtime_ns}:{source.stat().st_size}"
-            digest = hashlib.sha256(stamp.encode("utf-8")).hexdigest()[:16]
-            out_path = Path(gettempdir()) / f"renderscript_logo_{digest}.png"
-            framed.save(out_path, format="PNG")
-            return _data_uri(out_path.read_bytes())
-    except Exception:
-        return _data_uri(logo_path.read_bytes())
+    return _data_uri(logo_path.read_bytes())
 
 
 def _render_html(
@@ -118,7 +91,7 @@ def _render_html(
         progress_text=PROGRESS_TEXT,
         prompt_path=prompt_path,
         asset_prompts_path=asset_prompts_path,
-        keeper_sheet_path="rubric/scoring_sheet.csv",
+        keeper_sheet_path="keepers/scoring_sheet.csv",
         scene_meta=_safe_scene_meta(scene_heading, scene_id, shot_count),
         logo_uri=_logo_uri(logo_path),
     )
@@ -264,7 +237,7 @@ def _fallback_pages(prompt_path: str, asset_prompts_path: str, provider: str, sc
             "Page 2: Refs",
             "Open: prompts/asset_prompts.md",
             "Open: assets/ingredients_manifest.md",
-            "Open: assets/placeholder/*",
+            "Open: assets/refs/*",
             f"Asset prompts path: {asset_prompts_path}",
             "Use exact naming and minimum reference set.",
         ],
@@ -282,11 +255,11 @@ def _fallback_pages(prompt_path: str, asset_prompts_path: str, provider: str, sc
             "Open: audio/dialogue_script.txt",
             "Open: audio/voice_bible.md",
             "Open: audio/sfx_cue_sheet.md",
-            "Open: optional edit/subtitles.srt",
+            "Open: optional edit_guide/subtitles.srt",
         ],
         [
             "Page 5: Keepers + Iterate",
-            "Open: rubric/scoring_sheet.csv (Keeper Sheet)",
+            "Open: keepers/scoring_sheet.csv (Keeper Sheet)",
             "Pick keeper per shot, reroll only failing beats, and iterate.",
             runway_line,
         ],
