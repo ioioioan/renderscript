@@ -14,7 +14,6 @@
     </div>
     <section class="hero-inline">
       <h1>Screenplay in. RenderPackage out.</h1>
-      <p>Upload a Fountain screenplay, choose provider + scene, and export a zip with shot list, asset bindings, provider prompts, and run instructions.</p>
       <div class="hero-actions">
         <a href="/static/sample_RenderPackage.zip" class="secondary" download="sample_RenderPackage.zip">View sample package</a>
       </div>
@@ -22,134 +21,153 @@
   </header>
 
   <main class="workspace">
-    <section id="app-panel" class="panel app-panel">
-      <h2>Build a RenderPackage</h2>
-      {% if error %}
-      <div class="error">{{ error }}</div>
-      {% endif %}
-
-      <form id="build-form" action="/build" method="post" enctype="multipart/form-data">
-        <label for="screenplay_file">Screenplay file</label>
-        <input id="screenplay_file" name="screenplay_file" type="file" accept=".fountain,.fnt,text/plain" required>
-        <div class="hint">Accepted screenplay format: <strong>.fountain</strong> (also supports <strong>.fnt</strong>).</div>
-        <div id="file-picked" class="meta hidden"></div>
-
-        <label for="provider">Provider</label>
-        <select id="provider" name="provider">
-          {% for item in providers %}
-          <option value="{{ item }}" {% if provider == item %}selected{% endif %}>
-            {% if item == "universal" %}Universal - Any AI Video Tool{% elif item == "runway.gen4_image_refs" %}Runway{% else %}{{ item }}{% endif %}
-          </option>
-          {% endfor %}
-        </select>
-
-        <div id="scene-simple" class="hint">Single-scene scripts default to scene 1.</div>
-        <div id="scene-advanced" class="hidden">
-          <label for="scene">Scene ordinal</label>
-          <select id="scene" name="scene"></select>
-        </div>
-        <input id="scene-hidden" type="hidden" name="scene" value="{{ scene }}">
-
-        <label for="project">Project name</label>
-        <input id="project" name="project" type="text" value="{{ project if project != 'project' else '' }}" placeholder="project" required>
-
-        <button id="submit-btn" type="submit">Build RenderPackage</button>
-      </form>
-    </section>
-
-    <aside class="panel info-panel">
+    <section class="panel integrated-panel">
       <nav class="topnav in-panel">
         <button class="tab-btn active" data-tab="app" type="button">App</button>
         <button class="tab-btn" data-tab="creators" type="button">Creators</button>
         <button class="tab-btn" data-tab="developers" type="button">Developers</button>
+        <button class="tab-btn" data-tab="about" type="button">About</button>
       </nav>
 
       <section class="tab-pane active" data-pane="app">
-        <h3>App</h3>
+        <h2>Build a RenderPackage</h2>
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
         <p>
-          This app packages one screenplay scene into a RenderPackage: a practical workflow for AI video generation.
-          You export a single downloadable file in <code>.zip</code> format containing a structured production kit.
+          RenderScript packages one screenplay scene into a RenderPackage - a practical workflow for AI video generation.
         </p>
-        <ul>
+        <p>
+          The output is a downloadable <code>.zip</code> file containing a structured production kit: shot planning files,
+          provider-ready prompts, a Keeper Sheet, and audio post-production guides.
+        </p>
+        <ol class="app-instructions">
           <li>
-            Upload a screenplay file in <code>.fountain</code> format.
-            Fountain is a plain-text screenplay format used by writers and developers because it is easy to read,
-            version, and convert from script tools.
+            Upload a screenplay in <code>.fountain</code> format.
+            Fountain is a plain-text screenplay format that is easy to read, version, and convert from common script tools.
           </li>
           <li>
-            If your script has multiple scenes, choose the scene number you want to package.
-            (If it has one scene, the app auto-selects scene 1.)
+            Select the scene you want to package.
+            If the script contains only one scene, scene 1 is selected automatically.
           </li>
           <li>
-            Select your provider and build the RenderPackage for that scene.
+            Choose your target provider and build the RenderPackage.
           </li>
-          <li>
-            Output format is a <code>.zip</code> file containing your RenderPackage, including shot planning files,
-            provider-ready prompts, Keeper Sheet, and audio post-production docs (dialogue, voice, and SFX cue sheets).
-          </li>
-        </ul>
+        </ol>
+        <form id="build-form" action="/build" method="post" enctype="multipart/form-data">
+          <label for="screenplay_file">Screenplay file</label>
+          <input id="screenplay_file" name="screenplay_file" type="file" accept=".fountain,.fnt,text/plain" required>
+          <div class="hint">Accepted screenplay format: <strong>.fountain</strong> (also supports <strong>.fnt</strong>).</div>
+          <div id="file-picked" class="meta hidden"></div>
+
+          <label for="provider">Provider</label>
+          <select id="provider" name="provider">
+            {% for item in providers %}
+            <option value="{{ item }}" {% if provider == item %}selected{% endif %}>
+              {% if item == "universal" %}Universal - Any AI Video Tool{% elif item == "runway.gen4_image_refs" %}Runway{% else %}{{ item }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+
+          <div id="scene-simple" class="hint">Single-scene scripts default to scene 1.</div>
+          <div id="scene-advanced" class="hidden">
+            <label for="scene">Scene number</label>
+            <select id="scene" name="scene"></select>
+          </div>
+          <input id="scene-hidden" type="hidden" name="scene" value="{{ scene }}">
+
+          <label for="project">Project name</label>
+          <input id="project" name="project" type="text" value="{{ project if project != 'project' else '' }}" placeholder="project" required>
+
+          <button id="submit-btn" type="submit">Build RenderPackage</button>
+          <div class="button-helper">
+            RenderScript builds the package. You run it in your chosen AI video tool.<br>
+            Downloads a RenderPackage <code>.zip</code> containing the full scene production kit.
+          </div>
+        </form>
       </section>
 
       <section class="tab-pane" data-pane="creators">
-        <h3>Creators</h3>
+        <h3>For Creators</h3>
         <p>
-          RenderScript is built for writer-directors and small teams who want to move fast in AI filmmaking without
-          losing control of the cut. Instead of treating each generation as a one-off prompt, it gives you a repeatable
-          production flow from shots and takes to keepers and edit.
+          RenderScript is designed for writer-directors and small teams exploring AI filmmaking.
         </p>
         <p>
-          The picture-first approach is central: focus on visual continuity first, then handle ADR/VO, SFX, and mix in
-          post. That principle is used in professional workflows broadly, but RenderScript makes it explicit inside the
-          package so teams can apply it consistently with AI-generated footage.
+          Instead of treating each generation as a one-off prompt, RenderScript creates a repeatable production workflow
+          built around shots, takes, keepers, and editing.
         </p>
         <p>
-          The result is fewer random rerolls, clearer creative decisions, and a cleaner path from screenplay scene to
+          The system follows a picture-first approach:
+        </p>
+        <p>
+          generate visuals first, then handle dialogue, sound effects, and mix in post.
+        </p>
+        <p>
+          This mirrors real production workflows and helps maintain visual continuity while working with AI video tools.
+        </p>
+        <p>
+          The result is fewer random rerolls, clearer creative decisions, and a smoother path from screenplay scene to
           rough cut.
-        </p>
-        <p>
-          Under the hood, the AI-assisted RenderScript compiler turns screenplay structure into a stable package
-          contract, so creators and developers can work from the same source of truth across prompts, shots, keepers,
-          and post.
         </p>
       </section>
 
       <section class="tab-pane" data-pane="developers">
-        <h3>Developers</h3>
+        <h3>For Developers</h3>
         <p>
-          RenderScript gives you a reliable packaging layer between screenplay text and AI video tooling. The goal is
-          simple: make creative intent machine-usable without locking teams to one provider or internal pipeline.
+          RenderScript provides a deterministic packaging layer between screenplay text and AI video tooling.
         </p>
         <p>
-          For product and pipeline teams, this means a stable handoff format you can validate, version, and automate in
-          CI while creators keep working in familiar script language.
+          Screenplays are compiled into a stable internal structure and exported as a RenderPackage - a portable
+          production kit that can be validated, versioned, and automated in pipelines.
+        </p>
+        <p>
+          This allows creative teams to work in familiar screenplay formats while engineering teams build tooling around
+          a predictable contract.
         </p>
         <p><strong>CLI quick start</strong></p>
         <ul>
           <li><code>python3 -m pip install -e .</code></li>
           <li><code>renderscript package path/to/script.fountain --scene 1 --provider universal -o ./out/package.zip</code></li>
-          <li>Provider options: <code>universal</code>, <code>runway.gen4_image_refs</code></li>
         </ul>
-        <p><strong>What you can build on top</strong></p>
+        <p><strong>Provider options</strong></p>
         <ul>
-          <li>Core contract: <code>rpack.json</code> + stable package file map</li>
-          <li>Provider adapters, internal QA checks, and custom orchestration wrappers</li>
-          <li>Studio UI: <code>renderscript.studio</code> (placeholder)</li>
-          <li>GitHub: <code>https://github.com/your-org/renderscript</code> (placeholder)</li>
+          <li>Universal - Any AI Video Tool</li>
+          <li>Runway</li>
+        </ul>
+        <p><strong>Developer links</strong></p>
+        <ul>
+          <li>Studio UI<br><code>renderscript.studio</code></li>
+          <li>GitHub<br><code>https://github.com/your-org/renderscript</code></li>
         </ul>
       </section>
-    </aside>
+
+      <section class="tab-pane" data-pane="about">
+        <h3>About RenderScript</h3>
+        <p>
+          RenderScript prepares screenplay scenes for AI video production.
+        </p>
+        <p>
+          It converts a scene into a RenderPackage: a structured toolkit containing shot planning files, prompt packs,
+          asset bindings, and post-production guides.
+        </p>
+        <p>
+          The goal is simple - make screenplay structure usable in AI video workflows.
+        </p>
+        <p>
+          RenderScript does not generate video. It builds a production package that creators run in their chosen AI
+          video tools.
+        </p>
+      </section>
+    </section>
   </main>
 
   <footer class="site-footer">
-    <div class="footer-links" aria-label="RenderScript social links">
-      <span class="footer-link" aria-label="YouTube placeholder">
-        <img src="/static/icons/youtube.svg" alt="" aria-hidden="true">
-        <span>YouTube</span>
-      </span>
-      <span class="footer-link" aria-label="X placeholder">
-        <img src="/static/icons/x.svg" alt="" aria-hidden="true">
-        <span>X</span>
-      </span>
+    <div class="footer-copy" aria-label="RenderScript footer">
+      <div class="footer-icons" aria-hidden="true">
+        <img src="/static/icons/youtube.svg" alt="">
+        <img src="/static/icons/x.svg" alt="">
+      </div>
+      <p>© 2026 RenderScript AI, RenderScript is an open-core project.</p>
     </div>
   </footer>
 
