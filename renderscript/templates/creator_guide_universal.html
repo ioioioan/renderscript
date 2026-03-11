@@ -18,13 +18,14 @@
 
     <h1>RenderPackage Creator Guide (Start here)</h1>
     <p>A RenderPackage is a scene-level production kit for AI video generation.</p>
-    <p><strong>Provider:</strong> Universal</p>
 
     <h2>Golden rule</h2>
     <p>Picture-first.</p>
     <p>No burned-in subtitles, captions, logos, watermarks, or on-screen text.</p>
     <p>If text appears in a generated shot, discard that take and generate again.</p>
     <p>Audio comes later: ADR / VO, sound effects, and mix are added after the rough cut.</p>
+    <h2>Generation workflow</h2>
+    <p>Open your AI video tool → apply references → paste the shot prompt → generate → mark keeper</p>
 
     <h2>Choose your starting workflow</h2>
     <p><strong>Path A — Prompts-only (quick test)</strong></p>
@@ -35,11 +36,14 @@
     <p>Use this when you can provide reference images.</p>
     <p>References improve consistency more than complex prompts.</p>
     <p>This package shows which references each shot expects.</p>
+    <h2>Workflow map</h2>
+    <p>Scene ↓ Generate refs ↓ Generate shot_001, shot_002, ... ↓ Mark keepers ↓ Edit ↓ Audio in post</p>
 
     <h2>Open:</h2>
     <div class="open-list">
       <p>PACKAGE_MAP.md</p>
-      <p>Shot prompts: prompts/shot_prompts.md</p>
+      <p>Universal shot prompts: prompts/shot_prompts.md</p>
+      <p>Provider-specific prompts: prompts/&lt;provider&gt;_prompts.md</p>
       <p>prompts/asset_prompts.md</p>
       <p>assets/ingredients_manifest.md</p>
       <p>shots/bindings.csv</p>
@@ -120,7 +124,8 @@
 
     <h2>Open:</h2>
     <div class="open-list">
-      <p>Shot prompts: prompts/shot_prompts.md</p>
+      <p>Universal shot prompts: prompts/shot_prompts.md</p>
+      <p>Provider-specific prompts: prompts/&lt;provider&gt;_prompts.md</p>
       <p>shots/bindings.csv</p>
       <p>shots/shot_list.csv</p>
     </div>

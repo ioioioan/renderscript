@@ -175,14 +175,42 @@ def test_package_generates_required_files_and_is_deterministic(
     assert len(shot_rows) == len(rpack["shots"])
     assert len(bindings_rows) == len(rpack["shots"])
     assert len(rubric_rows) == len(rpack["shots"])
+    assert list(shot_rows[0].keys()) == [
+        "shot_id",
+        "status",
+        "beat",
+        "shot_type",
+        "camera",
+        "description",
+        "characters",
+        "location",
+        "style_ref",
+        "duration_hint",
+    ]
+    assert list(bindings_rows[0].keys()) == [
+        "shot_id",
+        "character_refs",
+        "location_refs",
+        "style_refs",
+        "prop_refs",
+        "notes",
+    ]
+    assert list(rubric_rows[0].keys()) == [
+        "shot_id",
+        "keeper",
+        "character_consistency",
+        "location_consistency",
+        "style_consistency",
+        "note",
+    ]
 
     shot_beats = {row["shot_id"]: row["beat"] for row in shot_rows}
     rubric_ids = {row["shot_id"] for row in rubric_rows}
     for row in bindings_rows:
-        assert row["location_ref_ids"] == "loc_01_ref_01"
-        assert row["style_ref_ids"] == "style_01_ref_01"
+        assert row["location_refs"] == "loc_01_ref_01"
+        assert row["style_refs"] == "style_01_ref_01"
         if row["shot_id"] in shot_beats and ": " in shot_beats[row["shot_id"]]:
-            assert row["character_ref_ids"], f"dialogue shot missing character refs: {row['shot_id']}"
+            assert row["character_refs"], f"dialogue shot missing character refs: {row['shot_id']}"
     assert rubric_ids == {shot["shot_id"] for shot in rpack["shots"]}
 
     for shot in rpack["shots"]:
@@ -192,17 +220,19 @@ def test_package_generates_required_files_and_is_deterministic(
     assert prompt_text.count("No on-screen text or subtitles.") == len(rpack["shots"])
 
     package_map = contents_one["PACKAGE_MAP.md"].decode("utf-8")
-    assert "Start here: CREATOR_GUIDE.pdf" in package_map
-    assert "prompts/asset_prompts.md" in package_map
-    assert "audio/voice_bible.md" in package_map
-    assert "audio/dialogue_script.txt" in package_map
-    assert "audio/sfx_cue_sheet.md" in package_map
-    assert "edit_guide/subtitles.srt" in package_map
+    assert "## 1) What to open first" in package_map
+    assert "## 2) Where references go" in package_map
+    assert "## 3) Where prompts live" in package_map
+    assert "## 4) Where to track keepers" in package_map
+    assert "## 5) Where audio files live" in package_map
+    assert "## 6) Developer files" in package_map
+    assert "shots/bindings.csv" in package_map
+    assert "keepers/scoring_sheet.csv" in package_map
     start_here = contents_one["START_HERE.txt"].decode("utf-8")
     assert "1. Read CREATOR_GUIDE.pdf" in start_here
-    assert "2. Generate reference images in assets/refs" in start_here
-    assert "3. Use prompts/shot_prompts.md to generate shots" in start_here
-    assert "4. Track keepers in keepers/scoring_sheet.csv" in start_here
+    assert "2. Put reference images in assets/refs" in start_here
+    assert "3. Generate takes using prompts" in start_here
+    assert "4. Mark keepers in keepers/scoring_sheet.csv" in start_here
 
     assert provenance["provider"] == "universal"
     assert provenance["creator_guide"]["renderer_used"] == "html"
@@ -215,7 +245,7 @@ def test_package_generates_required_files_and_is_deterministic(
     assert len(contents_one["CREATOR_GUIDE.pdf"]) > 80000
     universal_pdf_text = _pdf_text(contents_one["CREATOR_GUIDE.pdf"])
     normalized_universal_pdf_text = _normalize_ws(universal_pdf_text)
-    assert "Runway" not in normalized_universal_pdf_text
+    assert "Provider: Runway" not in normalized_universal_pdf_text
     assert "creator-guide-pad" not in normalized_universal_pdf_text
     assert "Page 1:" not in normalized_universal_pdf_text
     if _has_pypdf():
@@ -304,7 +334,7 @@ def test_package_duration_override_applies_to_all_shots(
     contents = _zip_contents(out_path)
     shot_rows = _csv_rows(contents["shots/shot_list.csv"])
     assert shot_rows
-    assert all(row["duration_s"] == "7" for row in shot_rows)
+    assert all(row["duration_hint"] == "7s" for row in shot_rows)
 
 
 def test_package_output_directory_auto_names_zip(

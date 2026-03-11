@@ -93,18 +93,15 @@ def _resolve_output_path(
 
 
 def _render_scoring_sheet(shots: list[dict[str, object]]) -> str:
-    rows = [
-        [str(shot["shot_id"]), "", "", "", "", ""]
-        for shot in shots
-    ]
+    rows = [[str(shot["shot_id"]), "", "", "", "", ""] for shot in shots]
     return _to_csv(
         headers=[
             "shot_id",
             "keeper",
-            "character_consistency_1_5",
-            "location_consistency_1_5",
-            "style_consistency_1_5",
-            "notes",
+            "character_consistency",
+            "location_consistency",
+            "style_consistency",
+            "note",
         ],
         rows=rows,
     )
@@ -112,32 +109,39 @@ def _render_scoring_sheet(shots: list[dict[str, object]]) -> str:
 
 def _render_package_map(provider: str, prompt_path: str) -> str:
     return (
-        f"Start here: {CREATOR_GUIDE_FILENAME}\n\n"
-        f"- Package profile: `{provider}`.\n"
-        f"- If you want a fast creator walkthrough: open `{CREATOR_GUIDE_FILENAME}`.\n"
-        f"- If you want shot-by-shot prompts (default): open `{UNIVERSAL_PROMPTS_FILENAME}`.\n"
-        f"- If you want Runway-specific prompts: open `{RUNWAY_PROMPTS_FILENAME}`.\n"
-        "- If you want the required references list: open `assets/ingredients_manifest.md`.\n"
-        f"- If you want prompts to generate reference images: open `{ASSET_PROMPTS_FILENAME}`.\n"
-        "- If you want folders for reference assets: open `assets/refs/`.\n"
-        f"- If you want character voice guidance: open `{VOICE_BIBLE_FILENAME}`.\n"
-        f"- If you want dialogue lines for post audio: open `{DIALOGUE_SCRIPT_FILENAME}`.\n"
-        f"- If you want per-shot ambience/SFX cues: open `{SFX_CUE_SHEET_FILENAME}`.\n"
-        f"- If you want optional external subtitles for editing: open `{SUBTITLES_FILENAME}`.\n"
-        "- If you want durations and framing per shot: open `shots/shot_list.csv`.\n"
-        f"- If you want the Reference Map per shot: open `{BINDINGS_FILENAME}`.\n"
-        f"- If you want scoring and keeper tracking: open `{KEEPER_SHEET_FILENAME}`.\n"
-        f"- If you want machine-readable package details: open `{RPACK_FILENAME}`.\n"
-        f"- If you want provenance/debug metadata: open `{PROVENANCE_FILENAME}`.\n"
+        "# RenderPackage Map\n\n"
+        "## 1) What to open first\n\n"
+        f"- Start with `{CREATOR_GUIDE_FILENAME}`.\n"
+        "- Then follow `START_HERE.txt` for the quick flow.\n\n"
+        "## 2) Where references go\n\n"
+        "- Place all reference images inside `assets/refs/`.\n"
+        "- Use `assets/ingredients_manifest.md` for required IDs and naming.\n\n"
+        "## 3) Where prompts live\n\n"
+        f"- Universal shot prompts: `{UNIVERSAL_PROMPTS_FILENAME}`.\n"
+        "- Provider-specific prompts: `prompts/<provider>_prompts.md`.\n"
+        f"- In this package, provider profile is `{provider}` and provider prompt file is `{prompt_path}`.\n"
+        f"- Reference image prompt helper: `{ASSET_PROMPTS_FILENAME}`.\n\n"
+        "## 4) Where to track keepers\n\n"
+        "- Directing sheet: `shots/shot_list.csv`.\n"
+        f"- Reference map: `{BINDINGS_FILENAME}`.\n"
+        f"- Keeper tracking sheet: `{KEEPER_SHEET_FILENAME}`.\n\n"
+        "## 5) Where audio files live\n\n"
+        f"- Dialogue script: `{DIALOGUE_SCRIPT_FILENAME}`.\n"
+        f"- Voice guide: `{VOICE_BIBLE_FILENAME}`.\n"
+        f"- SFX cues: `{SFX_CUE_SHEET_FILENAME}`.\n"
+        f"- Optional subtitle guide: `{SUBTITLES_FILENAME}`.\n\n"
+        "## 6) Developer files\n\n"
+        f"- Machine-readable source of truth: `{RPACK_FILENAME}`.\n"
+        f"- Build/provenance metadata: `{PROVENANCE_FILENAME}`.\n"
     )
 
 
 def _render_start_here() -> str:
     return (
         "1. Read CREATOR_GUIDE.pdf\n"
-        "2. Generate reference images in assets/refs\n"
-        "3. Use prompts/shot_prompts.md to generate shots\n"
-        "4. Track keepers in keepers/scoring_sheet.csv\n"
+        "2. Put reference images in assets/refs\n"
+        "3. Generate takes using prompts\n"
+        "4. Mark keepers in keepers/scoring_sheet.csv\n"
     )
 
 
@@ -544,6 +548,58 @@ def _build_bindings(
     return out, required_refs
 
 
+def _scene_location_label(scene: dict[str, object]) -> str:
+    heading = scene.get("heading", {})
+    raw = str(heading.get("raw", "")) if isinstance(heading, dict) else ""
+    if not raw:
+        return "scene_location"
+    normalized = re.sub(r"^(INT\\.|EXT\\.|INT/EXT\\.|I/E\\.)\\s*", "", raw.strip(), flags=re.IGNORECASE)
+    core = normalized.split(" - ", 1)[0].strip()
+    return core or "scene_location"
+
+
+def _short_beat_label(text: str, max_words: int = 8) -> str:
+    cleaned = re.sub(r"\s+", " ", text.strip())
+    if ": " in cleaned:
+        cleaned = cleaned.split(": ", 1)[1].strip()
+    words = cleaned.split(" ")
+    return " ".join(words[:max_words]).strip()
+
+
+def _shot_type_for_unit(unit: dict[str, object], framing: str, index: int) -> str:
+    text = str(unit.get("text", "")).lower()
+    props = unit.get("props", [])
+    if any(token in text for token in ("walk", "run", "move", "crosses", "tracks")):
+        return "tracking"
+    if unit.get("type") == "dialogue":
+        return "over_shoulder"
+    if props and index % 4 == 0:
+        return "insert"
+    if framing == "wide":
+        return "wide_establishing"
+    if framing == "close":
+        return "close_up"
+    return "medium"
+
+
+def _camera_for_shot_type(shot_type: str) -> str:
+    mapping = {
+        "wide_establishing": "static",
+        "medium": "static",
+        "close_up": "slow_push",
+        "insert": "static",
+        "tracking": "tracking",
+        "over_shoulder": "over_shoulder",
+    }
+    return mapping.get(shot_type, "static")
+
+
+def _description_from_unit_text(text: str, max_words: int = 20) -> str:
+    cleaned = re.sub(r"\s+", " ", text.strip())
+    words = cleaned.split(" ")
+    return " ".join(words[:max_words]).strip()
+
+
 def _render_prompts(
     shots: list[dict[str, object]],
     bindings: dict[str, dict[str, list[str]]],
@@ -843,24 +899,41 @@ def package_fountain_file(
     bindings, required_refs = _build_bindings(shots, units=shot_units, doc=doc)
     character_ref_by_speaker = _character_ref_lookup(speaker_by_id)
     speaker_by_character_ref = {ref_id: speaker_id for speaker_id, ref_id in character_ref_by_speaker.items()}
+    character_name_by_ref: dict[str, str] = {}
     character_refs_for_prompts: list[tuple[str, str]] = []
     for ref_id in required_refs["character_ref_ids"]:
         speaker_id = speaker_by_character_ref.get(ref_id, "")
         speaker_name = speaker_by_id.get(speaker_id, speaker_id)
         if speaker_name:
+            character_name_by_ref[ref_id] = speaker_name
             character_refs_for_prompts.append((ref_id, speaker_name))
 
-    shot_rows = [
-        [
-            str(shot["shot_id"]),
-            str(shot["duration_s"]),
-            str(shot["framing"]),
-            str(shot["beat"]),
-            str(shot["notes"]),
-            "|".join(str(flag) for flag in shot["risk_flags"]),
-        ]
-        for shot in shots
-    ]
+    location_label = _scene_location_label(selected_scene)
+    shot_rows = []
+    for idx, shot in enumerate(shots):
+        shot_id = str(shot["shot_id"])
+        shot_bindings = bindings[shot_id]
+        unit = shot_units[idx] if idx < len(shot_units) else {}
+        beat_text = str(shot.get("beat", "")).strip()
+        shot_type = _shot_type_for_unit(unit, str(shot.get("framing", "")), idx + 1)
+        camera = _camera_for_shot_type(shot_type)
+        description = _description_from_unit_text(beat_text)
+        character_names = [character_name_by_ref.get(ref_id, ref_id) for ref_id in shot_bindings["character_ref_ids"]]
+        shot_rows.append(
+            [
+                shot_id,
+                "",
+                _short_beat_label(beat_text),
+                shot_type,
+                camera,
+                description,
+                ";".join(character_names),
+                location_label,
+                shot_bindings["style_ref_ids"][0] if shot_bindings["style_ref_ids"] else "",
+                f"{shot['duration_s']}s",
+            ]
+        )
+
     bindings_rows = []
     for shot in shots:
         shot_id = str(shot["shot_id"])
@@ -868,10 +941,11 @@ def package_fountain_file(
         bindings_rows.append(
             [
                 shot_id,
-                "|".join(shot_bindings["character_ref_ids"]),
-                "|".join(shot_bindings["location_ref_ids"]),
-                "|".join(shot_bindings["style_ref_ids"]),
-                "|".join(shot_bindings["prop_ref_ids"]),
+                ";".join(shot_bindings["character_ref_ids"]),
+                ";".join(shot_bindings["location_ref_ids"]),
+                ";".join(shot_bindings["style_ref_ids"]),
+                ";".join(shot_bindings["prop_ref_ids"]),
+                "Dialogue-driven shot" if shot_bindings["character_ref_ids"] else "",
             ]
         )
 
@@ -928,15 +1002,28 @@ def package_fountain_file(
         SFX_CUE_SHEET_FILENAME: _render_sfx_cue_sheet(shots=shots, units=shot_units),
         SUBTITLES_FILENAME: _render_subtitles_srt(shots=shots, units=shot_units),
         "shots/shot_list.csv": _to_csv(
-            headers=["shot_id", "duration_s", "framing", "beat", "notes", "risk_flags"], rows=shot_rows
+            headers=[
+                "shot_id",
+                "status",
+                "beat",
+                "shot_type",
+                "camera",
+                "description",
+                "characters",
+                "location",
+                "style_ref",
+                "duration_hint",
+            ],
+            rows=shot_rows,
         ),
         BINDINGS_FILENAME: _to_csv(
             headers=[
                 "shot_id",
-                "character_ref_ids",
-                "location_ref_ids",
-                "style_ref_ids",
-                "prop_ref_ids",
+                "character_refs",
+                "location_refs",
+                "style_refs",
+                "prop_refs",
+                "notes",
             ],
             rows=bindings_rows,
         ),

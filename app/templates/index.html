@@ -178,6 +178,17 @@
     const submitBtn = document.getElementById("submit-btn");
     const form = document.getElementById("build-form");
     const projectInput = document.getElementById("project");
+    const submitLabel = "Build RenderPackage";
+    let submitResetTimer = null;
+
+    function resetSubmitButton() {
+      if (submitResetTimer) {
+        clearTimeout(submitResetTimer);
+        submitResetTimer = null;
+      }
+      submitBtn.disabled = false;
+      submitBtn.textContent = submitLabel;
+    }
 
     function setSingleScene() {
       sceneSimple.classList.remove("hidden");
@@ -234,6 +245,14 @@
     form.addEventListener("submit", () => {
       submitBtn.disabled = true;
       submitBtn.textContent = "Building...";
+      // Download responses do not reload the page; recover button state automatically.
+      submitResetTimer = window.setTimeout(resetSubmitButton, 8000);
+    });
+
+    // Most browsers refocus the tab after a save dialog or download completion.
+    window.addEventListener("focus", resetSubmitButton);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) resetSubmitButton();
     });
 
     const tabButtons = document.querySelectorAll(".tab-btn");
