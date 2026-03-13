@@ -18,7 +18,6 @@ BASE_REQUIRED_PATHS = [
     "shots/shot_list.csv",
     "shots/bindings.csv",
     "prompts/shot_prompts.md",
-    "prompts/runway.gen4_image_refs_prompts.md",
     "prompts/asset_prompts.md",
     "assets/ingredients_manifest.md",
     "assets/refs/styles/",
@@ -35,8 +34,11 @@ BASE_REQUIRED_PATHS = [
 ]
 
 
-def _required_paths() -> list[str]:
-    return BASE_REQUIRED_PATHS
+def _required_paths(*, include_runway_prompts: bool = False) -> list[str]:
+    paths = list(BASE_REQUIRED_PATHS)
+    if include_runway_prompts:
+        paths.insert(paths.index("prompts/asset_prompts.md"), "prompts/runway.gen4_image_refs_prompts.md")
+    return paths
 
 
 def _zip_contents(path: Path) -> dict[str, bytes]:
@@ -362,7 +364,7 @@ def test_package_output_directory_auto_names_zip(
     assert len(outputs) == 1
     assert outputs[0].name.startswith("pilot_scene_001_runway_gen4_image_refs_renderpackage_v1")
     contents = _zip_contents(outputs[0])
-    assert set(contents.keys()) == set(_required_paths())
+    assert set(contents.keys()) == set(_required_paths(include_runway_prompts=True))
 
 
 def test_package_output_directory_auto_names_zip_for_universal(
@@ -465,6 +467,6 @@ def test_package_golden_expected_paths_universal_scene_one(
     assert (unpack_dir / "PACKAGE_MAP.md").read_text(encoding="utf-8").strip()
     assert (unpack_dir / "START_HERE.txt").read_text(encoding="utf-8").strip()
     assert (unpack_dir / "prompts/shot_prompts.md").read_text(encoding="utf-8").strip()
-    assert (unpack_dir / "prompts/runway.gen4_image_refs_prompts.md").read_text(encoding="utf-8").strip()
+    assert not (unpack_dir / "prompts/runway.gen4_image_refs_prompts.md").exists()
     assert (unpack_dir / "prompts/asset_prompts.md").read_text(encoding="utf-8").strip()
     assert (unpack_dir / "CREATOR_GUIDE.pdf").stat().st_size > 80000

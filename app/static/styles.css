@@ -142,6 +142,22 @@ label {
   font-weight: 700;
 }
 
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.checkbox-row-locked {
+  color: #6e6e80;
+}
+
 form input,
 form select,
 form button {

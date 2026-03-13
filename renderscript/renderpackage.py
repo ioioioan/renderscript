@@ -35,7 +35,6 @@ BASE_REQUIRED_FILES = [
     "shots/shot_list.csv",
     BINDINGS_FILENAME,
     UNIVERSAL_PROMPTS_FILENAME,
-    RUNWAY_PROMPTS_FILENAME,
     ASSET_PROMPTS_FILENAME,
     "assets/ingredients_manifest.md",
     "assets/refs/styles/",
@@ -62,8 +61,36 @@ def _prompt_filename_for_provider(provider: str) -> str:
     return UNIVERSAL_PROMPTS_FILENAME
 
 
-def _required_files() -> list[str]:
-    return BASE_REQUIRED_FILES
+def _required_files(prompt_files: list[str]) -> list[str]:
+    out = list(BASE_REQUIRED_FILES)
+    prompt_insert_idx = out.index(ASSET_PROMPTS_FILENAME)
+    for prompt_file in prompt_files:
+        if prompt_file not in out:
+            out.insert(prompt_insert_idx, prompt_file)
+            prompt_insert_idx += 1
+    return out
+
+
+def _prompt_files_for_package(provider: str, include_provider_prompts: list[str] | None = None) -> list[str]:
+    prompt_files = [UNIVERSAL_PROMPTS_FILENAME]
+    providers_to_include: list[str] = []
+
+    if provider != DEFAULT_PROVIDER:
+        providers_to_include.append(provider)
+    for extra in include_provider_prompts or []:
+        if extra not in providers_to_include:
+            providers_to_include.append(extra)
+
+    for provider_name in providers_to_include:
+        if provider_name not in SUPPORTED_PROVIDERS:
+            supported_str = ", ".join(SUPPORTED_PROVIDERS)
+            raise ValueError(f"Unsupported provider: {provider_name}. Supported providers: {supported_str}")
+        if provider_name == DEFAULT_PROVIDER:
+            continue
+        prompt_file = _prompt_filename_for_provider(provider_name)
+        if prompt_file not in prompt_files:
+            prompt_files.append(prompt_file)
+    return prompt_files
 
 
 def _now_iso_utc() -> str:
@@ -872,6 +899,7 @@ def package_fountain_file(
     output_path: Path,
     provider: str = DEFAULT_PROVIDER,
     provider_version: str = "",
+    include_provider_prompts: list[str] | None = None,
     scene_ordinal: int | None = None,
     duration_s: int = 3,
     project: str = "project",
@@ -887,7 +915,8 @@ def package_fountain_file(
     generated_at = _now_iso_utc()
     selected_scene = _extract_scene(doc, scene_ordinal)
     prompt_filename = _prompt_filename_for_provider(provider)
-    ordered_paths = _required_files()
+    prompt_files = _prompt_files_for_package(provider=provider, include_provider_prompts=include_provider_prompts)
+    ordered_paths = _required_files(prompt_files)
     speaker_by_id = _speaker_lookup(doc)
     resolved_output_path = _resolve_output_path(
         output_path=output_path,
@@ -1029,6 +1058,7 @@ def package_fountain_file(
         ),
         KEEPER_SHEET_FILENAME: _render_scoring_sheet(shots),
         UNIVERSAL_PROMPTS_FILENAME: _render_prompts(shots, bindings, provider=DEFAULT_PROVIDER),
-        RUNWAY_PROMPTS_FILENAME: _render_prompts(shots, bindings, provider=RUNWAY_PROVIDER),
     }
+    if RUNWAY_PROMPTS_FILENAME in prompt_files:
+        files[RUNWAY_PROMPTS_FILENAME] = _render_prompts(shots, bindings, provider=RUNWAY_PROVIDER)
     _write_deterministic_zip(resolved_output_path, files, ordered_paths=ordered_paths)

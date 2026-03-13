@@ -169,6 +169,7 @@ async def build(
     request: Request,
     screenplay_file: UploadFile = File(...),
     provider: str = Form(DEFAULT_PROVIDER),
+    include_provider_prompts: list[str] = Form(default=[]),
     scene: int = Form(1),
     project: str = Form(DEFAULT_PROJECT),
 ) -> Any:
@@ -202,6 +203,7 @@ async def build(
                 input_path=source_path,
                 output_path=output_path,
                 provider=provider_value,
+                include_provider_prompts=include_provider_prompts,
                 scene_ordinal=scene,
                 project=project_safe,
             )

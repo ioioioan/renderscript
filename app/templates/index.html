@@ -60,21 +60,27 @@
           <div class="hint">Accepted screenplay format: <strong>.fountain</strong> (also supports <strong>.fnt</strong>).</div>
           <div id="file-picked" class="meta hidden"></div>
 
-          <label for="provider">Provider</label>
-          <select id="provider" name="provider">
-            {% for item in providers %}
-            <option value="{{ item }}" {% if provider == item %}selected{% endif %}>
-              {% if item == "universal" %}Universal - Any AI Video Tool{% elif item == "runway.gen4_image_refs" %}Runway{% else %}{{ item }}{% endif %}
-            </option>
-            {% endfor %}
-          </select>
-
           <div id="scene-simple" class="hint">Single-scene scripts default to scene 1.</div>
           <div id="scene-advanced" class="hidden">
             <label for="scene">Scene number</label>
             <select id="scene" name="scene"></select>
           </div>
           <input id="scene-hidden" type="hidden" name="scene" value="{{ scene }}">
+
+          <label>Providers</label>
+          <input type="hidden" name="provider" value="universal">
+          <label class="checkbox-row checkbox-row-locked" for="provider-universal">
+            <input id="provider-universal" type="checkbox" checked disabled>
+            Universal
+          </label>
+          {% for item in providers %}
+          {% if item != "universal" %}
+          <label class="checkbox-row" for="include-provider-{{ loop.index }}">
+            <input id="include-provider-{{ loop.index }}" type="checkbox" name="include_provider_prompts" value="{{ item }}">
+            {% if item == "runway.gen4_image_refs" %}Runaway{% else %}{{ item.replace('.', ' ').replace('_', ' ').title() }}{% endif %}
+          </label>
+          {% endif %}
+          {% endfor %}
 
           <label for="project">Project name</label>
           <input id="project" name="project" type="text" value="{{ project if project != 'project' else '' }}" placeholder="project" required>

@@ -18,7 +18,9 @@ def test_ui_get_root_returns_200() -> None:
 
 
 def test_ui_build_returns_zip_for_one_scene_example(monkeypatch) -> None:
-    def fake_package_fountain_file(*, input_path, output_path, provider, scene_ordinal, project, provider_version=""):
+    def fake_package_fountain_file(
+        *, input_path, output_path, provider, scene_ordinal, project, provider_version="", include_provider_prompts=None
+    ):
         with ZipFile(output_path, "w", compression=ZIP_STORED) as zf:
             zf.writestr(
                 "dev/provenance.json",
