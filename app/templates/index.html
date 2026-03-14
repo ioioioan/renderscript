@@ -137,6 +137,28 @@
           <li>Pipeline integrations for studio or cloud workflows</li>
           <li>Downstream orchestration systems built around RenderPackage</li>
         </ul>
+        <p><strong>Why RenderPackage exists</strong></p>
+        <p>
+          RenderPackage exists to remove ambiguity between screenplay text and generation workflows.
+        </p>
+        <p>
+          Screenplays are written for humans and can be interpreted in many ways. RenderScript converts one scene into a deterministic generation plan: a shot list, reference bindings, prompt blocks, and a machine-readable package contract.
+        </p>
+        <p>
+          This means downstream tools do not need to parse screenplay text or infer shot structure. They can operate directly on the structured package data.
+        </p>
+        <p>
+          The package is designed so that:
+        </p>
+        <ul>
+          <li>creators work in screenplay language</li>
+          <li>the package provides a stable handoff format</li>
+          <li>developers can build automation, validation, or adapters around the package without modifying the creator workflow</li>
+        </ul>
+        <p>
+          The machine-readable contract for the package lives in:
+        </p>
+        <p><code>dev/rpack.json</code></p>
         <p><strong>Core package contract</strong></p>
         <p>
           RenderPackage is designed to be machine-consumable. Creator-facing files are included for workflow use, but
