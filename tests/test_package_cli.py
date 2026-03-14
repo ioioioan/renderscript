@@ -9,6 +9,7 @@ from zipfile import ZipFile
 import pytest
 
 from renderscript import cli
+from renderscript.providers import GROK_PROVIDER, PROVIDER_REGISTRY
 
 
 BASE_REQUIRED_PATHS = [
@@ -34,11 +35,22 @@ BASE_REQUIRED_PATHS = [
 ]
 
 
-def _required_paths(*, include_runway_prompts: bool = False) -> list[str]:
+def _required_paths(*, include_runway_prompts: bool = False, include_grok_prompts: bool = False) -> list[str]:
     paths = list(BASE_REQUIRED_PATHS)
     if include_runway_prompts:
         paths.insert(paths.index("prompts/asset_prompts.md"), "prompts/runway.gen4_image_refs_prompts.md")
+    if include_grok_prompts:
+        paths.insert(paths.index("prompts/asset_prompts.md"), "prompts/grok.imagine_prompts.md")
     return paths
+
+
+def test_provider_registry_includes_grok_imagine() -> None:
+    grok = PROVIDER_REGISTRY[GROK_PROVIDER]
+    assert grok.id == "grok.imagine"
+    assert grok.label == "Grok Imagine"
+    assert grok.prompt_filename == "prompts/grok.imagine_prompts.md"
+    assert grok.supported is True
+    assert grok.requires_reference_image is True
 
 
 def _zip_contents(path: Path) -> dict[str, bytes]:
@@ -161,6 +173,7 @@ def test_package_generates_required_files_and_is_deterministic(
     rpack = json.loads(contents_one["dev/rpack.json"].decode("utf-8"))
     provenance = json.loads(contents_one["dev/provenance.json"].decode("utf-8"))
     assert rpack["target_provider"] == "universal"
+    assert rpack["selected_providers"] == ["universal"]
     assert rpack["generator"]["name"] == "RenderScript AI"
     assert "version" in rpack["generator"]
     assert isinstance(rpack["generated_at"], str)
@@ -237,6 +250,7 @@ def test_package_generates_required_files_and_is_deterministic(
     assert "This package uses the Universal workflow." in package_map
     assert "Use `prompts/shot_prompts.md` to generate shots." in package_map
     assert "provider profile" not in package_map
+    assert "Grok Imagine" not in package_map
     start_here = contents_one["START_HERE.txt"].decode("utf-8")
     assert "1. Read CREATOR_GUIDE.pdf" in start_here
     assert "2. Put reference images in assets/refs" in start_here
@@ -432,6 +446,43 @@ def test_package_output_directory_auto_names_zip_for_universal(
     outputs = sorted(out_dir.glob("*.zip"))
     assert len(outputs) == 1
     assert outputs[0].name.startswith("pilot_scene_001_universal_renderpackage_v1")
+
+
+def test_package_add_pack_grok_generates_grok_prompt_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = Path("examples/t1_dialogue_attribution.fountain")
+    out_path = tmp_path / "out.zip"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "renderscript",
+            "package",
+            str(source),
+            "--provider",
+            "universal",
+            "--add-pack",
+            "grok.imagine",
+            "-o",
+            str(out_path),
+        ],
+    )
+    assert cli.main() == 0
+    contents = _zip_contents(out_path)
+    assert set(contents.keys()) == set(_required_paths(include_grok_prompts=True))
+    assert "prompts/grok.imagine_prompts.md" in contents
+    grok_prompt_text = contents["prompts/grok.imagine_prompts.md"].decode("utf-8")
+    assert "# Grok Imagine Prompts" in grok_prompt_text
+    assert (
+        "Grok Imagine video workflows typically start from a reference image. "
+        "For best results, attach at least a style or character reference image before generating."
+    ) in grok_prompt_text
+    assert "How to apply refs:" in grok_prompt_text
+    package_map = contents["PACKAGE_MAP.md"].decode("utf-8")
+    assert "Grok Imagine" in package_map
+    assert "`prompts/grok.imagine_prompts.md`" in package_map
+    rpack = json.loads(contents["dev/rpack.json"].decode("utf-8"))
+    assert rpack["selected_providers"] == ["universal", "grok.imagine"]
 
 
 def test_package_runway_provider_generates_runway_prompt_file(

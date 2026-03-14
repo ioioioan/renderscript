@@ -10,7 +10,8 @@ from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 
-RUNWAY_PROVIDER = "runway.gen4_image_refs"
+from .providers import DEFAULT_PROVIDER, RUNWAY_PROVIDER, get_provider
+
 PROGRESS_TEXT = "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio"
 MIN_CREATOR_GUIDE_BYTES = 50_001
 STRICT_PDF_ENV = "RENDERSCRIPT_STRICT_PDF"
@@ -29,11 +30,11 @@ def _is_runway(provider: str) -> bool:
 
 
 def _provider_label(provider: str) -> str:
-    return "Runway" if _is_runway(provider) else "Universal"
+    return get_provider(provider).label
 
 
 def _title_for_provider(provider: str) -> str:
-    return "Creator Guide - Runway" if _is_runway(provider) else "Creator Guide - Universal"
+    return f"Creator Guide - {get_provider(provider).label}"
 
 
 def _safe_scene_meta(scene_heading: str | None, scene_id: str | None, shot_count: int | None) -> list[tuple[str, str]]:

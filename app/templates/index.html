@@ -76,13 +76,11 @@
               <input id="provider-universal" type="checkbox" checked disabled>
               Universal
             </label>
-            {% for item in providers %}
-            {% if item != "universal" %}
+            {% for adapter in providers %}
             <label class="checkbox-row" for="include-provider-{{ loop.index }}">
-              <input id="include-provider-{{ loop.index }}" type="checkbox" name="include_provider_prompts" value="{{ item }}">
-              {% if item == "runway.gen4_image_refs" %}Runway{% else %}{{ item.replace('.', ' ').replace('_', ' ').title() }}{% endif %}
+              <input id="include-provider-{{ loop.index }}" type="checkbox" name="include_provider_prompts" value="{{ adapter.id }}">
+              {{ adapter.label }}
             </label>
-            {% endif %}
             {% endfor %}
           </div>
 
@@ -150,11 +148,13 @@
         <ul>
           <li><code>python3 -m pip install -e .</code></li>
           <li><code>renderscript package path/to/script.fountain --scene 1 --provider universal -o ./out/package.zip</code></li>
+          <li><code>renderscript package path/to/script.fountain --scene 1 --provider universal --add-pack grok.imagine -o ./out/package.zip</code></li>
         </ul>
         <p><strong>Provider options</strong></p>
         <ul>
           <li>Universal → <code>universal</code></li>
           <li>Runway Gen-4 References → <code>runway.gen4_image_refs</code></li>
+          <li>Grok Imagine → <code>grok.imagine</code></li>
         </ul>
         <p><strong>Where to go next</strong></p>
         <ul>

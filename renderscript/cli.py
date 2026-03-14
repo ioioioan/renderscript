@@ -10,6 +10,7 @@ from pathlib import Path
 from . import __version__
 from .compiler import compile_file, compile_fountain_text, write_rscript
 from .prompt import render_prompt
+from .providers import SUPPORTED_PROVIDERS
 from .renderpackage import package_fountain_file
 from .validate import validate_document, validate_file
 
@@ -99,6 +100,7 @@ def build_parser() -> argparse.ArgumentParser:
     package_parser = subparsers.add_parser("package")
     package_parser.add_argument("input", type=Path)
     package_parser.add_argument("--provider", type=str, default="universal")
+    package_parser.add_argument("--add-pack", dest="include_provider_prompts", action="append", default=[])
     package_parser.add_argument("--provider-version", type=str, default="")
     package_parser.add_argument("--scene", type=int)
     package_parser.add_argument("--duration-s", type=int, default=3)
@@ -151,11 +153,16 @@ def main() -> int:
         try:
             if args.duration_s <= 0:
                 raise ValueError("--duration-s must be a positive integer")
+            if args.provider not in SUPPORTED_PROVIDERS:
+                raise ValueError(
+                    f"Unsupported provider: {args.provider}. Supported providers: {', '.join(SUPPORTED_PROVIDERS)}"
+                )
             package_fountain_file(
                 input_path=args.input,
                 output_path=args.output,
                 provider=args.provider,
                 provider_version=args.provider_version,
+                include_provider_prompts=args.include_provider_prompts,
                 scene_ordinal=args.scene,
                 duration_s=args.duration_s,
                 project=args.project,

@@ -11,14 +11,19 @@ from zipfile import ZIP_STORED, ZipFile, ZipInfo
 from . import __version__
 from .compiler import compile_fountain_text
 from .pdf_guide import render_creator_guide_pdf
+from .providers import (
+    DEFAULT_PROVIDER,
+    GROK_PROVIDER,
+    PROVIDER_REGISTRY,
+    RUNWAY_PROVIDER,
+    SUPPORTED_PROVIDERS,
+    get_provider,
+)
 
-
-DEFAULT_PROVIDER = "universal"
-RUNWAY_PROVIDER = "runway.gen4_image_refs"
-SUPPORTED_PROVIDERS = (DEFAULT_PROVIDER, RUNWAY_PROVIDER)
 ASSET_PROMPTS_FILENAME = "prompts/asset_prompts.md"
-UNIVERSAL_PROMPTS_FILENAME = "prompts/shot_prompts.md"
-RUNWAY_PROMPTS_FILENAME = f"prompts/{RUNWAY_PROVIDER}_prompts.md"
+UNIVERSAL_PROMPTS_FILENAME = PROVIDER_REGISTRY[DEFAULT_PROVIDER].prompt_filename
+RUNWAY_PROMPTS_FILENAME = PROVIDER_REGISTRY[RUNWAY_PROVIDER].prompt_filename
+GROK_PROMPTS_FILENAME = PROVIDER_REGISTRY[GROK_PROVIDER].prompt_filename
 VOICE_BIBLE_FILENAME = "audio/voice_bible.md"
 DIALOGUE_SCRIPT_FILENAME = "audio/dialogue_script.txt"
 SFX_CUE_SHEET_FILENAME = "audio/sfx_cue_sheet.md"
@@ -56,9 +61,7 @@ FRAMING_CYCLE = ("wide", "medium", "close")
 
 
 def _prompt_filename_for_provider(provider: str) -> str:
-    if provider == RUNWAY_PROVIDER:
-        return RUNWAY_PROMPTS_FILENAME
-    return UNIVERSAL_PROMPTS_FILENAME
+    return get_provider(provider).prompt_filename
 
 
 def _required_files(prompt_files: list[str]) -> list[str]:
@@ -82,15 +85,24 @@ def _prompt_files_for_package(provider: str, include_provider_prompts: list[str]
             providers_to_include.append(extra)
 
     for provider_name in providers_to_include:
-        if provider_name not in SUPPORTED_PROVIDERS:
-            supported_str = ", ".join(SUPPORTED_PROVIDERS)
-            raise ValueError(f"Unsupported provider: {provider_name}. Supported providers: {supported_str}")
+        get_provider(provider_name)
         if provider_name == DEFAULT_PROVIDER:
             continue
         prompt_file = _prompt_filename_for_provider(provider_name)
         if prompt_file not in prompt_files:
             prompt_files.append(prompt_file)
     return prompt_files
+
+
+def _selected_providers(provider: str, include_provider_prompts: list[str] | None = None) -> list[str]:
+    selected = [DEFAULT_PROVIDER]
+    if provider != DEFAULT_PROVIDER:
+        selected.append(provider)
+    for extra in include_provider_prompts or []:
+        get_provider(extra)
+        if extra != DEFAULT_PROVIDER and extra not in selected:
+            selected.append(extra)
+    return selected
 
 
 def _now_iso_utc() -> str:
@@ -134,10 +146,19 @@ def _render_scoring_sheet(shots: list[dict[str, object]]) -> str:
     )
 
 
-def _render_package_map(provider: str, prompt_path: str) -> str:
+def _render_package_map(provider: str, prompt_path: str, selected_provider_ids: list[str]) -> str:
     workflow_line = "This package uses the Universal workflow."
-    if provider == RUNWAY_PROVIDER:
-        workflow_line = "This package uses the Runway Gen-4 References workflow."
+    if provider != DEFAULT_PROVIDER:
+        workflow_line = f"This package uses the {get_provider(provider).label} workflow."
+    optional_lines: list[str] = []
+    optional_provider_ids = [provider_id for provider_id in selected_provider_ids if provider_id != DEFAULT_PROVIDER]
+    if optional_provider_ids:
+        optional_labels = ", ".join(get_provider(provider_id).label for provider_id in optional_provider_ids)
+        optional_files = ", ".join(f"`{_prompt_filename_for_provider(provider_id)}`" for provider_id in optional_provider_ids)
+        optional_lines.append(f"- Optional provider prompt packs in this package: {optional_labels}.")
+        optional_lines.append(f"- Optional provider prompt files: {optional_files}.")
+    else:
+        optional_lines.append("- Add optional provider prompt packs when you want tool-specific prompt formatting.")
     return (
         "# RenderPackage Map\n\n"
         "## 1) What to open first\n\n"
@@ -151,6 +172,8 @@ def _render_package_map(provider: str, prompt_path: str) -> str:
         "- Provider-specific prompts: `prompts/<provider>_prompts.md`.\n"
         f"- {workflow_line}\n"
         f"- Use `{prompt_path}` to generate shots.\n"
+        + "\n".join(optional_lines)
+        + "\n"
         f"- Reference image prompt helper: `{ASSET_PROMPTS_FILENAME}`.\n\n"
         "## 4) Where to track keepers\n\n"
         "- Directing sheet: `shots/shot_list.csv`.\n"
@@ -774,11 +797,11 @@ def _render_prompts(
     bindings: dict[str, dict[str, list[str]]],
     provider: str,
 ) -> str:
-    title = (
-        "# Runway Gen-4 Image References Prompts"
-        if provider == RUNWAY_PROVIDER
-        else "# Universal RenderPackage Prompts"
-    )
+    provider_label = get_provider(provider).label
+    if provider == DEFAULT_PROVIDER:
+        title = "# Universal RenderPackage Prompts"
+    else:
+        title = f"# {provider_label} Prompts"
     lines = [
         title,
         "",
@@ -788,6 +811,13 @@ def _render_prompts(
         "> Drift warning: outputs can still vary; review each shot for continuity.",
         "",
     ]
+    if provider == GROK_PROVIDER:
+        lines.extend(
+            [
+                "Grok Imagine video workflows typically start from a reference image. For best results, attach at least a style or character reference image before generating.",
+                "",
+            ]
+        )
     for shot in shots:
         shot_id = str(shot["shot_id"])
         shot_bindings = bindings[shot_id]
@@ -800,6 +830,16 @@ def _render_prompts(
                 f"character={', '.join(shot_bindings['character_ref_ids']) or 'none'}, "
                 f"location={', '.join(shot_bindings['location_ref_ids'])}, "
                 f"style={', '.join(shot_bindings['style_ref_ids'])}"
+            )
+        elif provider == GROK_PROVIDER:
+            lines.append(
+                "Required ref IDs: "
+                f"character={', '.join(shot_bindings['character_ref_ids']) or 'none'}, "
+                f"location={', '.join(shot_bindings['location_ref_ids'])}, "
+                f"style={', '.join(shot_bindings['style_ref_ids'])}"
+            )
+            lines.append(
+                "How to apply refs: Attach at least a style or character reference image before generating when available. Keep the same refs on rerolls."
             )
         else:
             lines.append("Apply references: Attach style/location/character reference images if your tool supports them.")
@@ -1040,6 +1080,7 @@ def _render_rpack_json(
     generated_at: str,
     creator_guide_renderer_used: str,
     creator_guide_error: str,
+    selected_providers: list[str],
 ) -> str:
     heading = scene.get("heading", {})
     heading_raw = heading.get("raw", "") if isinstance(heading, dict) else ""
@@ -1047,6 +1088,7 @@ def _render_rpack_json(
         "rpack_version": "0.1",
         "target_provider": target_provider,
         "target_provider_version": target_provider_version,
+        "selected_providers": selected_providers,
         "source": {"filename": source_name, "hash": source_hash},
         "generator": {"name": "RenderScript AI", "version": __version__},
         "generated_at": generated_at,
@@ -1099,9 +1141,7 @@ def package_fountain_file(
     duration_s: int = 3,
     project: str = "project",
 ) -> None:
-    if provider not in SUPPORTED_PROVIDERS:
-        supported_str = ", ".join(SUPPORTED_PROVIDERS)
-        raise ValueError(f"Unsupported provider: {provider}. Supported providers: {supported_str}")
+    get_provider(provider)
 
     text = input_path.read_text(encoding="utf-8")
     doc = compile_fountain_text(text, source_name=input_path.name)
@@ -1110,6 +1150,7 @@ def package_fountain_file(
     generated_at = _now_iso_utc()
     selected_scene = _extract_scene(doc, scene_ordinal)
     prompt_filename = _prompt_filename_for_provider(provider)
+    selected_provider_ids = _selected_providers(provider=provider, include_provider_prompts=include_provider_prompts)
     prompt_files = _prompt_files_for_package(provider=provider, include_provider_prompts=include_provider_prompts)
     ordered_paths = _required_files(prompt_files)
     speaker_by_id = _speaker_lookup(doc)
@@ -1202,6 +1243,7 @@ def package_fountain_file(
             generated_at=generated_at,
             creator_guide_renderer_used=guide_result.renderer_used,
             creator_guide_error=guide_result.error,
+            selected_providers=selected_provider_ids,
         ),
         PROVENANCE_FILENAME: _render_provenance_json(
             source_name=input_path.name,
@@ -1211,7 +1253,7 @@ def package_fountain_file(
             generated_at=generated_at,
             guide_debug_text=guide_result.debug_text,
         ),
-        "PACKAGE_MAP.md": _render_package_map(provider, prompt_filename),
+        "PACKAGE_MAP.md": _render_package_map(provider, prompt_filename, selected_provider_ids),
         CREATOR_GUIDE_FILENAME: guide_result.pdf_bytes,
         "assets/ingredients_manifest.md": _render_ingredients_manifest(required_refs),
         ASSET_PROMPTS_FILENAME: _render_asset_prompts(
@@ -1258,4 +1300,6 @@ def package_fountain_file(
     }
     if RUNWAY_PROMPTS_FILENAME in prompt_files:
         files[RUNWAY_PROMPTS_FILENAME] = _render_prompts(shots, bindings, provider=RUNWAY_PROVIDER)
+    if GROK_PROMPTS_FILENAME in prompt_files:
+        files[GROK_PROMPTS_FILENAME] = _render_prompts(shots, bindings, provider=GROK_PROVIDER)
     _write_deterministic_zip(resolved_output_path, files, ordered_paths=ordered_paths)
