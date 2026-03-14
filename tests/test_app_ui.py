@@ -45,3 +45,17 @@ def test_ui_build_returns_zip_for_one_scene_example(monkeypatch) -> None:
     assert response.headers["content-type"].startswith("application/zip")
     assert "attachment; filename=" in response.headers.get("content-disposition", "")
     assert len(response.content) > 0
+
+
+def test_ui_build_rejects_txt_upload_with_friendly_error() -> None:
+    response = client.post(
+        "/build",
+        data={
+            "provider": "universal",
+            "scene": "1",
+            "project": "ui_test",
+        },
+        files={"screenplay_file": ("notes.txt", b"INT. TEST ROOM - DAY\nA test.\n", "text/plain")},
+    )
+    assert response.status_code == 400
+    assert "Unsupported file type. Upload a .fountain or .fnt screenplay file." in response.text

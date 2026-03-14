@@ -58,6 +58,8 @@ def _scene_options_from_text(text: str, source_name: str = "upload.fountain") ->
 def _friendly_error_message(message: str) -> str:
     if "v1 supports one scene; pass --scene to select" in message:
         return "v1 supports one scene: choose a scene ordinal"
+    if message.startswith("Content appears before first scene heading:"):
+        return "Unsupported file type. Upload a .fountain or .fnt screenplay file."
     return message
 
 
@@ -110,9 +112,8 @@ async def _read_upload(upload: UploadFile) -> bytes:
 def _validate_upload_type(upload: UploadFile, data: bytes) -> str:
     filename = upload.filename or "upload.fountain"
     suffix = Path(filename).suffix.lower()
-    text_content_type = (upload.content_type or "").startswith("text/")
-    if suffix not in ALLOWED_SUFFIXES and not text_content_type and suffix != "":
-        raise ValueError("Unsupported file type. Use .fountain, .fnt, or plain text.")
+    if suffix not in ALLOWED_SUFFIXES:
+        raise ValueError("Unsupported file type. Upload a .fountain or .fnt screenplay file.")
     try:
         return data.decode("utf-8")
     except UnicodeDecodeError as exc:

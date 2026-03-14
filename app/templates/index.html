@@ -15,7 +15,7 @@
     <section class="hero-inline">
       <h1>Screenplay in. RenderPackage out.</h1>
       <div class="hero-actions">
-        <a href="/static/sample_RenderPackage.zip" class="secondary" download="sample_RenderPackage.zip">View sample package</a>
+        <a href="/static/sample_RenderPackage.zip" class="secondary" download="sample_RenderPackage.zip">Example RenderPackage</a>
       </div>
     </section>
   </header>
@@ -32,7 +32,7 @@
       <section class="tab-pane active" data-pane="app">
         <h2>Build a RenderPackage</h2>
         {% if error %}
-        <div class="error">{{ error }}</div>
+        <div id="form-error" class="error">{{ error }}</div>
         {% endif %}
         <p>
           RenderScript packages one screenplay scene into a RenderPackage - a practical workflow for AI video generation.
@@ -56,7 +56,7 @@
         </ol>
         <form id="build-form" action="/build" method="post" enctype="multipart/form-data">
           <label for="screenplay_file">Screenplay file</label>
-          <input id="screenplay_file" name="screenplay_file" type="file" accept=".fountain,.fnt,text/plain" required>
+          <input id="screenplay_file" name="screenplay_file" type="file" accept=".fountain,.fnt" required>
           <div id="format-scene-note" class="inline-note">
             Accepted screenplay format: <strong>.fountain</strong> (also supports <strong>.fnt</strong>). Single-scene scripts default to scene 1.
           </div>
@@ -87,7 +87,7 @@
           </div>
 
           <label for="project">Project name</label>
-          <input id="project" name="project" type="text" value="{{ project if project != 'project' else '' }}" placeholder="project" required>
+          <input id="project" name="project" type="text" value="{{ project if project != 'project' else '' }}" placeholder="Project" required>
 
           <button id="submit-btn" type="submit">Build RenderPackage</button>
           <div class="button-helper">
@@ -204,8 +204,14 @@
     const submitBtn = document.getElementById("submit-btn");
     const form = document.getElementById("build-form");
     const projectInput = document.getElementById("project");
+    const formError = document.getElementById("form-error");
     const submitLabel = "Build RenderPackage";
     let submitResetTimer = null;
+
+    function clearFormError() {
+      if (!formError) return;
+      formError.remove();
+    }
 
     function resetSubmitButton() {
       if (submitResetTimer) {
@@ -246,6 +252,8 @@
         return;
       }
 
+      clearFormError();
+
       filePicked.classList.remove("hidden");
       filePicked.textContent = `Selected: ${file.name}`;
       const stem = file.name.replace(/\.[^/.]+$/, "");
@@ -269,6 +277,7 @@
     });
 
     form.addEventListener("submit", () => {
+      clearFormError();
       submitBtn.disabled = true;
       submitBtn.textContent = "Building...";
       // Download responses do not reload the page; recover button state automatically.
