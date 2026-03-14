@@ -220,6 +220,10 @@ def test_package_generates_required_files_and_is_deterministic(
     assert "IMPORTANT: NO ON-SCREEN TEXT. NO SUBTITLES. NO CAPTIONS. NO WATERMARKS. NO LOGOS." in prompt_text
     assert "Generate picture-only shots. Audio/dialogue will be added in post." in prompt_text
     assert prompt_text.count("No on-screen text or subtitles.") == len(rpack["shots"])
+    assert ".." not in prompt_text
+    assert "?." not in prompt_text
+    assert "!." not in prompt_text
+    assert "  " not in prompt_text
 
     package_map = contents_one["PACKAGE_MAP.md"].decode("utf-8")
     assert "## 1) What to open first" in package_map
@@ -230,6 +234,9 @@ def test_package_generates_required_files_and_is_deterministic(
     assert "## 6) Developer files" in package_map
     assert "shots/bindings.csv" in package_map
     assert "keepers/scoring_sheet.csv" in package_map
+    assert "This package uses the Universal workflow." in package_map
+    assert "Use `prompts/shot_prompts.md` to generate shots." in package_map
+    assert "provider profile" not in package_map
     start_here = contents_one["START_HERE.txt"].decode("utf-8")
     assert "1. Read CREATOR_GUIDE.pdf" in start_here
     assert "2. Put reference images in assets/refs" in start_here
@@ -255,6 +262,8 @@ def test_package_generates_required_files_and_is_deterministic(
         assert "Keeper Sheet" in normalized_universal_pdf_text
         assert "rough cut" in normalized_universal_pdf_text
         assert "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_universal_pdf_text
+        assert "Example scene" in normalized_universal_pdf_text
+        assert "featuring Alice and Bob in Int. Server Room - Night." in normalized_universal_pdf_text
         assert "v0.1.0Page" not in universal_pdf_text
         assert _pdf_page_count(contents_one["CREATOR_GUIDE.pdf"]) == 5
     assert provenance["creator_guide"]["engine"] == "playwright"
@@ -337,6 +346,35 @@ def test_package_duration_override_applies_to_all_shots(
     shot_rows = _csv_rows(contents["shots/shot_list.csv"])
     assert shot_rows
     assert all(row["duration_hint"] == "7s" for row in shot_rows)
+
+
+def test_dialogue_heavy_scene_uses_varied_end_coverage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    source = Path("examples/t1_dialogue_attribution.fountain")
+    out_path = tmp_path / "out.zip"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "renderscript",
+            "package",
+            str(source),
+            "-o",
+            str(out_path),
+        ],
+    )
+    assert cli.main() == 0
+    contents = _zip_contents(out_path)
+    shot_rows = _csv_rows(contents["shots/shot_list.csv"])
+    assert len(shot_rows) >= 8
+    final_three = shot_rows[-3:]
+    final_descriptions = [row["description"] for row in final_three]
+    assert len(set(final_descriptions)) == len(final_descriptions)
+    assert any("Reaction on" in description for description in final_descriptions)
+    assert any("Two-shot coverage" in description for description in final_descriptions)
+    assert final_three[0]["characters"] == "Alice"
+    assert final_three[1]["characters"] == "Bob"
+    assert final_three[2]["characters"] == "Alice;Bob"
 
 
 def test_package_output_directory_auto_names_zip(

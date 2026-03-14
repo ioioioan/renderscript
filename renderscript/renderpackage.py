@@ -135,6 +135,9 @@ def _render_scoring_sheet(shots: list[dict[str, object]]) -> str:
 
 
 def _render_package_map(provider: str, prompt_path: str) -> str:
+    workflow_line = "This package uses the Universal workflow."
+    if provider == RUNWAY_PROVIDER:
+        workflow_line = "This package uses the Runway Gen-4 References workflow."
     return (
         "# RenderPackage Map\n\n"
         "## 1) What to open first\n\n"
@@ -146,7 +149,8 @@ def _render_package_map(provider: str, prompt_path: str) -> str:
         "## 3) Where prompts live\n\n"
         f"- Universal shot prompts: `{UNIVERSAL_PROMPTS_FILENAME}`.\n"
         "- Provider-specific prompts: `prompts/<provider>_prompts.md`.\n"
-        f"- In this package, provider profile is `{provider}` and provider prompt file is `{prompt_path}`.\n"
+        f"- {workflow_line}\n"
+        f"- Use `{prompt_path}` to generate shots.\n"
         f"- Reference image prompt helper: `{ASSET_PROMPTS_FILENAME}`.\n\n"
         "## 4) Where to track keepers\n\n"
         "- Directing sheet: `shots/shot_list.csv`.\n"
@@ -345,6 +349,24 @@ def _split_into_sentences(text: str) -> list[str]:
     return out or [text.strip()]
 
 
+def _clean_prompt_sentence(text: str) -> str:
+    cleaned = re.sub(r"\s+", " ", text.strip())
+    cleaned = re.sub(r"\s+([,.;:!?])", r"\1", cleaned)
+    cleaned = re.sub(r"\.{2,}", ".", cleaned)
+    cleaned = cleaned.replace("?.", "?").replace("!.", "!")
+    return cleaned.strip()
+
+
+def _format_prompt_line(beat: str, framing: str) -> str:
+    cleaned_beat = _clean_prompt_sentence(beat)
+    if cleaned_beat and cleaned_beat[-1] not in ".!?":
+        cleaned_beat = f"{cleaned_beat}."
+    return (
+        f"{cleaned_beat} Framing {framing}. "
+        "Stay in this location. Do not invent new characters or props. Keep consistent look."
+    ).strip()
+
+
 def _extract_caps_tokens(text: str) -> list[str]:
     seen: set[str] = set()
     out: list[str] = []
@@ -444,10 +466,123 @@ def _expand_units_to_min(units: list[dict[str, object]], min_shots: int) -> list
             next_unit["text"] = sentence
             replacements.append(next_unit)
         out = out[:split_idx] + replacements + out[split_idx + 1 :]
+    if len(out) < min_shots and out:
+        out = _expand_dialogue_coverage(out, min_shots)
     while len(out) < min_shots and out:
-        clone = dict(out[(len(out) - 1) % len(out)])
+        clone_source = out[(len(out) - 1) % len(out)]
+        clone = dict(clone_source)
+        clone["type"] = "coverage"
+        clone["coverage_kind"] = "hold"
+        base_text = _clean_prompt_sentence(str(clone_source.get("text", "")))
+        if clone.get("speaker_ids"):
+            clone["text"] = f"Hold on {', '.join(str(sid) for sid in clone['speaker_ids'])} after the beat: {base_text}"
+        else:
+            clone["text"] = f"Hold on the room after the beat: {base_text}"
         clone["notes"] = "Pacing hold"
+        clone["salience"] = 1
         out.append(clone)
+    return out
+
+
+def _dialogue_line_from_unit(unit: dict[str, object]) -> tuple[str, str]:
+    text = _clean_prompt_sentence(str(unit.get("text", "")))
+    if ": " not in text:
+        return "", text
+    speaker, line = text.split(": ", 1)
+    return speaker.strip(), line.strip()
+
+
+def _speaker_ids_from_unit(unit: dict[str, object]) -> list[str]:
+    return [str(sid) for sid in unit.get("speaker_ids", []) if str(sid)]
+
+
+def _dialogue_variant_units(
+    unit: dict[str, object],
+    prev_unit: dict[str, object] | None,
+    next_unit: dict[str, object] | None,
+    variant_budget: int,
+) -> list[dict[str, object]]:
+    if unit.get("type") != "dialogue" or variant_budget <= 0:
+        return []
+
+    speaker_name, line = _dialogue_line_from_unit(unit)
+    if not line:
+        return []
+
+    current_speaker_ids = _speaker_ids_from_unit(unit)
+    other_unit = next_unit if next_unit and next_unit.get("type") == "dialogue" else prev_unit
+    other_speaker_name = ""
+    other_speaker_ids: list[str] = []
+    if other_unit and other_unit.get("type") == "dialogue":
+        other_speaker_name, _ = _dialogue_line_from_unit(other_unit)
+        other_speaker_ids = _speaker_ids_from_unit(other_unit)
+        if other_speaker_name == speaker_name:
+            other_speaker_name = ""
+            other_speaker_ids = []
+
+    variants: list[dict[str, object]] = []
+    if other_speaker_name:
+        variants.append(
+            {
+                "type": "coverage",
+                "coverage_kind": "reaction",
+                "text": f"Reaction on {other_speaker_name} as {speaker_name} lands the line: {line}",
+                "speaker_ids": other_speaker_ids,
+                "props": [],
+                "salience": 2,
+                "notes": "Reaction coverage",
+            }
+        )
+    if variant_budget > len(variants):
+        if other_speaker_name:
+            variants.append(
+                {
+                    "type": "coverage",
+                    "coverage_kind": "two_shot",
+                    "text": f"Two-shot coverage holds {speaker_name} and {other_speaker_name} on the beat: {line}",
+                    "speaker_ids": sorted(set(current_speaker_ids + other_speaker_ids)),
+                    "props": [],
+                    "salience": 1,
+                    "notes": "Two-shot coverage",
+                }
+            )
+        else:
+            variants.append(
+                {
+                    "type": "coverage",
+                    "coverage_kind": "hold",
+                    "text": f"Hold on {speaker_name} after the beat: {line}",
+                    "speaker_ids": current_speaker_ids,
+                    "props": [],
+                    "salience": 1,
+                    "notes": "Hold coverage",
+                }
+            )
+    return variants[:variant_budget]
+
+
+def _expand_dialogue_coverage(units: list[dict[str, object]], min_shots: int) -> list[dict[str, object]]:
+    out: list[dict[str, object]] = []
+    remaining_needed = max(min_shots - len(units), 0)
+    dialogue_indices = [idx for idx, unit in enumerate(units) if unit.get("type") == "dialogue"]
+    dialogue_count = max(len(dialogue_indices), 1)
+
+    for idx, unit in enumerate(units):
+        out.append(dict(unit))
+        if remaining_needed <= 0 or unit.get("type") != "dialogue":
+            continue
+
+        variants_for_this_unit = max(1, remaining_needed // dialogue_count)
+        if remaining_needed % dialogue_count:
+            variants_for_this_unit += 1
+        prev_unit = units[idx - 1] if idx > 0 else None
+        next_unit = units[idx + 1] if idx + 1 < len(units) else None
+        variants = _dialogue_variant_units(unit, prev_unit, next_unit, variant_budget=min(2, variants_for_this_unit))
+        for variant in variants:
+            if remaining_needed <= 0:
+                break
+            out.append(variant)
+            remaining_needed -= 1
     return out
 
 
@@ -554,7 +689,7 @@ def _build_bindings(
         shot_id = str(shot["shot_id"])
         unit = units[index]
         direct_speakers = [str(s) for s in unit.get("speaker_ids", []) if str(s)]
-        inferred_speakers = _speakers_from_action(str(unit.get("text", "")), speaker_by_id)
+        inferred_speakers = [] if direct_speakers else _speakers_from_action(str(unit.get("text", "")), speaker_by_id)
         speaker_ids = sorted(set(direct_speakers + inferred_speakers))
         character_ref_ids = [character_ref_by_speaker[sid] for sid in speaker_ids if sid in character_ref_by_speaker]
         prop_ref_ids = [prop_lookup[str(token)] for token in unit.get("props", []) if str(token) in prop_lookup]
@@ -594,6 +729,13 @@ def _short_beat_label(text: str, max_words: int = 8) -> str:
 
 
 def _shot_type_for_unit(unit: dict[str, object], framing: str, index: int) -> str:
+    coverage_kind = str(unit.get("coverage_kind", "")).strip()
+    if coverage_kind == "reaction":
+        return "close_up"
+    if coverage_kind == "two_shot":
+        return "medium"
+    if coverage_kind == "hold":
+        return "medium"
     text = str(unit.get("text", "")).lower()
     props = unit.get("props", [])
     if any(token in text for token in ("walk", "run", "move", "crosses", "tracks")):
@@ -669,13 +811,55 @@ def _render_prompts(
             )
         if shot_bindings["prop_ref_ids"]:
             lines.append(f"Props references: {', '.join(shot_bindings['prop_ref_ids'])}")
-        lines.append(
-            "Prompt: "
-            f"{shot['beat']}. Framing {shot['framing']}. "
-            "Stay in this location. Do not invent new characters or props. Keep consistent look."
-        )
+        lines.append("Prompt: " + _format_prompt_line(str(shot["beat"]), str(shot["framing"])))
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
+
+
+def _scene_character_names(scene: dict[str, object], speaker_by_id: dict[str, str]) -> list[str]:
+    names: list[str] = []
+    seen: set[str] = set()
+    for beat in scene.get("beats", []) if isinstance(scene.get("beats", []), list) else []:
+        if not isinstance(beat, dict):
+            continue
+        speaker_id = str(beat.get("speaker_id", "")).strip()
+        if speaker_id and speaker_id in speaker_by_id:
+            name = speaker_by_id[speaker_id].title()
+            if name not in seen:
+                seen.add(name)
+                names.append(name)
+    return names
+
+
+def _example_scene_lines(scene: dict[str, object], speaker_by_id: dict[str, str]) -> list[str]:
+    heading = scene.get("heading", {})
+    heading_raw = str(heading.get("raw", "")).strip() if isinstance(heading, dict) else ""
+    location_label = _scene_location_label(scene).replace("_", " ").title()
+    character_names = _scene_character_names(scene, speaker_by_id)
+    if character_names:
+        if len(character_names) == 1:
+            characters_text = character_names[0]
+        elif len(character_names) == 2:
+            characters_text = " and ".join(character_names)
+        else:
+            characters_text = ", ".join(character_names[:-1]) + f", and {character_names[-1]}"
+        context_label = heading_raw or location_label
+        return [
+            "Example scene",
+            f"This package was generated from a short example screenplay scene featuring {characters_text} in {context_label.title()}.",
+            "The shot plan reflects the beats of that scene.",
+        ]
+    if heading_raw:
+        return [
+            "Example scene",
+            f"This package was generated from a short example screenplay scene set in {heading_raw.title()}.",
+            "The shot plan reflects the beats of that scene.",
+        ]
+    return [
+        "Example scene",
+        "This package was generated from a short example screenplay scene.",
+        "The shot plan reflects the beats of that scene.",
+    ]
 
 
 def _extract_dialogue_pairs(text: str) -> list[tuple[str, str]]:
@@ -934,8 +1118,9 @@ def package_fountain_file(
         speaker_id = speaker_by_character_ref.get(ref_id, "")
         speaker_name = speaker_by_id.get(speaker_id, speaker_id)
         if speaker_name:
-            character_name_by_ref[ref_id] = speaker_name
-            character_refs_for_prompts.append((ref_id, speaker_name))
+            display_name = speaker_name.title()
+            character_name_by_ref[ref_id] = display_name
+            character_refs_for_prompts.append((ref_id, display_name))
 
     location_label = _scene_location_label(selected_scene)
     shot_rows = []
@@ -989,6 +1174,7 @@ def package_fountain_file(
         else "",
         scene_id=str(selected_scene.get("id", "")),
         shot_count=len(shots),
+        example_scene_lines=_example_scene_lines(selected_scene, speaker_by_id),
     )
 
     files: dict[str, str | bytes] = {

@@ -18,6 +18,9 @@
 
     <h1>RenderPackage Creator Guide (Start here)</h1>
     <p>A RenderPackage is a scene-level production kit for AI video generation.</p>
+    {% if example_scene_lines %}
+    <p><strong>{{ example_scene_lines[0] }}.</strong> {{ example_scene_lines[1] }} {{ example_scene_lines[2] }}</p>
+    {% endif %}
 
     <h2>Golden rule</h2>
     <p>Picture-first.</p>

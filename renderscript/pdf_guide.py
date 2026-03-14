@@ -79,6 +79,7 @@ def _render_html(
     scene_heading: str | None = None,
     scene_id: str | None = None,
     shot_count: int | None = None,
+    example_scene_lines: list[str] | None = None,
 ) -> str:
     env = _template_env()
     template_name = "creator_guide_runway.html" if _is_runway(provider) else "creator_guide_universal.html"
@@ -94,6 +95,7 @@ def _render_html(
         keeper_sheet_path="keepers/scoring_sheet.csv",
         scene_meta=_safe_scene_meta(scene_heading, scene_id, shot_count),
         logo_uri=_logo_uri(logo_path),
+        example_scene_lines=example_scene_lines or [],
     )
 
 
@@ -216,10 +218,19 @@ def _page_stream(lines: list[str], start_y: int = 800) -> bytes:
     return ("\n".join(out) + "\n").encode("latin-1", errors="replace")
 
 
-def _fallback_pages(prompt_path: str, asset_prompts_path: str, provider: str, scene_heading: str | None, scene_id: str | None, shot_count: int | None) -> list[list[str]]:
+def _fallback_pages(
+    prompt_path: str,
+    asset_prompts_path: str,
+    provider: str,
+    scene_heading: str | None,
+    scene_id: str | None,
+    shot_count: int | None,
+    example_scene_lines: list[str] | None = None,
+) -> list[list[str]]:
     meta_lines = []
     for key, value in _safe_scene_meta(scene_heading, scene_id, shot_count):
         meta_lines.append(f"{key}: {value}")
+    example_lines = list(example_scene_lines or [])
 
     runway_line = "Where to click: Workflow -> Tool -> References -> Paste prompt -> Generate -> Mark keeper" if _is_runway(provider) else ""
     return [
@@ -227,6 +238,7 @@ def _fallback_pages(prompt_path: str, asset_prompts_path: str, provider: str, sc
             "Page 1: Start",
             PROGRESS_TEXT,
             "Start -> Refs -> Takes -> Keepers -> Edit -> Audio",
+            *example_lines,
             "Open: PACKAGE_MAP.md",
             "You are here: Creator Guide",
             "Diagram 1: RenderPackage -> Refs -> Takes -> Keepers -> Edit -> Audio -> Export",
@@ -274,11 +286,20 @@ def _render_fallback_pdf(
     scene_heading: str | None = None,
     scene_id: str | None = None,
     shot_count: int | None = None,
+    example_scene_lines: list[str] | None = None,
 ) -> bytes:
     footer = f"RenderScript AI v{version} | Provider: {_provider_label(provider)}"
     pages = [
         page + ["", footer]
-        for page in _fallback_pages(prompt_path, asset_prompts_path, provider, scene_heading, scene_id, shot_count)
+        for page in _fallback_pages(
+            prompt_path,
+            asset_prompts_path,
+            provider,
+            scene_heading,
+            scene_id,
+            shot_count,
+            example_scene_lines,
+        )
     ]
     streams = [_page_stream(page) for page in pages]
 
@@ -344,6 +365,7 @@ def render_creator_guide_pdf(
     scene_heading: str | None = None,
     scene_id: str | None = None,
     shot_count: int | None = None,
+    example_scene_lines: list[str] | None = None,
 ) -> CreatorGuideRenderResult:
     strict_pdf = os.getenv(STRICT_PDF_ENV) == "1"
     errors: list[str] = []
@@ -361,6 +383,7 @@ def render_creator_guide_pdf(
             scene_heading=scene_heading,
             scene_id=scene_id,
             shot_count=shot_count,
+            example_scene_lines=example_scene_lines,
         )
     except Exception as exc:
         errors.append(f"HTML template render failed: {type(exc).__name__}: {exc}")
@@ -400,6 +423,7 @@ def render_creator_guide_pdf(
         scene_heading=scene_heading,
         scene_id=scene_id,
         shot_count=shot_count,
+        example_scene_lines=example_scene_lines,
     )
     pdf = _ensure_min_pdf_size(pdf)
     return CreatorGuideRenderResult(
