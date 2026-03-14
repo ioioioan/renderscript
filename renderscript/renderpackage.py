@@ -831,35 +831,46 @@ def _scene_character_names(scene: dict[str, object], speaker_by_id: dict[str, st
     return names
 
 
-def _example_scene_lines(scene: dict[str, object], speaker_by_id: dict[str, str]) -> list[str]:
+def _scene_summary_lines(scene: dict[str, object], speaker_by_id: dict[str, str]) -> list[str]:
     heading = scene.get("heading", {})
     heading_raw = str(heading.get("raw", "")).strip() if isinstance(heading, dict) else ""
-    location_label = _scene_location_label(scene).replace("_", " ").title()
+    ordinal = int(scene.get("ordinal", 0) or 0)
     character_names = _scene_character_names(scene, speaker_by_id)
+
+    beat_parts: list[str] = []
+    beats = scene.get("beats", [])
+    if isinstance(beats, list):
+        for beat in beats:
+            if not isinstance(beat, dict):
+                continue
+            text = _clean_prompt_sentence(str(beat.get("text", "")))
+            if not text:
+                continue
+            if beat.get("type") == "dialogue":
+                speaker_id = str(beat.get("speaker_id", "")).strip()
+                speaker_name = speaker_by_id.get(speaker_id, "").title()
+                if speaker_name:
+                    text = f"{speaker_name} says {text.rstrip('.!?')}"
+            beat_parts.append(text.rstrip(".!?"))
+            if len(beat_parts) == 2:
+                break
+
+    beat_summary = ""
+    if beat_parts:
+        beat_summary = "; ".join(beat_parts)
+
+    lines = ["Scene summary"]
+    if ordinal:
+        lines.append(f"This package was generated from Scene {ordinal} of the screenplay.")
+    else:
+        lines.append("This package was generated from one scene of the screenplay.")
     if character_names:
-        if len(character_names) == 1:
-            characters_text = character_names[0]
-        elif len(character_names) == 2:
-            characters_text = " and ".join(character_names)
-        else:
-            characters_text = ", ".join(character_names[:-1]) + f", and {character_names[-1]}"
-        context_label = heading_raw or location_label
-        return [
-            "Example scene",
-            f"This package was generated from a short example screenplay scene featuring {characters_text} in {context_label.title()}.",
-            "The shot plan reflects the beats of that scene.",
-        ]
+        lines.append(f"Characters: {', '.join(character_names)}")
     if heading_raw:
-        return [
-            "Example scene",
-            f"This package was generated from a short example screenplay scene set in {heading_raw.title()}.",
-            "The shot plan reflects the beats of that scene.",
-        ]
-    return [
-        "Example scene",
-        "This package was generated from a short example screenplay scene.",
-        "The shot plan reflects the beats of that scene.",
-    ]
+        lines.append(f"Location: {heading_raw.title()}")
+    if beat_summary:
+        lines.append(f"Beat: {beat_summary}.")
+    return lines
 
 
 def _extract_dialogue_pairs(text: str) -> list[tuple[str, str]]:
@@ -1174,7 +1185,7 @@ def package_fountain_file(
         else "",
         scene_id=str(selected_scene.get("id", "")),
         shot_count=len(shots),
-        example_scene_lines=_example_scene_lines(selected_scene, speaker_by_id),
+        example_scene_lines=_scene_summary_lines(selected_scene, speaker_by_id),
     )
 
     files: dict[str, str | bytes] = {

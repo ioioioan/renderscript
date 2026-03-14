@@ -262,8 +262,13 @@ def test_package_generates_required_files_and_is_deterministic(
         assert "Keeper Sheet" in normalized_universal_pdf_text
         assert "rough cut" in normalized_universal_pdf_text
         assert "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_universal_pdf_text
-        assert "Example scene" in normalized_universal_pdf_text
-        assert "featuring Alice and Bob in Int. Server Room - Night." in normalized_universal_pdf_text
+        assert "Each RenderPackage represents one scene from your screenplay." in normalized_universal_pdf_text
+        assert "Scene summary" in normalized_universal_pdf_text
+        assert "This package was generated from Scene 1 of the screenplay." in normalized_universal_pdf_text
+        assert "Characters: Alice, Bob" in normalized_universal_pdf_text
+        assert "Location: Int. Server Room - Night" in normalized_universal_pdf_text
+        assert "What you do now" in normalized_universal_pdf_text
+        assert "1. Prepare your reference images" in normalized_universal_pdf_text
         assert "v0.1.0Page" not in universal_pdf_text
         assert _pdf_page_count(contents_one["CREATOR_GUIDE.pdf"]) == 5
     assert provenance["creator_guide"]["engine"] == "playwright"

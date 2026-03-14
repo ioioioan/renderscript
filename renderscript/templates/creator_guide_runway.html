@@ -18,9 +18,23 @@
 
     <h1>RenderPackage Creator Guide (Start here)</h1>
     <p>A RenderPackage is a scene-level production kit for AI video generation.</p>
+    <p>Each RenderPackage represents one scene from your screenplay.</p>
     {% if example_scene_lines %}
-    <p><strong>{{ example_scene_lines[0] }}.</strong> {{ example_scene_lines[1] }} {{ example_scene_lines[2] }}</p>
+    <h2>{{ example_scene_lines[0] }}</h2>
+    <div class="compact-block">
+    {% for line in example_scene_lines[1:] %}
+    <p>{{ line }}</p>
+    {% endfor %}
+    </div>
     {% endif %}
+    <h2>What you do now</h2>
+    <ol class="compact-list">
+      <li>Prepare your reference images</li>
+      <li>Generate takes for each shot</li>
+      <li>Mark keepers</li>
+      <li>Edit picture first</li>
+      <li>Add audio in post</li>
+    </ol>
 
     <h2>Golden rule</h2>
     <p>Picture-first.</p>
@@ -32,14 +46,8 @@
     <p>Open your AI video tool → apply references → paste the shot prompt → generate → mark keeper</p>
 
     <h2>Choose your starting workflow</h2>
-    <p><strong>Path A — Prompts-only (quick test)</strong></p>
-    <p>Use this when you don’t have reference images yet.</p>
-    <p>Generate a few shots to test pacing and visual intent.</p>
-    <p>Expect more drift at this stage — this is normal.</p>
-    <p><strong>Path B — References (best consistency)</strong></p>
-    <p>Use this when you can provide reference images.</p>
-    <p>References improve consistency more than complex prompts.</p>
-    <p>This package shows which references each shot expects.</p>
+    <p><strong>Path A — Prompts-only (quick test)</strong> Use this when you don’t have reference images yet. Generate a few shots to test pacing and visual intent. Expect more drift at this stage — this is normal.</p>
+    <p><strong>Path B — References (best consistency)</strong> Use this when you can provide reference images. References improve consistency more than complex prompts. This package shows which references each shot expects.</p>
     <h2>Workflow map</h2>
     <p>Scene ↓ Generate refs ↓ Generate shot_001, shot_002, ... ↓ Mark keepers ↓ Edit ↓ Audio in post</p>
 
