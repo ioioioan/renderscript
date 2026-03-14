@@ -26,8 +26,10 @@ DEFAULT_PROJECT = "project"
 APP_DIR = Path(__file__).resolve().parent
 STYLES_PATH = APP_DIR / "static" / "styles.css"
 BRANDING_DIR = Path(__file__).resolve().parent.parent / "renderscript" / "assets" / "branding"
+ASSETS_DIR = Path(__file__).resolve().parent.parent / "renderscript" / "assets"
 BRANDING_UI_LOGO_PATH = BRANDING_DIR / "renderscript_logo_horizontal_mark_left_text_right_pad5_v3.png"
 BRANDING_MARK_LOGO_PATH = BRANDING_DIR / "renderscript_logo_mark_blue_pad5.png"
+EXAMPLE_PACKAGE_PATH = ASSETS_DIR / "Example_scene_1_universal_renderpackage_v1.zip"
 
 app = FastAPI(title="RenderScript Studio UI")
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
@@ -66,6 +68,12 @@ def _friendly_error_message(message: str) -> str:
 def _read_logo_png(path: Path) -> bytes:
     if not path.exists():
         raise FileNotFoundError("Logo file not found.")
+    return path.read_bytes()
+
+
+def _read_asset_file(path: Path) -> bytes:
+    if not path.exists():
+        raise FileNotFoundError(f"Asset file not found: {path.name}")
     return path.read_bytes()
 
 
@@ -144,6 +152,19 @@ async def brand_favicon() -> Response:
         content=favicon_bytes,
         media_type="image/png",
         headers={"Cache-Control": "no-store, max-age=0", "ETag": etag},
+    )
+
+
+@app.get("/example-renderpackage.zip")
+async def example_renderpackage() -> Response:
+    package_bytes = await run_in_threadpool(_read_asset_file, EXAMPLE_PACKAGE_PATH)
+    return Response(
+        content=package_bytes,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{EXAMPLE_PACKAGE_PATH.name}"',
+            "Cache-Control": "no-store, max-age=0",
+        },
     )
 
 
