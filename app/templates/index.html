@@ -57,38 +57,42 @@
         <form id="build-form" action="/build" method="post" enctype="multipart/form-data">
           <label for="screenplay_file">Screenplay file</label>
           <input id="screenplay_file" name="screenplay_file" type="file" accept=".fountain,.fnt,text/plain" required>
-          <div class="hint">Accepted screenplay format: <strong>.fountain</strong> (also supports <strong>.fnt</strong>).</div>
+          <div id="format-scene-note" class="inline-note">
+            Accepted screenplay format: <strong>.fountain</strong> (also supports <strong>.fnt</strong>). Single-scene scripts default to scene 1.
+          </div>
           <div id="file-picked" class="meta hidden"></div>
 
-          <div id="scene-simple" class="hint">Single-scene scripts default to scene 1.</div>
+          <div id="scene-simple" class="inline-note hidden">Accepted screenplay format: <strong>.fountain</strong> (also supports <strong>.fnt</strong>). Single-scene scripts default to scene 1.</div>
           <div id="scene-advanced" class="hidden">
             <label for="scene">Scene number</label>
             <select id="scene" name="scene"></select>
           </div>
           <input id="scene-hidden" type="hidden" name="scene" value="{{ scene }}">
 
-          <label>Providers</label>
+          <label>Include prompt packs for</label>
           <input type="hidden" name="provider" value="universal">
-          <label class="checkbox-row checkbox-row-locked" for="provider-universal">
-            <input id="provider-universal" type="checkbox" checked disabled>
-            Universal
-          </label>
-          {% for item in providers %}
-          {% if item != "universal" %}
-          <label class="checkbox-row" for="include-provider-{{ loop.index }}">
-            <input id="include-provider-{{ loop.index }}" type="checkbox" name="include_provider_prompts" value="{{ item }}">
-            {% if item == "runway.gen4_image_refs" %}Runaway{% else %}{{ item.replace('.', ' ').replace('_', ' ').title() }}{% endif %}
-          </label>
-          {% endif %}
-          {% endfor %}
+          <div class="provider-row">
+            <label class="checkbox-row checkbox-row-locked" for="provider-universal">
+              <input id="provider-universal" type="checkbox" checked disabled>
+              Universal
+            </label>
+            {% for item in providers %}
+            {% if item != "universal" %}
+            <label class="checkbox-row" for="include-provider-{{ loop.index }}">
+              <input id="include-provider-{{ loop.index }}" type="checkbox" name="include_provider_prompts" value="{{ item }}">
+              {% if item == "runway.gen4_image_refs" %}Runway{% else %}{{ item.replace('.', ' ').replace('_', ' ').title() }}{% endif %}
+            </label>
+            {% endif %}
+            {% endfor %}
+          </div>
 
           <label for="project">Project name</label>
           <input id="project" name="project" type="text" value="{{ project if project != 'project' else '' }}" placeholder="project" required>
 
           <button id="submit-btn" type="submit">Build RenderPackage</button>
           <div class="button-helper">
-            RenderScript builds the package. You run it in your chosen AI video tool.<br>
-            Downloads a RenderPackage <code>.zip</code> containing the full scene production kit.
+            Builds a RenderPackage <code>.zip</code> for one scene.<br>
+            Use the package in your chosen AI video workflow.
           </div>
         </form>
       </section>
@@ -117,15 +121,30 @@
       <section class="tab-pane" data-pane="developers">
         <h3>For Developers</h3>
         <p>
-          RenderScript provides a deterministic packaging layer between screenplay text and AI video tooling.
+          RenderScript is not just a UI tool. It is a programmable packaging layer between screenplay text and downstream
+          AI video workflows. Creators will usually use the Studio UI. Developers will use the CLI and GitHub when they
+          need automation, integration, adapters, and pipeline control.
         </p>
+        <p><strong>Why use the CLI</strong></p>
         <p>
-          Screenplays are compiled into a stable internal structure and exported as a RenderPackage - a portable
-          production kit that can be validated, versioned, and automated in pipelines.
+          Use the CLI when package generation needs to be repeatable and scriptable. That includes generating packages
+          programmatically, batch processing scenes or scripts, integrating RenderScript into CI, validating screenplay
+          inputs automatically, and running QA on generated shot plans before anyone starts generation work.
         </p>
+        <p><strong>What developers can build</strong></p>
+        <ul>
+          <li>Provider adapters for specific AI video workflows</li>
+          <li>Validation and QA checks around screenplay and package outputs</li>
+          <li>Internal tools that wrap RenderPackage generation</li>
+          <li>Pipeline integrations for studio or cloud workflows</li>
+          <li>Downstream orchestration systems built around RenderPackage</li>
+        </ul>
+        <p><strong>Core package contract</strong></p>
         <p>
-          This allows creative teams to work in familiar screenplay formats while engineering teams build tooling around
-          a predictable contract.
+          RenderPackage is designed to be machine-consumable. Creator-facing files are included for workflow use, but
+          developer tooling should rely on the machine-readable contract in <code>dev/rpack.json</code>. The format is
+          export-first, portable, and intentionally structured to support adapters, validation, and downstream
+          orchestration.
         </p>
         <p><strong>CLI quick start</strong></p>
         <ul>
@@ -134,10 +153,10 @@
         </ul>
         <p><strong>Provider options</strong></p>
         <ul>
-          <li>Universal - Any AI Video Tool</li>
-          <li>Runway</li>
+          <li>Universal → <code>universal</code></li>
+          <li>Runway Gen-4 References → <code>runway.gen4_image_refs</code></li>
         </ul>
-        <p><strong>Developer links</strong></p>
+        <p><strong>Where to go next</strong></p>
         <ul>
           <li>Studio UI<br><code>renderscript.studio</code></li>
           <li>GitHub<br><code>https://github.com/your-org/renderscript</code></li>
@@ -169,6 +188,7 @@
       <div class="footer-icons" aria-hidden="true">
         <img src="/static/icons/youtube.svg" alt="">
         <img src="/static/icons/x.svg" alt="">
+        <img src="/static/icons/github.svg" alt="">
       </div>
       <p>© 2026 RenderScript AI, RenderScript is an open-core project.</p>
     </div>

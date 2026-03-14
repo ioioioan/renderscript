@@ -147,6 +147,7 @@ label {
   align-items: center;
   gap: 8px;
   font-weight: 500;
+  width: auto;
 }
 
 .checkbox-row input[type="checkbox"] {
@@ -156,6 +157,13 @@ label {
 
 .checkbox-row-locked {
   color: #6e6e80;
+}
+
+.provider-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
 }
 
 form input,
@@ -191,6 +199,13 @@ form button[type="submit"]:disabled {
   color: var(--muted);
   font-size: 13px;
   padding: 8px 10px;
+}
+
+.inline-note {
+  color: #202123;
+  background: #ffffff;
+  font-size: 13px;
+  padding: 0;
 }
 
 .topnav {
@@ -300,5 +315,9 @@ form button[type="submit"]:disabled {
 
   .panel {
     min-height: auto;
+  }
+
+  .provider-row {
+    gap: 12px;
   }
 }
