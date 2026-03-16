@@ -50,14 +50,13 @@ Relevant files:
 
 ### 3. Delivery surface
 
-This exposes the system through the CLI and the web UI.
+This open-core repo exposes the system through the CLI.
 
-Relevant files:
+Relevant file:
 
 - `renderscript/cli.py`
-- `app/main.py`
-- `app/templates/index.html`
-- `app/static/styles.css`
+
+The hosted UI exists separately at `renderscript.studio` and is not part of this public repo.
 
 ## Recommended Reading Order
 
@@ -68,7 +67,6 @@ If you want to understand the code quickly, read in this order:
 3. `renderscript/renderpackage.py`
 4. `renderscript/providers.py`
 5. `renderscript/pdf_guide.py`
-6. `app/main.py`
 
 That order follows the real product flow from input to output.
 
@@ -81,7 +79,7 @@ The user supplies a `.fountain` file.
 This happens through:
 
 - CLI: `renderscript package ...`
-- UI: upload form in `app/main.py`
+- or a separate hosted UI that wraps the same package engine
 
 ### B. Parsing
 
@@ -169,19 +167,16 @@ The machine truth still lives in `dev/rpack.json`.
 
 The CLI is the main developer entry point.
 
-#### UI
+#### Hosted UI
 
-`app/main.py` wraps packaging in a small FastAPI app.
+The hosted UI is intentionally separate from this open-core repo.
 
-The UI:
+That separation keeps the public repository focused on:
 
-- accepts screenplay upload
-- detects scenes
-- lets the user pick optional provider prompt packs
-- builds a RenderPackage zip
-- returns the zip as a download
-
-The UI is intentionally thin. It does not contain the core package logic.
+- the engine
+- the CLI
+- tests
+- examples
 
 ## The Important Internal Concepts
 
@@ -309,29 +304,6 @@ Schema validation for compiled documents.
 
 Command-line entrypoint and argument parsing.
 
-### `app/main.py`
-
-FastAPI UI backend.
-
-Responsibilities:
-
-- render the UI
-- validate uploads
-- detect scenes
-- invoke package generation
-- return the zip download
-
-### `app/templates/index.html`
-
-Single-page UI template.
-
-Contains:
-
-- app tab
-- creators tab
-- developers tab
-- about tab
-
 ### `tests/`
 
 Regression protection for:
@@ -426,8 +398,6 @@ Start in:
 
 - `renderscript/providers.py`
 - `renderscript/renderpackage.py`
-- `app/main.py`
-- `app/templates/index.html`
 
 ### If you want to change the Creator Guide
 
@@ -437,14 +407,6 @@ Start in:
 - `renderscript/templates/creator_guide_universal.html`
 - `renderscript/templates/creator_guide_runway.html`
 - `renderscript/templates/creator_guide.css`
-
-### If you want to change the UI
-
-Start in:
-
-- `app/main.py`
-- `app/templates/index.html`
-- `app/static/styles.css`
 
 ## What To Ignore At First
 
@@ -479,7 +441,7 @@ These are the important stable rules in the codebase today:
 - RenderPackage is export-only.
 - The package is creator-first.
 - `dev/rpack.json` is the machine-readable contract.
-- The UI is a thin wrapper around the same package builder used by the CLI.
+- The hosted UI is separate from this open-core repo.
 
 ## Useful Commands
 
@@ -487,14 +449,6 @@ These are the important stable rules in the codebase today:
 
 ```bash
 python3 -m pytest -q
-```
-
-### Run the UI locally
-
-```bash
-python3 -m pip install -e .
-python3 -m pip install -r app/requirements.txt
-uvicorn app.main:app --reload
 ```
 
 ### Build a package from CLI
@@ -516,7 +470,6 @@ renderscript package path/to/script.fountain --scene 1 --provider universal --ad
 - `renderpackage.py`: turn one scene into the final creator package
 - `pdf_guide.py`: render the package guide PDF
 - `cli.py`: expose the system to developers
-- `app/main.py`: expose the same package builder through a small web UI
 
 ## Short Summary
 

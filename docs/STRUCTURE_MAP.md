@@ -8,17 +8,14 @@ It separates:
 - tests
 - assets/templates
 - examples
-- generated output
 
 ## Top-Level Map
 
 ```text
 renderscript/
-├── app/                     # FastAPI UI wrapper
 ├── bench/                   # Benchmark protocol and scoring data
 ├── docs/                    # Human-facing codebase documentation
 ├── examples/                # Example Fountain scripts and expected outputs
-├── out/                     # Generated packages and scratch output (not source of truth)
 ├── renderscript/            # Core Python package
 ├── tests/                   # Regression tests
 ├── pyproject.toml           # Package metadata and dependencies
@@ -41,7 +38,6 @@ renderscript/
 ├── renderpackage.py         # RenderPackage builder
 ├── validate.py              # Schema validation
 ├── assets/
-│   ├── Example_scene_1_universal_renderpackage_v1.zip
 │   └── branding/
 │       ├── renderscript_logo_horizontal_mark_left_text_right_pad5_v3.png
 │       ├── renderscript_logo_mark_blue_pad5.png
@@ -53,30 +49,11 @@ renderscript/
     └── creator_guide_universal.html
 ```
 
-## UI Layer
-
-```text
-app/
-├── main.py                  # FastAPI app
-├── README.md                # Local UI run instructions
-├── requirements.txt
-├── static/
-│   ├── styles.css
-│   ├── sample_RenderPackage.zip
-│   └── icons/
-│       ├── github.svg
-│       ├── x.svg
-│       └── youtube.svg
-└── templates/
-    └── index.html           # Single-page UI
-```
-
 ## Tests
 
 ```text
 tests/
 ├── expected_package_paths.txt
-├── test_app_ui.py
 ├── test_bench.py
 ├── test_cli_version.py
 ├── test_package_cli.py
@@ -106,20 +83,6 @@ examples/
     └── t4_location_persistence.rscript
 ```
 
-## Generated Output
-
-```text
-out/
-├── *.zip
-├── debug_pdf/
-├── pilot_renderpackage_v7/
-├── universal_polish/
-├── universal_ui_guide/
-└── ...
-```
-
-Treat `out/` as generated artifacts, not canonical source.
-
 ## Responsibility Map
 
 ### Parse and compile
@@ -139,9 +102,6 @@ Treat `out/` as generated artifacts, not canonical source.
 ### Deliver through interfaces
 
 - `renderscript/cli.py`
-- `app/main.py`
-- `app/templates/index.html`
-- `app/static/styles.css`
 
 ## Source of Truth Map
 
@@ -166,13 +126,6 @@ The source of truth is:
 - `renderscript/templates/creator_guide_runway.html`
 - `renderscript/templates/creator_guide.css`
 
-### For UI behavior
-
-The source of truth is:
-
-- `app/main.py`
-- `app/templates/index.html`
-
 ### For expected behavior
 
 The source of truth is:
@@ -182,7 +135,7 @@ The source of truth is:
 ## High-Level Call Graph
 
 ```text
-UI / CLI
+CLI
   -> compiler.py
   -> renderpackage.py
       -> providers.py
@@ -202,9 +155,7 @@ Start here:
 Then check:
 
 - `renderscript/renderpackage.py`
-- `app/main.py`
-- `app/templates/index.html`
-- tests in `tests/test_package_cli.py` and `tests/test_app_ui.py`
+- tests in `tests/test_package_cli.py`
 
 ### I want to change the package folder contents
 
@@ -226,12 +177,6 @@ Start here:
 - `renderscript/fountain_parser.py`
 - `renderscript/compiler.py`
 
-### I want to understand what the app does on submit
-
-Start here:
-
-- `app/main.py`
-
 ### I want to understand why a test is failing
 
 Start here:
@@ -247,3 +192,9 @@ If you come back later and feel lost again:
 2. Read `renderscript/cli.py`
 3. Read `renderscript/renderpackage.py`
 4. Use `tests/test_package_cli.py` as the behavioral spec
+
+## Hosted UI
+
+The hosted UI exists separately at `renderscript.studio`.
+
+It is intentionally not included in this open-core repository.
