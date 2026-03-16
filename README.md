@@ -8,6 +8,18 @@ This repository contains the open-core engine and CLI.
 
 The hosted UI lives separately at `renderscript.studio`.
 
+## Why It Exists
+
+Screenplays are written for humans. AI video workflows need structured inputs.
+
+RenderScript sits between those two worlds. It takes one screenplay scene and turns it into a deterministic package with:
+
+- shot planning
+- reference bindings
+- prompt packs
+- creator docs
+- machine-readable package data
+
 ## Product Boundary
 
 RenderScript is intentionally narrow:
@@ -22,6 +34,18 @@ It does **not**:
 - manage user accounts
 - automate generation
 
+## Who This Repo Is For
+
+This open-core repo is for developers who want to:
+
+- generate RenderPackages from the CLI
+- inspect `dev/rpack.json`
+- build provider adapters
+- add validation or QA around package generation
+- integrate RenderPackage into internal pipelines
+
+If you want the hosted UI, that is a separate product surface.
+
 ## What A RenderPackage Contains
 
 A RenderPackage typically includes:
@@ -35,19 +59,27 @@ A RenderPackage typically includes:
 - audio post-production docs
 - `dev/rpack.json` as the machine-readable contract
 
-## Install
+## Quick Start
+
+Install:
 
 ```bash
 python3 -m pip install -e .
 ```
 
-## Run Tests
+Run tests:
 
 ```bash
 python3 -m pytest -q
 ```
 
-## CLI
+Build a package:
+
+```bash
+renderscript package path/to/script.fountain --scene 1 --provider universal -o ./out/package.zip
+```
+
+## CLI Examples
 
 Build a package from a screenplay:
 
@@ -61,6 +93,12 @@ Add an optional provider pack:
 renderscript package path/to/script.fountain --scene 1 --provider universal --add-pack grok.imagine -o ./out/package.zip
 ```
 
+Use a different primary provider:
+
+```bash
+renderscript package path/to/script.fountain --scene 1 --provider runway.gen4_image_refs -o ./out/package.zip
+```
+
 ## Provider Adapters
 
 Current adapters:
@@ -72,6 +110,14 @@ Current adapters:
 Universal is the default workflow.
 Provider packs are optional additions.
 
+## Core Ideas
+
+- One scene in, one package out
+- Universal workflow first
+- Provider packs as optional additions
+- Creator-facing files for workflow use
+- `dev/rpack.json` as the machine-readable contract
+
 ## Repo Layout
 
 ```text
@@ -80,6 +126,12 @@ examples/        Example Fountain scripts
 tests/           Regression tests
 docs/            Project and codebase documentation
 ```
+
+## Examples
+
+Example Fountain inputs live in `examples/`.
+
+Those fixtures are also used by the test suite, so they are a good place to start if you want to understand the expected input shape and current behavior.
 
 ## Documentation
 
