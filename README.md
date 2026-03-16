@@ -142,4 +142,4 @@ Start here:
 
 ## License
 
-Add your chosen open-source license before publishing.
+Licensed under Apache-2.0. See `LICENSE`.
