@@ -13,7 +13,6 @@ It separates:
 
 ```text
 renderscript/
-├── bench/                   # Benchmark protocol and scoring data
 ├── docs/                    # Human-facing codebase documentation
 ├── examples/                # Example Fountain scripts and expected outputs
 ├── renderscript/            # Core Python package
@@ -54,7 +53,6 @@ renderscript/
 ```text
 tests/
 ├── expected_package_paths.txt
-├── test_bench.py
 ├── test_cli_version.py
 ├── test_package_cli.py
 ├── test_pdf_guide.py

@@ -163,7 +163,6 @@ The machine truth still lives in `dev/rpack.json`.
 - `validate`
 - `prompt`
 - `package`
-- `bench`
 
 The CLI is the main developer entry point.
 
@@ -312,8 +311,6 @@ Regression protection for:
 - prompts
 - packaging
 - PDF guide
-- UI
-- benchmarks
 
 ## The Package Builder Mental Model
 
