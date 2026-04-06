@@ -1,11 +1,9 @@
 .DS_Store
 __pycache__/
+*.py[cod]
 .pytest_cache/
 .venv/
 out/
-*.pyc
-*.pyo
-*.pyd
 *.rscript
 *.zip
 
