@@ -1,9 +1,0 @@
-shot_id,duration_s,framing,beat,notes,risk_flags
-shot_001,3,wide,ALICE (whispering): Did you copy the drive?,,
-shot_002,3,medium,BOB: Yes.,,
-shot_003,3,close,ALICE: Then move.,,
-shot_004,3,wide,ALICE: Then move.,Pacing hold,
-shot_005,3,medium,ALICE: Then move.,Pacing hold,
-shot_006,3,close,ALICE: Then move.,Pacing hold,
-shot_007,3,wide,ALICE: Then move.,Pacing hold,
-shot_008,3,medium,ALICE: Then move.,Pacing hold,
