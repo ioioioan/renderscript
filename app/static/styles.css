@@ -3,30 +3,34 @@
 }
 
 :root {
-  --bg: #ffffff;
+  --bg: #f6f8fb;
   --surface: #ffffff;
-  --ink: #202123;
-  --muted: #6e6e80;
-  --line: #ffffff;
-  --accent: #10a37f;
-  --accent-soft: #e7f7f2;
+  --surface-soft: #f9fbfd;
+  --ink: #17181a;
+  --muted: #626873;
+  --line: #dfe6ee;
+  --accent: #01518e;
+  --accent-strong: #003d6b;
+  --accent-soft: #e6f0f8;
+  --shadow: 0 18px 60px rgba(22, 31, 37, 0.08);
 }
 
 body {
   margin: 0;
-  padding: 20px;
+  padding: 28px 20px;
   background: var(--bg);
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial, sans-serif;
+  line-height: 1.55;
+  text-rendering: optimizeLegibility;
 }
 
 .topbar {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  background: var(--surface);
-  padding: 8px 0 0;
+  gap: 16px;
+  padding: 6px 0 0;
 }
 
 .brand {
@@ -37,16 +41,18 @@ body {
 }
 
 .brand img {
-  max-height: 30px;
+  max-height: 34px;
   width: auto;
   height: auto;
   max-width: 100%;
 }
 
 .hero-inline h1 {
-  margin: 0 0 8px;
-  font-size: 30px;
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.08;
   text-align: center;
+  letter-spacing: 0;
 }
 
 .hero-inline p {
@@ -64,18 +70,23 @@ body {
   border-bottom: 2px solid transparent;
   border-radius: 0;
   background: transparent;
-  padding: 6px 2px;
+  padding: 4px 0 8px;
   font-size: 14px;
   cursor: pointer;
-  color: var(--ink);
+  color: var(--muted);
   white-space: nowrap;
   width: auto;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.tab-btn:hover {
+  color: var(--ink);
 }
 
 .tab-btn.active {
   border-bottom-color: var(--accent);
   background: transparent;
-  color: #0f8d6d;
+  color: var(--accent-strong);
   font-weight: 700;
 }
 
@@ -89,33 +100,44 @@ body {
 .hero-actions a {
   text-decoration: none;
   border-radius: 8px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   font-weight: 700;
   font-size: 14px;
 }
 
 .hero-actions .secondary {
-  background: transparent;
-  color: var(--accent);
-  border: none;
-  padding-left: 0;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border: 1px solid #c8d9e8;
+}
+
+.hero-actions .secondary:hover {
+  background: #dceaf5;
+  border-color: #aec9df;
+  color: var(--accent-strong);
 }
 
 .workspace {
-  margin-top: 20px;
-  max-width: 1100px;
+  margin-top: 28px;
+  max-width: 940px;
   margin-left: auto;
   margin-right: auto;
 }
 
 .panel {
   background: var(--surface);
-  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 24px;
   min-height: 420px;
 }
 
 .integrated-panel h2 {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
+  font-size: 30px;
+  line-height: 1.15;
+  letter-spacing: 0;
 }
 
 .panel-sub {
@@ -134,12 +156,30 @@ body {
 
 form {
   display: grid;
-  gap: 9px;
+  gap: 10px;
+  margin-top: 22px;
+  max-width: 620px;
+}
+
+.tab-pane[data-pane="app"] {
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tab-pane[data-pane="app"] p,
+.tab-pane[data-pane="app"] form {
+  max-width: none;
+}
+
+.tab-pane[data-pane="app"] form {
+  text-align: left;
 }
 
 label {
   font-size: 13px;
   font-weight: 700;
+  color: #2b3036;
 }
 
 .checkbox-row {
@@ -170,20 +210,38 @@ form input,
 form select,
 form button {
   width: 100%;
-  border: none;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 10px;
+  padding: 11px 12px;
   font-size: 14px;
-  background: #f7f7f8;
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+form input:focus,
+form select:focus,
+.tab-btn:focus-visible,
+.hero-actions a:focus-visible,
+.footer-icons a:focus-visible,
+.tab-pane a:focus-visible {
+  outline: 3px solid rgba(1, 81, 142, 0.2);
+  outline-offset: 2px;
+  border-color: var(--accent);
 }
 
 form button[type="submit"] {
-  margin-top: 4px;
+  margin-top: 8px;
   background: var(--accent);
   color: #ffffff;
   border-color: var(--accent);
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 10px 22px rgba(1, 81, 142, 0.2);
+}
+
+form button[type="submit"]:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
 }
 
 form button[type="submit"]:disabled {
@@ -193,17 +251,17 @@ form button[type="submit"]:disabled {
 
 .hint,
 .meta {
-  border: none;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: #f7f7f8;
+  background: var(--surface-soft);
   color: var(--muted);
   font-size: 13px;
   padding: 8px 10px;
 }
 
 .inline-note {
-  color: #202123;
-  background: #ffffff;
+  color: var(--muted);
+  background: transparent;
   font-size: 13px;
   padding: 0;
 }
@@ -215,33 +273,61 @@ form button[type="submit"]:disabled {
   flex-wrap: nowrap;
   align-items: center;
   overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0;
 }
 
 .in-panel {
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 
 .tab-pane h3 {
   margin-top: 0;
-  font-size: 22px;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: 0;
 }
 
 .tab-pane h4 {
-  margin: 22px 0 6px;
+  margin: 26px 0 6px;
   font-size: 16px;
+  color: var(--ink);
 }
 
 .tab-pane p {
   color: var(--muted);
+  max-width: 720px;
+  margin: 0 0 12px;
+}
+
+.tab-pane a {
+  color: var(--accent-strong);
+  font-weight: 700;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.tab-pane code {
+  border: 1px solid #d9e5ef;
+  border-radius: 6px;
+  background: #f3f7fb;
+  color: #014777;
+  font-size: 0.94em;
+  padding: 1px 5px;
 }
 
 .tab-pane ul {
-  margin: 8px 0 0;
+  margin: 10px 0 16px;
   padding-left: 18px;
+  color: var(--muted);
 }
 
 .tab-pane li + li {
   margin-top: 6px;
+}
+
+.tab-pane li::marker {
+  color: var(--accent);
 }
 
 .app-instructions {
@@ -286,20 +372,29 @@ form button[type="submit"]:disabled {
 
 .footer-icons {
   display: inline-flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
   margin-bottom: 8px;
+}
+
+.footer-icons a {
+  border-radius: 8px;
 }
 
 .footer-icons img {
   width: 18px;
   height: 18px;
   display: block;
+  opacity: 0.78;
+}
+
+.footer-icons a:hover img {
+  opacity: 1;
 }
 
 .button-helper {
-  background: #ffffff;
-  color: #000000;
+  background: transparent;
+  color: var(--muted);
   font-size: 13px;
   line-height: 1.45;
   padding: 2px 0 0;
@@ -307,7 +402,7 @@ form button[type="submit"]:disabled {
 
 @media (max-width: 960px) {
   body {
-    padding: 12px;
+    padding: 18px 12px;
   }
   .topbar {
     grid-template-columns: 1fr;
@@ -315,7 +410,15 @@ form button[type="submit"]:disabled {
   }
 
   .hero-inline h1 {
-    font-size: 24px;
+    font-size: 28px;
+  }
+
+  .workspace {
+    margin-top: 22px;
+  }
+
+  .panel {
+    padding: 18px;
   }
 
   .panel {

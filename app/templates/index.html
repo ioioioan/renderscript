@@ -22,15 +22,15 @@
 
   <main class="workspace">
     <section class="panel integrated-panel">
-      <nav class="topnav in-panel">
-        <button class="tab-btn active" data-tab="app" type="button">App</button>
-        <button class="tab-btn" data-tab="quick-start" type="button">Quick Start</button>
-        <button class="tab-btn" data-tab="creators" type="button">Creators</button>
-        <button class="tab-btn" data-tab="about" type="button">About</button>
-        <button class="tab-btn" data-tab="developers" type="button">Developers</button>
+      <nav class="topnav in-panel" role="tablist" aria-label="RenderScript sections">
+        <button class="tab-btn active" id="tab-app" data-tab="app" type="button" role="tab" aria-selected="true" aria-controls="pane-app">App</button>
+        <button class="tab-btn" id="tab-quick-start" data-tab="quick-start" type="button" role="tab" aria-selected="false" aria-controls="pane-quick-start">Quick Start</button>
+        <button class="tab-btn" id="tab-creators" data-tab="creators" type="button" role="tab" aria-selected="false" aria-controls="pane-creators">Creators</button>
+        <button class="tab-btn" id="tab-about" data-tab="about" type="button" role="tab" aria-selected="false" aria-controls="pane-about">About</button>
+        <button class="tab-btn" id="tab-developers" data-tab="developers" type="button" role="tab" aria-selected="false" aria-controls="pane-developers">Developers</button>
       </nav>
 
-      <section class="tab-pane active" data-pane="app">
+      <section class="tab-pane active" id="pane-app" data-pane="app" role="tabpanel" aria-labelledby="tab-app">
         <h2>Build a RenderPackage</h2>
         {% if error %}
         <div id="form-error" class="error">{{ error }}</div>
@@ -63,7 +63,7 @@
         </form>
       </section>
 
-      <section class="tab-pane" data-pane="quick-start">
+      <section class="tab-pane" id="pane-quick-start" data-pane="quick-start" role="tabpanel" aria-labelledby="tab-quick-start">
         <h3>Quick Start</h3>
         <p>
           RenderScript creates a RenderPackage: a structured production kit you can use with the AI video tools you already know.
@@ -79,7 +79,11 @@
         <p>Upload your screenplay, select a scene, and download the RenderPackage <code>.zip</code>.</p>
 
         <h4>Open the package</h4>
-        <p>Unzip the package and open it in a workspace app.</p>
+        <p>Unzip the package and open <code>START_HERE.txt</code> first.</p>
+        <p>
+          That file gives you the shortest path through the package. Then open <code>CREATOR_GUIDE.pdf</code> for the full creator walkthrough.
+        </p>
+        <p>Open the package folder in a workspace app when you are ready to work through the files.</p>
         <ul>
           <li><a href="https://obsidian.md/download" target="_blank" rel="noreferrer">Obsidian</a> - creator-friendly notes workspace</li>
           <li><a href="https://www.notion.com/desktop" target="_blank" rel="noreferrer">Notion</a> - polished workspace for organising docs</li>
@@ -101,7 +105,7 @@
         </p>
       </section>
 
-      <section class="tab-pane" data-pane="creators">
+      <section class="tab-pane" id="pane-creators" data-pane="creators" role="tabpanel" aria-labelledby="tab-creators">
         <h3>For Creators</h3>
         <p>
           AI video generation gets messy fast. Prompts drift, characters change, props disappear, and every shot can become a new negotiation with the machine.
@@ -134,7 +138,7 @@
         </p>
       </section>
 
-      <section class="tab-pane" data-pane="developers">
+      <section class="tab-pane" id="pane-developers" data-pane="developers" role="tabpanel" aria-labelledby="tab-developers">
         <h3>For Developers</h3>
         <p>
           RenderScript is not just a UI tool. It is a programmable packaging layer between screenplay text and downstream
@@ -203,7 +207,7 @@
         </ul>
       </section>
 
-      <section class="tab-pane" data-pane="about">
+      <section class="tab-pane" id="pane-about" data-pane="about" role="tabpanel" aria-labelledby="tab-about">
         <h3>About RenderScript</h3>
         <p>
           RenderScript prepares screenplay scenes for AI video production.
@@ -339,9 +343,13 @@
     tabButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
         const key = btn.dataset.tab;
-        tabButtons.forEach((x) => x.classList.remove("active"));
+        tabButtons.forEach((x) => {
+          x.classList.remove("active");
+          x.setAttribute("aria-selected", "false");
+        });
         panes.forEach((p) => p.classList.remove("active"));
         btn.classList.add("active");
+        btn.setAttribute("aria-selected", "true");
         const pane = document.querySelector(`[data-pane="${key}"]`);
         if (pane) pane.classList.add("active");
       });

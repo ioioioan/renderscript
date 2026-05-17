@@ -22,9 +22,7 @@ def test_ui_get_root_returns_200() -> None:
 
 def test_public_app_tab_hides_provider_controls() -> None:
     response = client.get("/")
-    app_html = response.text.split('<section class="tab-pane active" data-pane="app">', 1)[1].split(
-        '<section class="tab-pane" data-pane="quick-start">', 1
-    )[0]
+    app_html = response.text.split('data-pane="app"', 1)[1].split('data-pane="quick-start"', 1)[0]
     assert "name=\"provider\" value=\"universal\"" in app_html
     assert "name=\"include_provider_prompts\"" not in app_html
     assert "Runway" not in app_html
@@ -43,6 +41,8 @@ def test_public_tab_order() -> None:
 
 def test_quick_start_contains_creator_workflow_links() -> None:
     response = client.get("/")
+    assert "START_HERE.txt" in response.text
+    assert "CREATOR_GUIDE.pdf" in response.text
     assert "https://fountain.io/" in response.text
     assert "https://obsidian.md/download" in response.text
     assert "https://www.notion.com/desktop" in response.text
