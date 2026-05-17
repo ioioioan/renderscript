@@ -16,6 +16,7 @@ def test_ui_get_root_returns_200() -> None:
     assert response.status_code == 200
     assert "RenderScript Studio" in response.text
     assert "Build a RenderPackage" in response.text
+    assert "Screenplay to AI video workflow" in response.text
     assert "Quick Start" in response.text
     assert "Use the AI video tools you already know." in response.text
 
