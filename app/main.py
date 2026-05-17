@@ -18,9 +18,7 @@ from starlette.concurrency import run_in_threadpool
 from renderscript.compiler import compile_fountain_text
 from renderscript.providers import (
     DEFAULT_PROVIDER,
-    PROVIDER_REGISTRY,
     SUPPORTED_PROVIDERS,
-    optional_provider_adapters,
 )
 from renderscript.renderpackage import package_fountain_file
 
@@ -108,8 +106,6 @@ def _render_index(
             "logo_version": logo_version,
             "scene_options": options,
             "show_scene_dropdown": len(options) > 1,
-            "providers": optional_provider_adapters(),
-            "provider_registry": PROVIDER_REGISTRY,
             "styles_version": styles_version,
         },
         status_code=400 if error else 200,

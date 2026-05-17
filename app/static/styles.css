@@ -226,6 +226,11 @@ form button[type="submit"]:disabled {
   font-size: 22px;
 }
 
+.tab-pane h4 {
+  margin: 22px 0 6px;
+  font-size: 16px;
+}
+
 .tab-pane p {
   color: var(--muted);
 }

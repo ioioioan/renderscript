@@ -24,9 +24,10 @@
     <section class="panel integrated-panel">
       <nav class="topnav in-panel">
         <button class="tab-btn active" data-tab="app" type="button">App</button>
+        <button class="tab-btn" data-tab="quick-start" type="button">Quick Start</button>
         <button class="tab-btn" data-tab="creators" type="button">Creators</button>
-        <button class="tab-btn" data-tab="developers" type="button">Developers</button>
         <button class="tab-btn" data-tab="about" type="button">About</button>
+        <button class="tab-btn" data-tab="developers" type="button">Developers</button>
       </nav>
 
       <section class="tab-pane active" data-pane="app">
@@ -34,26 +35,8 @@
         {% if error %}
         <div id="form-error" class="error">{{ error }}</div>
         {% endif %}
-        <p>
-          RenderScript packages one screenplay scene into a RenderPackage - a practical workflow for AI video generation.
-        </p>
-        <p>
-          The output is a downloadable <code>.zip</code> file containing a structured production kit: shot planning files,
-          provider-ready prompts, a Keeper Sheet, and audio post-production guides.
-        </p>
-        <ol class="app-instructions">
-          <li>
-            Upload a screenplay in <code>.fountain</code> format.
-            Fountain is a plain-text screenplay format that is easy to read, version, and convert from common script tools.
-          </li>
-          <li>
-            Select the scene you want to package.
-            If the script contains only one scene, scene 1 is selected automatically.
-          </li>
-          <li>
-            Choose your prompt packs and build the RenderPackage.
-          </li>
-        </ol>
+        <p>Upload a Fountain screenplay, choose a scene, and export a RenderPackage for AI video production.</p>
+        <p>RenderScript builds the package. You use it with your preferred AI video tools.</p>
         <form id="build-form" action="/build" method="post" enctype="multipart/form-data">
           <label for="screenplay_file">Screenplay file</label>
           <input id="screenplay_file" name="screenplay_file" type="file" accept=".fountain,.fnt" required>
@@ -64,55 +47,90 @@
 
           <div id="scene-simple" class="inline-note hidden">Accepted screenplay format: <strong>.fountain</strong> (also supports <strong>.fnt</strong>). Single-scene scripts default to scene 1.</div>
           <div id="scene-advanced" class="hidden">
-            <label for="scene">Scene number</label>
+            <label for="scene">Scene</label>
             <select id="scene" name="scene"></select>
           </div>
           <input id="scene-hidden" type="hidden" name="scene" value="{{ scene }}">
-
-          <label>Include prompt packs for</label>
           <input type="hidden" name="provider" value="universal">
-          <div class="provider-row">
-            <label class="checkbox-row checkbox-row-locked" for="provider-universal">
-              <input id="provider-universal" type="checkbox" checked disabled>
-              Universal
-            </label>
-            {% for adapter in providers %}
-            <label class="checkbox-row" for="include-provider-{{ loop.index }}">
-              <input id="include-provider-{{ loop.index }}" type="checkbox" name="include_provider_prompts" value="{{ adapter.id }}">
-              {{ adapter.label }}
-            </label>
-            {% endfor %}
-          </div>
 
-          <label for="project">Project name</label>
-          <input id="project" name="project" type="text" value="{{ project if project != 'project' else '' }}" placeholder="Project" required>
+          <label for="project">Project name (optional)</label>
+          <input id="project" name="project" type="text" value="{{ project if project != 'project' else '' }}" placeholder="Project">
 
           <button id="submit-btn" type="submit">Build RenderPackage</button>
           <div class="button-helper">
-            Builds a RenderPackage <code>.zip</code> for one scene.<br>
-            Use the package in your chosen AI video workflow.
+            Downloads a RenderPackage <code>.zip</code> for one screenplay scene.
           </div>
         </form>
+      </section>
+
+      <section class="tab-pane" data-pane="quick-start">
+        <h3>Quick Start</h3>
+        <p>
+          RenderScript creates a RenderPackage: a structured production kit you can use with the AI video tools you already know.
+        </p>
+        <h4>Write or export a Fountain screenplay</h4>
+        <p>
+          RenderScript uses Fountain screenplay files. Fountain is a plain-text screenplay format for writing screenplays.
+        </p>
+        <p><a href="https://fountain.io/" target="_blank" rel="noreferrer">Fountain format</a></p>
+        <p>If you are new to Fountain, start with a simple one-scene script.</p>
+
+        <h4>Build a RenderPackage</h4>
+        <p>Upload your screenplay, select a scene, and download the RenderPackage <code>.zip</code>.</p>
+
+        <h4>Open the package</h4>
+        <p>Unzip the package and open it in a workspace app.</p>
+        <ul>
+          <li><a href="https://obsidian.md/download" target="_blank" rel="noreferrer">Obsidian</a> - creator-friendly notes workspace</li>
+          <li><a href="https://www.notion.com/desktop" target="_blank" rel="noreferrer">Notion</a> - polished workspace for organising docs</li>
+          <li><a href="https://code.visualstudio.com/download" target="_blank" rel="noreferrer">VS Code</a> - best for technical users and developers</li>
+        </ul>
+        <p>
+          CSV files such as the shot list and Keeper Sheet can also be opened in Excel, Numbers, or Google Sheets.
+        </p>
+
+        <h4>Generate takes</h4>
+        <p>Use the prompts and reference guidance inside the package with your preferred AI video tools.</p>
+
+        <h4>Pick keepers and edit</h4>
+        <p>
+          Generate multiple takes, mark the best ones as keepers, assemble the sequence, then add dialogue and sound in post.
+        </p>
+        <p>
+          <strong>RenderScript does not generate video.</strong> It prepares the package you use to generate with more control.
+        </p>
       </section>
 
       <section class="tab-pane" data-pane="creators">
         <h3>For Creators</h3>
         <p>
-          RenderScript is designed for writer-directors and small teams exploring AI filmmaking.
+          AI video generation gets messy fast. Prompts drift, characters change, props disappear, and every shot can become a new negotiation with the machine.
         </p>
         <p>
-          Instead of treating each generation as a one-off prompt, RenderScript creates a repeatable production workflow
-          built around shots, takes, keepers, and editing.
+          Use the AI video tools you already know.
         </p>
         <p>
-          The system follows a picture-first approach: generate visuals first, then handle dialogue, sound effects, and mix in post.
+          RenderScript gives your scene a structure before generation begins.
+        </p>
+        <p><strong>What RenderScript helps with:</strong></p>
+        <ul>
+          <li>turning a screenplay scene into shot-level prompts</li>
+          <li>keeping reference images organised</li>
+          <li>tracking takes and keepers</li>
+          <li>keeping edit and audio notes in one package</li>
+          <li>reducing prompt chaos when building look tests or rough scenes</li>
+        </ul>
+        <p><strong>Workflow:</strong></p>
+        <p>
+          Write the scene.<br>
+          Build the RenderPackage.<br>
+          Generate takes.<br>
+          Pick keepers.<br>
+          Cut the sequence.<br>
+          Finish audio in post.
         </p>
         <p>
-          This mirrors real production workflows and helps maintain visual continuity while working with AI video tools.
-        </p>
-        <p>
-          The result is fewer random rerolls, clearer creative decisions, and a smoother path from screenplay scene to
-          rough cut.
+          RenderScript does not replace direction or editing. It gives creators a clearer production workflow for AI video.
         </p>
       </section>
 
@@ -191,11 +209,11 @@
           RenderScript prepares screenplay scenes for AI video production.
         </p>
         <p>
-          It converts a scene into a RenderPackage: a structured toolkit containing shot planning files, prompt packs,
-          asset bindings, and post-production guides.
+          RenderScript is a universal AI-video workflow layer, not a platform-specific generator.
         </p>
         <p>
-          The goal is simple - make screenplay structure usable in AI video workflows.
+          It converts a scene into a RenderPackage: a structured toolkit containing shot planning files, prompt packs,
+          asset bindings, and post-production guides.
         </p>
         <p>
           RenderScript does not generate video. It builds a production package that creators run in their chosen AI
