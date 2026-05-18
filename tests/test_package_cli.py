@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 import re
-from io import StringIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from zipfile import ZipFile
+from xml.etree import ElementTree as ET
 
 import pytest
 
@@ -13,42 +14,54 @@ from renderscript.providers import GROK_PROVIDER, PROVIDER_REGISTRY
 
 
 BASE_REQUIRED_PATHS = [
-    "START_HERE.txt",
-    "CREATOR_GUIDE.pdf",
-    "PACKAGE_MAP.md",
-    "shots/shot_list.csv",
-    "shots/bindings.csv",
-    "prompts/shot_prompts.md",
-    "prompts/asset_prompts.md",
-    "assets/ingredients_manifest.md",
-    "assets/refs/styles/",
-    "assets/refs/characters/",
-    "assets/refs/locations/",
-    "assets/refs/props/",
-    "keepers/scoring_sheet.csv",
-    "audio/voice_bible.md",
-    "audio/dialogue_script.txt",
-    "audio/sfx_cue_sheet.md",
-    "edit_guide/subtitles.srt",
-    "dev/rpack.json",
-    "dev/provenance.json",
+    "RENDERPACKAGE.pdf",
+    "COPY_PASTE_PROMPTS.docx",
+    "KEEPER_SHEET.csv",
+    "DEVELOPER_FILES/",
+    "DEVELOPER_FILES/rpack.json",
+    "DEVELOPER_FILES/provenance.json",
+    "DEVELOPER_FILES/shot_list.csv",
+    "DEVELOPER_FILES/bindings.csv",
+    "DEVELOPER_FILES/AGENT_ORCHESTRATION.md",
+    "DEVELOPER_FILES/provider_capabilities.example.json",
+    "DEVELOPER_FILES/prompt_packs/",
+    "DEVELOPER_FILES/prompt_packs/shot_prompts.md",
+    "DEVELOPER_FILES/prompt_packs/runway.gen4_image_refs_prompts.md",
+    "DEVELOPER_FILES/prompt_packs/grok.imagine_prompts.md",
+    "DEVELOPER_FILES/package_map.md",
 ]
 
 
-def _required_paths(*, include_runway_prompts: bool = False, include_grok_prompts: bool = False) -> list[str]:
-    paths = list(BASE_REQUIRED_PATHS)
-    if include_runway_prompts:
-        paths.insert(paths.index("prompts/asset_prompts.md"), "prompts/runway.gen4_image_refs_prompts.md")
-    if include_grok_prompts:
-        paths.insert(paths.index("prompts/asset_prompts.md"), "prompts/grok.imagine_prompts.md")
-    return paths
+def _required_paths(
+    *,
+    source_filename: str = "t1_dialogue_attribution.fountain",
+    reference_paths: list[str] | None = None,
+    include_runway_prompts: bool = False,
+    include_grok_prompts: bool = False,
+) -> list[str]:
+    refs = reference_paths or [
+        "refs/01_style_reference/",
+        "refs/02_location_reference/",
+        "refs/03_character_reference_alice/",
+        "refs/04_character_reference_bob/",
+    ]
+    return [
+        "RENDERPACKAGE.pdf",
+        "COPY_PASTE_PROMPTS.docx",
+        "KEEPER_SHEET.csv",
+        source_filename,
+        *refs,
+        "generated_shots/takes/",
+        "generated_shots/keepers/",
+        *BASE_REQUIRED_PATHS[3:],
+    ]
 
 
 def test_provider_registry_includes_grok_imagine() -> None:
     grok = PROVIDER_REGISTRY[GROK_PROVIDER]
     assert grok.id == "grok.imagine"
     assert grok.label == "Grok Imagine"
-    assert grok.prompt_filename == "prompts/grok.imagine_prompts.md"
+    assert grok.prompt_filename == "DEVELOPER_FILES/prompt_packs/grok.imagine_prompts.md"
     assert grok.supported is True
     assert grok.requires_reference_image is True
 
@@ -107,6 +120,14 @@ def _has_pypdf() -> bool:
     return True
 
 
+def _docx_text(raw: bytes) -> str:
+    with ZipFile(BytesIO(raw), "r") as zf:
+        xml = zf.read("word/document.xml")
+    root = ET.fromstring(xml)
+    ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+    return "\n".join(node.text or "" for node in root.findall(".//w:t", ns))
+
+
 def _normalize_ws(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
@@ -152,26 +173,28 @@ def test_package_generates_required_files_and_is_deterministic(
     contents_two = _zip_contents(out_two)
     assert set(contents_one.keys()) == set(required_paths)
     assert set(contents_two.keys()) == set(required_paths)
+    assert contents_one["t1_dialogue_attribution.fountain"] == source.read_bytes()
 
     for path in required_paths:
-        if path == "dev/rpack.json":
+        if path == "DEVELOPER_FILES/rpack.json":
             assert _rpack_without_generated_at(contents_one[path]) == _rpack_without_generated_at(contents_two[path])
             continue
-        if path == "dev/provenance.json":
+        if path == "DEVELOPER_FILES/provenance.json":
             assert _provenance_without_generated_at(contents_one[path]) == _provenance_without_generated_at(
                 contents_two[path]
             )
             continue
-        if path == "CREATOR_GUIDE.pdf":
-            assert len(contents_one[path]) > 80000
-            assert len(contents_two[path]) > 80000
+        if path.endswith(".pdf"):
             if _has_pypdf():
                 assert _pdf_text(contents_one[path]) == _pdf_text(contents_two[path])
             continue
+        if path == "COPY_PASTE_PROMPTS.docx":
+            assert _docx_text(contents_one[path]) == _docx_text(contents_two[path])
+            continue
         assert contents_one[path] == contents_two[path]
 
-    rpack = json.loads(contents_one["dev/rpack.json"].decode("utf-8"))
-    provenance = json.loads(contents_one["dev/provenance.json"].decode("utf-8"))
+    rpack = json.loads(contents_one["DEVELOPER_FILES/rpack.json"].decode("utf-8"))
+    provenance = json.loads(contents_one["DEVELOPER_FILES/provenance.json"].decode("utf-8"))
     assert rpack["target_provider"] == "universal"
     assert rpack["selected_providers"] == ["universal"]
     assert rpack["generator"]["name"] == "RenderScript AI"
@@ -181,11 +204,32 @@ def test_package_generates_required_files_and_is_deterministic(
     assert 8 <= len(rpack["shots"]) <= 12
     assert rpack["debug"]["creator_guide"]["renderer_used"] == "html"
     assert isinstance(rpack["debug"]["creator_guide"]["error"], str)
+    agent_contract = rpack["agent_orchestration"]
+    assert agent_contract["source_of_truth"] == "DEVELOPER_FILES/rpack.json"
+    assert agent_contract["agent_contract"] == "DEVELOPER_FILES/AGENT_ORCHESTRATION.md"
+    assert agent_contract["provider_capabilities_example"] == "DEVELOPER_FILES/provider_capabilities.example.json"
+    assert agent_contract["keeper_sheet_path"] == "KEEPER_SHEET.csv"
+    assert agent_contract["provenance_path"] == "DEVELOPER_FILES/provenance.json"
+    assert agent_contract["prompt_pack_paths"]["universal"] == "DEVELOPER_FILES/prompt_packs/shot_prompts.md"
+    assert agent_contract["reference_folders"]
+    for reference in agent_contract["reference_folders"]:
+        assert reference["path"].startswith("refs/")
+        assert reference["base_prompt"]
+        assert reference["used_in"]
+    assert len(agent_contract["shots"]) == len(rpack["shots"])
+    for agent_shot in agent_contract["shots"]:
+        assert agent_shot["shot_id"]
+        assert agent_shot["shot_intent"]
+        assert agent_shot["base_prompt"]
+        assert "No subtitles, captions, logos, watermarks, or on-screen text." in agent_shot["base_prompt"]
+        assert agent_shot["references"]
+        assert agent_shot["reference_ids"]
+        assert "character_refs" in agent_shot["reference_ids"]
 
-    shot_rows = _csv_rows(contents_one["shots/shot_list.csv"])
-    bindings_rows = _csv_rows(contents_one["shots/bindings.csv"])
-    rubric_rows = _csv_rows(contents_one["keepers/scoring_sheet.csv"])
-    prompt_text = contents_one["prompts/shot_prompts.md"].decode("utf-8")
+    shot_rows = _csv_rows(contents_one["DEVELOPER_FILES/shot_list.csv"])
+    bindings_rows = _csv_rows(contents_one["DEVELOPER_FILES/bindings.csv"])
+    rubric_rows = _csv_rows(contents_one["KEEPER_SHEET.csv"])
+    prompt_text = contents_one["DEVELOPER_FILES/prompt_packs/shot_prompts.md"].decode("utf-8")
 
     assert len(shot_rows) == len(rpack["shots"])
     assert len(bindings_rows) == len(rpack["shots"])
@@ -212,11 +256,9 @@ def test_package_generates_required_files_and_is_deterministic(
     ]
     assert list(rubric_rows[0].keys()) == [
         "shot_id",
-        "keeper",
-        "character_consistency",
-        "location_consistency",
-        "style_consistency",
-        "note",
+        "keeper_take",
+        "usable",
+        "notes",
     ]
 
     shot_beats = {row["shot_id"]: row["beat"] for row in shot_rows}
@@ -238,63 +280,106 @@ def test_package_generates_required_files_and_is_deterministic(
     assert "!." not in prompt_text
     assert "  " not in prompt_text
 
-    package_map = contents_one["PACKAGE_MAP.md"].decode("utf-8")
-    assert "## 1) What to open first" in package_map
-    assert "## 2) Where references go" in package_map
-    assert "## 3) Where prompts live" in package_map
-    assert "## 4) Where to track keepers" in package_map
-    assert "## 5) Where audio files live" in package_map
-    assert "## 6) Developer files" in package_map
-    assert "shots/bindings.csv" in package_map
-    assert "keepers/scoring_sheet.csv" in package_map
+    package_map = contents_one["DEVELOPER_FILES/package_map.md"].decode("utf-8")
+    assert "## Creator-facing files" in package_map
+    assert "The source `.fountain` screenplay is included at the package root for reference." in package_map
+    assert "## Reference folders" in package_map
+    assert "## Developer files" in package_map
+    assert "## Agent orchestration" in package_map
+    assert "AGENT_ORCHESTRATION.md" in package_map
+    assert "provider_capabilities.example.json" in package_map
+    assert "Agents should use the package after it is generated" in package_map
+    assert "DEVELOPER_FILES/bindings.csv" in package_map
+    assert "KEEPER_SHEET.csv" in package_map
     assert "This package uses the Universal workflow." in package_map
-    assert "Use `prompts/shot_prompts.md` to generate shots." in package_map
+    assert "Selected prompt profile: `DEVELOPER_FILES/prompt_packs/shot_prompts.md`." in package_map
     assert "provider profile" not in package_map
     assert "Grok Imagine" not in package_map
-    start_here = contents_one["START_HERE.txt"].decode("utf-8")
-    assert "1. Read CREATOR_GUIDE.pdf" in start_here
-    assert "2. Put reference images in assets/refs" in start_here
-    assert "3. Generate takes using prompts" in start_here
-    assert "4. Mark keepers in keepers/scoring_sheet.csv" in start_here
 
     assert provenance["provider"] == "universal"
     assert provenance["creator_guide"]["renderer_used"] == "html"
 
-    asset_prompts = contents_one["prompts/asset_prompts.md"].decode("utf-8")
-    assert "style_01_ref_01" in asset_prompts
-    assert "loc_01_ref_01" in asset_prompts
-    assert "assets/asset_prompts.md" not in contents_one
-
-    assert len(contents_one["CREATOR_GUIDE.pdf"]) > 80000
-    universal_pdf_text = _pdf_text(contents_one["CREATOR_GUIDE.pdf"])
+    universal_pdf_text = _pdf_text(contents_one["RENDERPACKAGE.pdf"])
     normalized_universal_pdf_text = _normalize_ws(universal_pdf_text)
-    assert "Provider: Runway" not in normalized_universal_pdf_text
-    assert "creator-guide-pad" not in normalized_universal_pdf_text
-    assert "Page 1:" not in normalized_universal_pdf_text
     if _has_pypdf():
-        assert "Keepers" in normalized_universal_pdf_text
-        assert "Keeper Sheet" in normalized_universal_pdf_text
-        assert "rough cut" in normalized_universal_pdf_text
-        assert "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_universal_pdf_text
-        assert "Each RenderPackage represents one scene from your screenplay." in normalized_universal_pdf_text
+        assert "Shot Cards / Storyboard" in normalized_universal_pdf_text
+        assert "Reference Setup" in normalized_universal_pdf_text
+        assert "REFERENCE BOARD" in normalized_universal_pdf_text
+        assert "References are reusable visual ingredients for your shots." in normalized_universal_pdf_text
+        assert "REFERENCE BASE PROMPT" in normalized_universal_pdf_text
+        assert "Reference folders are already created for this scene." in normalized_universal_pdf_text
+        assert "help you keep the scene organized in one place" in normalized_universal_pdf_text
+        assert "Use one strong reference image to start." in normalized_universal_pdf_text
+        assert "USE FOR" in normalized_universal_pdf_text
+        assert "manually attach or upload" in normalized_universal_pdf_text
+        assert "Keeper Workflow" in normalized_universal_pdf_text
+        assert "POST-PRODUCTION WORKFLOW" in normalized_universal_pdf_text
+        assert "Dialogue in the prompt helps the video tool understand the performance moment." in normalized_universal_pdf_text
         assert "Scene summary" in normalized_universal_pdf_text
         assert "This package was generated from Scene 1 of the screenplay." in normalized_universal_pdf_text
         assert "Characters: Alice, Bob" in normalized_universal_pdf_text
         assert "Location: Int. Server Room - Night" in normalized_universal_pdf_text
-        assert "What you do now" in normalized_universal_pdf_text
-        assert "1. Prepare your reference images" in normalized_universal_pdf_text
-        assert "v0.1.0Page" not in universal_pdf_text
-        assert _pdf_page_count(contents_one["CREATOR_GUIDE.pdf"]) == 5
+        assert "SHOT 001" in normalized_universal_pdf_text
+        assert normalized_universal_pdf_text.count("BASE PROMPT") == len(rpack["shots"]) + len(
+            agent_contract["reference_folders"]
+        )
+        assert "Copy this section into your AI video tool as the starting prompt." in normalized_universal_pdf_text
+        assert "OPTIONAL TUNING" in normalized_universal_pdf_text
+        assert "KEEP CONSISTENT" in normalized_universal_pdf_text
+        assert "GENERATION CHECK" in normalized_universal_pdf_text
+        assert "A usable take should:" in normalized_universal_pdf_text
+        assert "generated_shots/takes/" in normalized_universal_pdf_text
+        assert "generated_shots/keepers/" in normalized_universal_pdf_text
+        assert "You do not need DEVELOPER_FILES to use this package." in normalized_universal_pdf_text
+        assert "DEVELOPER_FILES" in normalized_universal_pdf_text
+        assert "style_01_ref_01" not in normalized_universal_pdf_text
+    copy_doc = _docx_text(contents_one["COPY_PASTE_PROMPTS.docx"])
+    assert "COPY / PASTE BASE PROMPTS" in copy_doc
+    assert "RenderScript provides base prompts and tuning notes." in copy_doc
+    assert "REFERENCE BASE PROMPTS" in copy_doc
+    assert "SHOT BASE PROMPTS" in copy_doc
+    assert "Reference base prompts help you create reusable visual ingredients." in copy_doc
+    assert "Shot base prompts help you generate video takes." in copy_doc
+    assert "SHOT 001 -" in copy_doc
+    assert copy_doc.count("BASE PROMPT") == len(rpack["shots"]) + len(agent_contract["reference_folders"]) + 3
+    assert "TUNING NOTES" in copy_doc
+    assert "Camera movement:" in copy_doc
+    for shot in rpack["shots"]:
+        assert str(shot["shot_id"]).replace("shot_", "SHOT ") in copy_doc
+    assert "ALICE:" not in copy_doc
+    assert "BOB:" not in copy_doc
+    assert "MAYA:" not in copy_doc
     assert provenance["creator_guide"]["engine"] == "playwright"
     assert isinstance(provenance["creator_guide"]["error"], str)
-
-    assert contents_one["audio/voice_bible.md"].decode("utf-8").strip()
-    dialogue_script = contents_one["audio/dialogue_script.txt"].decode("utf-8")
-    assert "Dialogue Script (Audio in Post)" in dialogue_script
-    sfx_sheet = contents_one["audio/sfx_cue_sheet.md"].decode("utf-8")
-    assert "# SFX Cue Sheet" in sfx_sheet
-    subtitles = contents_one["edit_guide/subtitles.srt"].decode("utf-8")
-    assert subtitles.lstrip().startswith("1")
+    assert "START_HERE.pdf" not in contents_one
+    assert "START_HERE.txt" not in contents_one
+    assert "PACKAGE_MAP.md" not in contents_one
+    assert not any(name.endswith(".md") and not name.startswith("DEVELOPER_FILES/") for name in contents_one)
+    agent_orchestration = contents_one["DEVELOPER_FILES/AGENT_ORCHESTRATION.md"].decode("utf-8")
+    assert "# Agent Orchestration" in agent_orchestration
+    assert "An agent should not recreate the package." in agent_orchestration
+    assert "Submit generation jobs only when the user has configured provider access" in agent_orchestration
+    assert "generated_shots/takes/" in agent_orchestration
+    assert "generated_shots/keepers/" in agent_orchestration
+    assert "Do not place generated media inside DEVELOPER_FILES." in agent_orchestration
+    provider_capabilities = json.loads(
+        contents_one["DEVELOPER_FILES/provider_capabilities.example.json"].decode("utf-8")
+    )
+    assert provider_capabilities == {
+        "adapter_id": "example.provider",
+        "duration_control": "provider_setting",
+        "max_reference_images_per_generation": 3,
+        "notes": "Example capability map only. Real adapters must verify provider behaviour.",
+        "provider": "example_provider",
+        "supports_audio_references": False,
+        "supports_batch_generation": False,
+        "supports_download": True,
+        "supports_image_references": True,
+        "supports_keyframes": False,
+        "supports_task_polling": True,
+        "supports_text_to_video": True,
+        "supports_video_references": False,
+    }
 
 
 def test_package_errors_for_multi_scene_without_scene_selection(
@@ -362,7 +447,7 @@ def test_package_duration_override_applies_to_all_shots(
     )
     assert cli.main() == 0
     contents = _zip_contents(out_path)
-    shot_rows = _csv_rows(contents["shots/shot_list.csv"])
+    shot_rows = _csv_rows(contents["DEVELOPER_FILES/shot_list.csv"])
     assert shot_rows
     assert all(row["duration_hint"] == "7s" for row in shot_rows)
 
@@ -384,7 +469,7 @@ def test_dialogue_heavy_scene_uses_varied_end_coverage(
     )
     assert cli.main() == 0
     contents = _zip_contents(out_path)
-    shot_rows = _csv_rows(contents["shots/shot_list.csv"])
+    shot_rows = _csv_rows(contents["DEVELOPER_FILES/shot_list.csv"])
     assert len(shot_rows) >= 8
     final_three = shot_rows[-3:]
     final_descriptions = [row["description"] for row in final_three]
@@ -470,18 +555,18 @@ def test_package_add_pack_grok_generates_grok_prompt_file(
     assert cli.main() == 0
     contents = _zip_contents(out_path)
     assert set(contents.keys()) == set(_required_paths(include_grok_prompts=True))
-    assert "prompts/grok.imagine_prompts.md" in contents
-    grok_prompt_text = contents["prompts/grok.imagine_prompts.md"].decode("utf-8")
+    assert "DEVELOPER_FILES/prompt_packs/grok.imagine_prompts.md" in contents
+    grok_prompt_text = contents["DEVELOPER_FILES/prompt_packs/grok.imagine_prompts.md"].decode("utf-8")
     assert "# Grok Imagine Prompts" in grok_prompt_text
     assert (
         "Grok Imagine video workflows typically start from a reference image. "
         "For best results, attach at least a style or character reference image before generating."
     ) in grok_prompt_text
     assert "How to apply refs:" in grok_prompt_text
-    package_map = contents["PACKAGE_MAP.md"].decode("utf-8")
+    package_map = contents["DEVELOPER_FILES/package_map.md"].decode("utf-8")
     assert "Grok Imagine" in package_map
-    assert "`prompts/grok.imagine_prompts.md`" in package_map
-    rpack = json.loads(contents["dev/rpack.json"].decode("utf-8"))
+    assert "`DEVELOPER_FILES/prompt_packs/grok.imagine_prompts.md`" in package_map
+    rpack = json.loads(contents["DEVELOPER_FILES/rpack.json"].decode("utf-8"))
     assert rpack["selected_providers"] == ["universal", "grok.imagine"]
 
 
@@ -504,29 +589,23 @@ def test_package_runway_provider_generates_runway_prompt_file(
     )
     assert cli.main() == 0
     contents = _zip_contents(out_path)
-    assert "prompts/runway.gen4_image_refs_prompts.md" in contents
-    assert "prompts/shot_prompts.md" in contents
-    assert "prompts/asset_prompts.md" in contents
-    runway_prompt_text = contents["prompts/runway.gen4_image_refs_prompts.md"].decode("utf-8")
+    assert "DEVELOPER_FILES/prompt_packs/runway.gen4_image_refs_prompts.md" in contents
+    assert "DEVELOPER_FILES/prompt_packs/shot_prompts.md" in contents
+    assert "prompts/asset_prompts.md" not in contents
+    runway_prompt_text = contents["DEVELOPER_FILES/prompt_packs/runway.gen4_image_refs_prompts.md"].decode("utf-8")
     assert "IMPORTANT: NO ON-SCREEN TEXT. NO SUBTITLES. NO CAPTIONS. NO WATERMARKS. NO LOGOS." in runway_prompt_text
     assert "Generate picture-only shots. Audio/dialogue will be added in post." in runway_prompt_text
-    rpack = json.loads(contents["dev/rpack.json"].decode("utf-8"))
-    provenance = json.loads(contents["dev/provenance.json"].decode("utf-8"))
+    rpack = json.loads(contents["DEVELOPER_FILES/rpack.json"].decode("utf-8"))
+    provenance = json.loads(contents["DEVELOPER_FILES/provenance.json"].decode("utf-8"))
     assert rpack["target_provider"] == "runway.gen4_image_refs"
     assert rpack["debug"]["creator_guide"]["renderer_used"] == "html"
     assert runway_prompt_text.count("No on-screen text or subtitles.") == len(rpack["shots"])
-    runway_pdf_text = _pdf_text(contents["CREATOR_GUIDE.pdf"])
+    runway_pdf_text = _pdf_text(contents["RENDERPACKAGE.pdf"])
     normalized_runway_pdf_text = _normalize_ws(runway_pdf_text)
-    assert "Runway" in normalized_runway_pdf_text
-    assert "creator-guide-pad" not in normalized_runway_pdf_text
-    assert "Page 1:" not in normalized_runway_pdf_text
     if _has_pypdf():
-        assert "Start \u2192 Refs \u2192 Takes \u2192 Keepers \u2192 Edit \u2192 Audio" in normalized_runway_pdf_text
-        assert "rough cut" in normalized_runway_pdf_text
-        assert "v0.1.0Page" not in runway_pdf_text
-        assert _pdf_page_count(contents["CREATOR_GUIDE.pdf"]) == 5
+        assert "Shot Cards / Storyboard" in normalized_runway_pdf_text
+        assert "Keeper Workflow" in normalized_runway_pdf_text
     assert provenance["creator_guide"]["engine"] == "playwright"
-    assert len(contents["CREATOR_GUIDE.pdf"]) > 80000
 
 
 def test_package_golden_expected_paths_universal_scene_one(
@@ -558,9 +637,13 @@ def test_package_golden_expected_paths_universal_scene_one(
         assert set(zf.namelist()) == expected_paths
         unpack_dir = tmp_path / "unpacked"
         zf.extractall(unpack_dir)
-    assert (unpack_dir / "PACKAGE_MAP.md").read_text(encoding="utf-8").strip()
-    assert (unpack_dir / "START_HERE.txt").read_text(encoding="utf-8").strip()
-    assert (unpack_dir / "prompts/shot_prompts.md").read_text(encoding="utf-8").strip()
-    assert not (unpack_dir / "prompts/runway.gen4_image_refs_prompts.md").exists()
-    assert (unpack_dir / "prompts/asset_prompts.md").read_text(encoding="utf-8").strip()
-    assert (unpack_dir / "CREATOR_GUIDE.pdf").stat().st_size > 80000
+    assert (unpack_dir / "RENDERPACKAGE.pdf").stat().st_size > 0
+    assert (unpack_dir / "realistic.fountain").read_text(encoding="utf-8") == source.read_text(encoding="utf-8")
+    assert (unpack_dir / "COPY_PASTE_PROMPTS.docx").stat().st_size > 0
+    assert (unpack_dir / "KEEPER_SHEET.csv").read_text(encoding="utf-8").startswith("shot_id,keeper_take,usable,notes")
+    assert (unpack_dir / "DEVELOPER_FILES/package_map.md").read_text(encoding="utf-8").strip()
+    assert (unpack_dir / "DEVELOPER_FILES/prompt_packs/shot_prompts.md").read_text(encoding="utf-8").strip()
+    assert (unpack_dir / "DEVELOPER_FILES/prompt_packs/runway.gen4_image_refs_prompts.md").read_text(
+        encoding="utf-8"
+    ).strip()
+    assert (unpack_dir / "DEVELOPER_FILES/prompt_packs/grok.imagine_prompts.md").read_text(encoding="utf-8").strip()

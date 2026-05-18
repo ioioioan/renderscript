@@ -200,6 +200,54 @@ def _render_with_playwright(html: str, base_url: str) -> bytes:
         raise RuntimeError("Playwright launch attempts failed: " + " | ".join(launch_errors))
 
 
+def render_template_pdf(template_name: str, context: dict[str, object]) -> CreatorGuideRenderResult:
+    errors: list[str] = []
+    chromium_launch_success = False
+    chromium_installed = _chromium_installed()
+    base_url = str((Path(__file__).resolve().parent / "templates").resolve())
+
+    try:
+        env = _template_env()
+        template = env.get_template(template_name)
+        html = template.render(**context)
+    except Exception as exc:
+        errors.append(f"HTML template render failed: {type(exc).__name__}: {exc}")
+        html = None
+
+    if html is not None:
+        try:
+            pdf = _render_with_playwright(html, base_url=base_url)
+            chromium_launch_success = True
+            return CreatorGuideRenderResult(
+                pdf_bytes=pdf,
+                renderer_used="html",
+                error="",
+                debug_text=_build_debug_text(
+                    renderer_used="html",
+                    engine="playwright",
+                    error="",
+                    chromium_launch_success=chromium_launch_success,
+                    chromium_installed=chromium_installed,
+                ),
+            )
+        except Exception as exc:
+            errors.append(f"Playwright render failed: {type(exc).__name__}: {exc}")
+
+    error = " | ".join(errors).strip()
+    return CreatorGuideRenderResult(
+        pdf_bytes=b"",
+        renderer_used="fallback",
+        error=error,
+        debug_text=_build_debug_text(
+            renderer_used="fallback",
+            engine="fallback",
+            error=error,
+            chromium_launch_success=chromium_launch_success,
+            chromium_installed=chromium_installed,
+        ),
+    )
+
+
 def _pdf_escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 

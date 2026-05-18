@@ -203,6 +203,10 @@ It contains:
 - audio-post docs
 - machine-readable package files
 
+RenderPackage can also be consumed by external or local agents as a downstream workflow contract.
+Agents should read `DEVELOPER_FILES/rpack.json`, not creator-facing PDFs.
+Provider execution is outside the MVP and must be implemented by separate adapters or downstream tools.
+
 ### 3. Provider registry
 
 `renderscript/providers.py` is the single source of truth for provider adapters.
@@ -226,7 +230,7 @@ Current providers:
 This is one of the most important architectural ideas in the repo.
 
 - Creator-facing workflow files live in the package root and subfolders.
-- Machine-readable truth lives in `dev/rpack.json`.
+- Machine-readable truth lives in `DEVELOPER_FILES/rpack.json`.
 
 If you are building tooling, `dev/rpack.json` matters most.
 If you are helping creators use the package, the docs and prompt files matter most.

@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="creator_guide.css">
+</head>
+<body>
+  <section class="page">
+    <div class="header">
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="RenderScript logo">{% endif %}</div>
+      <div>
+        <div class="progress">{{ progress_text }}</div>
+        <div class="provider">Storyboard-led shooting pack</div>
+        <div class="page-num">Page 1</div>
+      </div>
+    </div>
+
+    <h1>RENDERPACKAGE</h1>
+    <p class="lead">A storyboard-led AI video shooting pack for one screenplay scene.</p>
+
+    <h2>Scene Summary</h2>
+    <div class="compact-block">
+      {% for line in scene_summary %}
+      <p>{{ line }}</p>
+      {% endfor %}
+    </div>
+
+    <h2>Reference Setup</h2>
+    <p>Reference folders are already created for this scene.</p>
+    <p>They are here to help you keep the scene organized in one place: style, location, character, and prop references stay beside the shooting pack instead of scattered across downloads or desktop folders.</p>
+    <p>Add your reference images into these folders before generating shots so you can quickly find the right assets while working shot by shot.</p>
+    <p>Use one strong reference image to start. Add more only if your AI video tool supports multiple references and the extra images improve consistency.</p>
+    <p>This package works best with AI video tools that support image references, ingredients, keyframes, or visual references.</p>
+    <p>Text-only generation can still be used, but expect more drift.</p>
+    <p><strong>Important:</strong> Your AI video tool only uses these images when you manually attach or upload them during generation.</p>
+    <p>Dialogue in prompts is a performance cue for the video tool. Final dialogue/audio should be added in post.</p>
+  </section>
+  <div class="page-split"></div>
+
+  <section class="page">
+    <div class="header">
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="RenderScript logo">{% endif %}</div>
+      <div>
+        <div class="progress">{{ progress_text }}</div>
+        <div class="provider">Reference Board</div>
+        <div class="page-num">Page 2</div>
+      </div>
+    </div>
+
+    <h1>REFERENCE BOARD</h1>
+    <p>References are reusable visual ingredients for your shots.</p>
+    <p>Create or collect the references before generating video takes.</p>
+    <p>Start with one strong reference image per folder. Add more only if your AI video tool supports multiple references and the extra images improve consistency.</p>
+    <p>Reference folders are already created for you.</p>
+    <p>Your AI video tool only uses these references when you manually attach or upload them during generation.</p>
+    {% for reference in reference_rows %}
+    <article class="reference-card">
+      <h2>REFERENCE {{ reference.number }} - {{ reference.name }}</h2>
+      <h2>USE FOR</h2>
+      <p>{{ reference.purpose }}</p>
+      <h2>SAVE HERE</h2>
+      <p>{{ reference.path }}</p>
+      <h2>REFERENCE BASE PROMPT</h2>
+      <p class="base-prompt">{{ reference.base_prompt }}</p>
+      <h2>TUNING NOTES</h2>
+      <p>{{ reference.tuning_notes }}</p>
+      <h2>USED IN</h2>
+      <p>{{ reference.used_in }}</p>
+    </article>
+    {% endfor %}
+  </section>
+  <div class="page-split"></div>
+
+  {% for page in shot_pages %}
+  <section class="page">
+    <div class="header">
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="RenderScript logo">{% endif %}</div>
+      <div>
+        <div class="progress">{{ progress_text }}</div>
+        <div class="provider">Shot Cards / Storyboard</div>
+        <div class="page-num">Page {{ loop.index + 2 }}</div>
+      </div>
+    </div>
+
+    <h1>Shot Cards / Storyboard</h1>
+    {% for card in page %}
+    <article class="shot-card">
+      <h2>{{ card.title }}</h2>
+      <h2>SHOT INTENT</h2>
+      <p>{{ card.intent }}</p>
+      <h2>FRAME</h2>
+      <p>{{ card.frame }}</p>
+      <h2>SCENE CONTEXT</h2>
+      <p>{{ card.scene_context }}</p>
+      <h2>CHARACTERS</h2>
+      <p>{{ card.characters }}</p>
+      <h2>REFERENCES TO ATTACH</h2>
+      {% if card.references %}
+      <ul class="compact-list">
+        {% for reference in card.references %}
+        <li>{{ reference }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>None</p>
+      {% endif %}
+      <h2>BASE PROMPT</h2>
+      <p>Copy this section into your AI video tool as the starting prompt.</p>
+      <p class="base-prompt">{{ card.base_prompt }}</p>
+      <h2>OPTIONAL TUNING</h2>
+      <p>Adjust the base prompt for your chosen AI video tool.</p>
+      <p>You may tune camera movement, shot energy, performance intensity, realism level, reference emphasis, and tool-specific wording.</p>
+      <h2>KEEP CONSISTENT</h2>
+      <ul class="compact-list">
+        {% for item in card.keep_consistent %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+      <h2>GENERATION CHECK</h2>
+      <p>A usable take should:</p>
+      <ul class="compact-list">
+        {% for item in card.generation_check %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+      <p>{{ card.generation_note }}</p>
+      <p>Save takes here: {{ card.take_path }}</p>
+      <p>Save selected keepers here: {{ card.keeper_path }}</p>
+      <p>Track the selected keeper in: {{ card.keeper_sheet_path }}</p>
+      <h2>POST-PRODUCTION NOTE</h2>
+      <p>{{ card.post_note }}</p>
+    </article>
+    {% endfor %}
+  </section>
+  <div class="page-split"></div>
+  {% endfor %}
+
+  <section class="page">
+    <div class="header">
+      <div class="logo">{% if logo_uri %}<img src="{{ logo_uri }}" alt="RenderScript logo">{% endif %}</div>
+      <div>
+        <div class="progress">{{ progress_text }}</div>
+        <div class="provider">Keepers + Post</div>
+        <div class="page-num">Page {{ shot_pages|length + 3 }}</div>
+      </div>
+    </div>
+
+    <h1>Keeper Workflow</h1>
+    <p>Use generated_shots/takes/ for all attempts.</p>
+    <p>Use generated_shots/keepers/ for selected clips.</p>
+    <p>Use KEEPER_SHEET.csv to record which take you chose and why.</p>
+    <p>A keeper does not need to be perfect. It needs to be useful in the edit.</p>
+
+    <h1>POST-PRODUCTION WORKFLOW</h1>
+    <p>Generate picture-first clips, then build the final scene in the edit.</p>
+    <p>Use speaking shots, reaction shots, inserts, and wider coverage together to support dialogue and rhythm.</p>
+    <p>Add final dialogue, sound effects, ambience, subtitles, colour, and polish in post.</p>
+    <p>Dialogue in the prompt helps the video tool understand the performance moment. It is not the final audio track.</p>
+    {% if dialogue_lines %}
+    {% for item in dialogue_lines %}
+    <h2>Shot {{ item.shot_number }} dialogue reference</h2>
+    {% for pair in item.lines %}
+    <p>{{ pair[0] }}: {{ pair[1] }}</p>
+    {% endfor %}
+    {% endfor %}
+    {% else %}
+    <p>No exact dialogue lines detected. Build final sound, music, and dialogue separately in post.</p>
+    {% endif %}
+
+    <h1>Developer Files Note</h1>
+    <p>You do not need DEVELOPER_FILES to use this package.</p>
+    <p>That folder is for technical users, adapters, validation, and automation.</p>
+  </section>
+</body>
+</html>

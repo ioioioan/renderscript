@@ -16,10 +16,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.concurrency import run_in_threadpool
 
 from renderscript.compiler import compile_fountain_text
-from renderscript.providers import (
-    DEFAULT_PROVIDER,
-    SUPPORTED_PROVIDERS,
-)
+from renderscript.providers import DEFAULT_PROVIDER, SUPPORTED_PROVIDERS
 from renderscript.renderpackage import package_fountain_file
 
 
@@ -234,7 +231,14 @@ async def build(
             zip_bytes = output_path.read_bytes()
             with ZipFile(BytesIO(zip_bytes), "r") as zf:
                 renderer_used = ""
-                if "dev/provenance.json" in zf.namelist():
+                if "DEVELOPER_FILES/provenance.json" in zf.namelist():
+                    provenance = json.loads(
+                        zf.read("DEVELOPER_FILES/provenance.json").decode("utf-8", errors="replace")
+                    )
+                    creator_guide = provenance.get("creator_guide", {}) if isinstance(provenance, dict) else {}
+                    if isinstance(creator_guide, dict):
+                        renderer_used = str(creator_guide.get("renderer_used", ""))
+                elif "dev/provenance.json" in zf.namelist():
                     provenance = json.loads(zf.read("dev/provenance.json").decode("utf-8", errors="replace"))
                     creator_guide = provenance.get("creator_guide", {}) if isinstance(provenance, dict) else {}
                     if isinstance(creator_guide, dict):
