@@ -11,6 +11,7 @@ import pytest
 
 from renderscript import cli
 from renderscript.providers import GROK_PROVIDER, PROVIDER_REGISTRY
+from renderscript.renderpackage import package_fountain_file
 
 
 BASE_REQUIRED_PATHS = [
@@ -647,3 +648,31 @@ def test_package_golden_expected_paths_universal_scene_one(
         encoding="utf-8"
     ).strip()
     assert (unpack_dir / "DEVELOPER_FILES/prompt_packs/grok.imagine_prompts.md").read_text(encoding="utf-8").strip()
+def test_package_exports_user_reference_assets_into_matching_refs_folder(tmp_path: Path):
+    source = Path("examples/t1_dialogue_attribution.fountain")
+    out_path = tmp_path / "reference_assets.zip"
+
+    package_fountain_file(
+        input_path=source,
+        output_path=out_path,
+        reference_assets=[
+            {
+                "reference_path": "refs/01_style_reference/",
+                "filename": "approved style.png",
+                "content": b"fake image bytes",
+            }
+        ],
+    )
+
+    contents = _zip_contents(out_path)
+    rpack = json.loads(contents["DEVELOPER_FILES/rpack.json"].decode("utf-8"))
+    asset_path = "refs/01_style_reference/approved_style.png"
+
+    assert contents[asset_path] == b"fake image bytes"
+    assert rpack["agent_orchestration"]["reference_folders"][0]["attached_reference_files"] == [
+        {
+            "filename": "approved_style.png",
+            "path": asset_path,
+            "source": "user_upload",
+        }
+    ]

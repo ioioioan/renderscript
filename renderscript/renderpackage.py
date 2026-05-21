@@ -55,6 +55,7 @@ ZIP_FIXED_DATETIME = (1980, 1, 1, 0, 0, 0)
 MIN_SHOTS = 8
 MAX_SHOTS = 12
 FRAMING_CYCLE = ("wide", "medium", "close")
+REFERENCE_ASSET_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
 
 
 def _prompt_filename_for_provider(provider: str) -> str:
@@ -2070,6 +2071,65 @@ def _write_deterministic_zip(output_path: Path, files: dict[str, str | bytes], o
             zf.writestr(info, content_bytes)
 
 
+def _safe_reference_asset_filename(filename: str) -> str:
+    name = Path(filename or "reference.png").name
+    suffix = Path(name).suffix.lower()
+    if suffix not in REFERENCE_ASSET_SUFFIXES:
+        raise ValueError("Reference assets must be JPG, PNG, or WebP images.")
+    stem = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(name).stem).strip("._-")
+    return f"{stem or 'reference'}{suffix}"
+
+
+def _reference_asset_files(
+    reference_assets: list[dict[str, object]] | None,
+    reference_paths: list[str],
+) -> tuple[dict[str, bytes], dict[str, list[dict[str, str]]]]:
+    if not reference_assets:
+        return {}, {}
+
+    allowed = set(reference_paths)
+    files: dict[str, bytes] = {}
+    metadata: dict[str, list[dict[str, str]]] = {}
+    used_names: dict[str, set[str]] = {}
+    for asset in reference_assets:
+        folder = str(asset.get("reference_path") or asset.get("folder") or "").replace("\\", "/")
+        if folder not in allowed:
+            raise ValueError("Reference asset does not match a package reference folder.")
+        content = asset.get("content")
+        if not isinstance(content, bytes):
+            raise ValueError("Reference asset content is missing.")
+        filename = _safe_reference_asset_filename(str(asset.get("filename") or "reference.png"))
+        names = used_names.setdefault(folder, set())
+        if filename in names:
+            suffix = Path(filename).suffix
+            stem = Path(filename).stem
+            counter = 2
+            while f"{stem}_{counter}{suffix}" in names:
+                counter += 1
+            filename = f"{stem}_{counter}{suffix}"
+        names.add(filename)
+        path = f"{folder}{filename}"
+        files[path] = content
+        metadata.setdefault(folder, []).append(
+            {
+                "filename": filename,
+                "path": path,
+                "source": "user_upload",
+            }
+        )
+    return files, metadata
+
+
+def _attach_reference_asset_metadata(
+    reference_rows: list[dict[str, object]],
+    metadata: dict[str, list[dict[str, str]]],
+) -> None:
+    for row in reference_rows:
+        path = str(row.get("path", ""))
+        if path in metadata:
+            row["attached_reference_files"] = metadata[path]
+
+
 def package_fountain_file(
     input_path: Path,
     output_path: Path,
@@ -2079,6 +2139,7 @@ def package_fountain_file(
     scene_ordinal: int | None = None,
     duration_s: int = 3,
     project: str = "project",
+    reference_assets: list[dict[str, object]] | None = None,
 ) -> None:
     get_provider(provider)
 
@@ -2183,12 +2244,15 @@ def package_fountain_file(
     )
     source_screenplay_filename = _source_screenplay_filename(input_path)
     reference_paths = _reference_folder_paths(reference_rows)
+    reference_asset_files, reference_asset_metadata = _reference_asset_files(reference_assets, reference_paths)
+    _attach_reference_asset_metadata(reference_rows, reference_asset_metadata)
     ordered_paths = [
         RENDERPACKAGE_FILENAME,
         COPY_PASTE_PROMPTS_FILENAME,
         KEEPER_SHEET_FILENAME,
         source_screenplay_filename,
         *reference_paths,
+        *sorted(reference_asset_files.keys()),
         GENERATED_TAKES_DIR,
         GENERATED_KEEPERS_DIR,
         *_required_files(prompt_files),
@@ -2295,4 +2359,5 @@ def package_fountain_file(
     }
     for reference_path in reference_paths:
         files[reference_path] = b""
+    files.update(reference_asset_files)
     _write_deterministic_zip(resolved_output_path, files, ordered_paths=ordered_paths)
