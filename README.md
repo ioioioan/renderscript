@@ -8,6 +8,16 @@ This repository contains the open-core engine and CLI.
 
 The hosted UI lives separately at `renderscript.studio`.
 
+## License, Copyright, and Branding
+
+RenderScript open-core source code and documentation are licensed under the Apache License, Version 2.0. See `LICENSE`.
+
+Copyright 2026 Ioan Jones.
+
+The Apache License allows use, modification, and distribution of the covered code and documentation, but it does not grant trademark rights. See `NOTICE` and `TRADEMARKS.md`.
+
+RenderScript, RenderPackage, PromptTuner, associated logos, and other RenderScript branding assets are names, marks, and branding assets of Ioan Jones. Do not use them to identify a competing product, imply endorsement, or confuse users about the origin of a product or service.
+
 ## Why It Exists
 
 Screenplays are written for humans. AI video workflows need structured inputs.
