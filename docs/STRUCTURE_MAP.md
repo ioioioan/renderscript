@@ -17,10 +17,23 @@ renderscript/
 ├── docs/                    # Human-facing codebase documentation
 ├── examples/                # Example Fountain scripts and expected outputs
 ├── renderscript/            # Core Python package
+├── skills/                  # Local inspectable agent-skill templates
 ├── tests/                   # Regression tests
 ├── pyproject.toml           # Package metadata and dependencies
 ├── build_backend.py         # Minimal build backend
 └── renderscript.schema.v0.1.json
+```
+
+## Local Skill Templates
+
+```text
+skills/
+└── renderscript-package-handoff/
+    ├── SKILL.md
+    └── references/
+        ├── handoff-template.md
+        ├── safety.md
+        └── target-workflows.md
 ```
 
 ## Core Python Package
@@ -63,6 +76,7 @@ tests/
 ├── test_phase1a.py
 ├── test_project_bundle.py
 ├── test_renderpackage_validation.py
+├── test_skill_template.py
 ├── test_prompt_cli.py
 ├── test_realistic_prompt_golden.py
 ├── test_stage_a_golden.py

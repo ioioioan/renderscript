@@ -23,6 +23,8 @@ DEVELOPER_FILES/
 
 Machine-readable files live under `DEVELOPER_FILES/`, especially `DEVELOPER_FILES/rpack.json`. Structured reference scaffolds also live in `prompts/reference_prompts.md`, `assets/refs/`, and `audio/`.
 
+RenderPackage is also the input to repo-local, inspectable skills and adapters. The starter template lives in `skills/renderscript-package-handoff/`; it is text-first and approval-gated.
+
 ## Main Source Files
 
 - `renderscript/fountain_parser.py`: reads Fountain text.
@@ -78,6 +80,7 @@ RenderPackage records prompt, visual-reference, and voice-reference approval sta
 - PDF wording: `renderscript/templates/renderpackage_storyboard.html` and `renderscript/pdf_guide.py`.
 - Prompt packs: `renderscript/renderpackage.py` and `renderscript/providers.py`.
 - Public/source copy: `README.md` and `docs/*.md`.
+- Local skill template: `skills/renderscript-package-handoff/`.
 
 ## README Rule
 

@@ -17,6 +17,7 @@ The product direction is one-click deploy from a RenderPackage, scene batch, or 
 - RenderScript does not generate finished video.
 - RenderScript does not include executable workflow code in the standard package.
 - One-click agent deploy is the north-star workflow direction, not the current package contract.
+- Developers can build their own local, inspectable package handoff skills from `skills/renderscript-package-handoff/`.
 - No Pro. No future-tier framing. MVP is the product.
 
 RenderScript is agnostic: no named external agent or provider is the product target.
@@ -69,6 +70,12 @@ renderscript project path/to/script.fountain --project pilot -o ./pilot_project_
 `project_manifest.json` tracks stable scene IDs, scene package paths, batch chunks, shared project refs, approval status, and incremental scene-package reuse metadata.
 
 For implementation orientation, start with `docs/CODEBASE_GUIDE.md`.
+
+## Local Skill Template
+
+RenderPackage is designed to be safe input for developer-built workflows. The repo includes a text-first starter skill at `skills/renderscript-package-handoff/` for agents that need to inspect a RenderPackage, verify approvals, prepare handoff batches, and stop before uploads, generation, spending, credentials, or external tool access.
+
+Do not treat random downloaded skills as trusted. Copy and adapt the local template in your own workspace so the workflow remains inspectable.
 
 ## License, Copyright, and Branding
 
