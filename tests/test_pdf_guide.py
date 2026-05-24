@@ -18,8 +18,8 @@ def test_strict_pdf_mode_raises_when_playwright_render_fails(monkeypatch: pytest
 
     with pytest.raises(RuntimeError):
         pdf_guide.render_creator_guide_pdf(
-            prompt_path="prompts/shot_prompts.md",
-            asset_prompts_path="prompts/asset_prompts.md",
+            prompt_path="DEVELOPER_FILES/prompt_packs/shot_prompts.md",
+            asset_prompts_path="DEVELOPER_FILES/rpack.json",
             provider="universal",
             version="0.1.0",
             logo_path=Path("assets/branding/renderscript_logo_mark_blue_pad5.png"),
@@ -39,8 +39,8 @@ def test_fallback_records_playwright_error_message(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(pdf_guide, "_render_with_playwright", no_playwright)
 
     result = pdf_guide.render_creator_guide_pdf(
-        prompt_path="prompts/shot_prompts.md",
-        asset_prompts_path="prompts/asset_prompts.md",
+        prompt_path="DEVELOPER_FILES/prompt_packs/shot_prompts.md",
+        asset_prompts_path="DEVELOPER_FILES/rpack.json",
         provider="universal",
         version="0.1.0",
         logo_path=Path("assets/branding/renderscript_logo_mark_blue_pad5.png"),

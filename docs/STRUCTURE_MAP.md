@@ -8,6 +8,7 @@ It separates:
 - tests
 - assets/templates
 - examples
+- generated output
 
 ## Top-Level Map
 
@@ -32,11 +33,13 @@ renderscript/
 ├── fountain_parser.py       # Low-level Fountain parsing
 ├── ids.py                   # Deterministic id helpers
 ├── pdf_guide.py             # Creator Guide PDF rendering
+├── project.py               # Project Bundle builder
 ├── prompt.py                # Older prompt-rendering path
-├── providers.py             # Provider/adapter registry
+├── providers.py             # Optional execution-template compatibility registry
 ├── renderpackage.py         # RenderPackage builder
 ├── validate.py              # Schema validation
 ├── assets/
+│   ├── Example_scene_1_universal_renderpackage_v1.zip
 │   └── branding/
 │       ├── renderscript_logo_horizontal_mark_left_text_right_pad5_v3.png
 │       ├── renderscript_logo_mark_blue_pad5.png
@@ -53,10 +56,13 @@ renderscript/
 ```text
 tests/
 ├── expected_package_paths.txt
+├── test_bench.py
 ├── test_cli_version.py
 ├── test_package_cli.py
 ├── test_pdf_guide.py
 ├── test_phase1a.py
+├── test_project_bundle.py
+├── test_renderpackage_validation.py
 ├── test_prompt_cli.py
 ├── test_realistic_prompt_golden.py
 ├── test_stage_a_golden.py
@@ -97,7 +103,7 @@ examples/
 - `renderscript/pdf_guide.py`
 - `renderscript/templates/*`
 
-### Deliver through interfaces
+### Deliver through interface
 
 - `renderscript/cli.py`
 
@@ -109,7 +115,7 @@ The source of truth is:
 
 - `renderscript/renderpackage.py`
 
-### For provider ids, labels, and filenames
+### For optional execution-template ids, labels, and filenames
 
 The source of truth is:
 
@@ -123,6 +129,10 @@ The source of truth is:
 - `renderscript/templates/creator_guide_universal.html`
 - `renderscript/templates/creator_guide_runway.html`
 - `renderscript/templates/creator_guide.css`
+
+### For UI behavior
+
+The hosted Studio UI lives outside the open-core branch. The open-core branch exposes the CLI and package builders.
 
 ### For expected behavior
 
@@ -144,7 +154,7 @@ CLI
 
 ## Practical “Where Do I Look?” Map
 
-### I want to add or rename a provider
+### I want to add or rename an execution template
 
 Start here:
 
@@ -190,9 +200,3 @@ If you come back later and feel lost again:
 2. Read `renderscript/cli.py`
 3. Read `renderscript/renderpackage.py`
 4. Use `tests/test_package_cli.py` as the behavioral spec
-
-## Hosted UI
-
-The hosted UI exists separately at `renderscript.studio`.
-
-It is intentionally not included in this open-core repository.

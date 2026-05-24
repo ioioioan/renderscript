@@ -20,6 +20,12 @@ from .providers import (
     SUPPORTED_PROVIDERS,
     get_provider,
 )
+from .versions import (
+    PROMPT_TUNER_VERSION,
+    RENDERPACKAGE_SPEC_VERSION,
+    RENDERSCRIPT_STUDIO_VERSION,
+    RSCRIPT_SCHEMA_VERSION,
+)
 
 RENDERPACKAGE_FILENAME = "RENDERPACKAGE.pdf"
 COPY_PASTE_PROMPTS_FILENAME = "COPY_PASTE_PROMPTS.docx"
@@ -27,6 +33,7 @@ KEEPER_SHEET_FILENAME = "KEEPER_SHEET.csv"
 GENERATED_TAKES_DIR = "generated_shots/takes/"
 GENERATED_KEEPERS_DIR = "generated_shots/keepers/"
 PROMPT_PACKS_DIR = "DEVELOPER_FILES/prompt_packs"
+REFERENCE_PROMPTS_FILENAME = "prompts/reference_prompts.md"
 UNIVERSAL_PROMPTS_FILENAME = f"{PROMPT_PACKS_DIR}/shot_prompts.md"
 RUNWAY_PROMPTS_FILENAME = f"{PROMPT_PACKS_DIR}/runway.gen4_image_refs_prompts.md"
 GROK_PROMPTS_FILENAME = f"{PROMPT_PACKS_DIR}/grok.imagine_prompts.md"
@@ -37,6 +44,29 @@ RPACK_FILENAME = "DEVELOPER_FILES/rpack.json"
 PROVENANCE_FILENAME = "DEVELOPER_FILES/provenance.json"
 AGENT_ORCHESTRATION_FILENAME = "DEVELOPER_FILES/AGENT_ORCHESTRATION.md"
 PROVIDER_CAPABILITIES_EXAMPLE_FILENAME = "DEVELOPER_FILES/provider_capabilities.example.json"
+ACTION_PLAN_FILENAME = "DEVELOPER_FILES/action_plan.json"
+EXECUTION_CONTRACT_FILENAME = "DEVELOPER_FILES/execution_contract.json"
+APPROVAL_CHECKPOINTS_FILENAME = "DEVELOPER_FILES/approval_checkpoints.json"
+TAKE_LOG_FILENAME = "DEVELOPER_FILES/take_log.csv"
+KEEPER_DECISIONS_FILENAME = "DEVELOPER_FILES/keeper_decisions.csv"
+ASSET_REFS_DIR = "assets/refs/"
+ASSET_REFERENCE_DIRS = [
+    "assets/",
+    ASSET_REFS_DIR,
+    "assets/refs/characters/",
+    "assets/refs/locations/",
+    "assets/refs/props/",
+    "assets/refs/costumes/",
+    "assets/refs/vehicles/",
+    "assets/refs/creatures/",
+    "assets/refs/style/",
+    "assets/refs/lighting/",
+    "assets/refs/vfx/",
+]
+AUDIO_DIR = "audio/"
+AUDIO_VOICE_BIBLE_FILENAME = "audio/voice_bible.md"
+VOICE_REFS_DIR = "audio/character_voice_refs/"
+VOICE_SAMPLES_DIR = "audio/voice_samples/"
 BASE_REQUIRED_FILES = [
     "DEVELOPER_FILES/",
     RPACK_FILENAME,
@@ -45,6 +75,11 @@ BASE_REQUIRED_FILES = [
     BINDINGS_FILENAME,
     AGENT_ORCHESTRATION_FILENAME,
     PROVIDER_CAPABILITIES_EXAMPLE_FILENAME,
+    ACTION_PLAN_FILENAME,
+    EXECUTION_CONTRACT_FILENAME,
+    APPROVAL_CHECKPOINTS_FILENAME,
+    TAKE_LOG_FILENAME,
+    KEEPER_DECISIONS_FILENAME,
     f"{PROMPT_PACKS_DIR}/",
     UNIVERSAL_PROMPTS_FILENAME,
     RUNWAY_PROMPTS_FILENAME,
@@ -56,6 +91,18 @@ MIN_SHOTS = 8
 MAX_SHOTS = 12
 FRAMING_CYCLE = ("wide", "medium", "close")
 REFERENCE_ASSET_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
+VOICE_ASSET_SUFFIXES = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg"}
+REFERENCE_TYPE_PLURALS = {
+    "character": "characters",
+    "location": "locations",
+    "prop": "props",
+    "costume": "costumes",
+    "vehicle": "vehicles",
+    "creature": "creatures",
+    "style": "style",
+    "lighting": "lighting",
+    "vfx": "vfx",
+}
 
 
 def _prompt_filename_for_provider(provider: str) -> str:
@@ -112,6 +159,35 @@ def _slug_name(name: str) -> str:
     return safe or "reference"
 
 
+def _reference_id_from_path(path: str) -> str:
+    return path.rstrip("/").split("/")[-1] if path else ""
+
+
+def _asset_reference_folder_for_type(ref_type: str) -> str:
+    folder = REFERENCE_TYPE_PLURALS.get(ref_type, ref_type or "style")
+    return f"assets/refs/{folder}/"
+
+
+def _list_from_multiline(value: str) -> list[str]:
+    items: list[str] = []
+    for raw in str(value or "").splitlines():
+        item = raw.strip().lstrip("-").strip()
+        if item:
+            items.append(item)
+    return items
+
+
+def _dedupe_ordered(paths: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for path in paths:
+        if path in seen:
+            continue
+        seen.add(path)
+        out.append(path)
+    return out
+
+
 def _resolve_output_path(
     output_path: Path,
     project: str,
@@ -161,7 +237,10 @@ def _render_package_map(provider: str, prompt_path: str, selected_provider_ids: 
         f"- `{GENERATED_TAKES_DIR}`: suggested place to save generated test takes.\n"
         f"- `{GENERATED_KEEPERS_DIR}`: suggested place to save selected keeper clips.\n\n"
         "## Reference folders\n\n"
-        "- Human-readable folders under `refs/` are generated automatically for style, location, characters, and props.\n"
+        "- Human-readable folders under `refs/` are generated automatically for extracted reference candidates.\n"
+        f"- Structured reference prompts are collected in `{REFERENCE_PROMPTS_FILENAME}`.\n"
+        f"- Structured visual reference notes live under `{ASSET_REFS_DIR}`.\n"
+        f"- Voice continuity scaffolds live in `{AUDIO_VOICE_BIBLE_FILENAME}` and `{VOICE_REFS_DIR}`.\n"
         "- Creators manually attach or upload those images in their AI video tool.\n\n"
         "## Developer files\n\n"
         f"- Machine-readable source of truth: `{RPACK_FILENAME}`.\n"
@@ -175,9 +254,14 @@ def _render_package_map(provider: str, prompt_path: str, selected_provider_ids: 
         + "\n\n"
         "## Agent orchestration\n\n"
         f"- `{AGENT_ORCHESTRATION_FILENAME}` explains how external/local agents can consume this package.\n"
-        f"- `{PROVIDER_CAPABILITIES_EXAMPLE_FILENAME}` is a template for describing provider adapter capabilities.\n"
+        f"- `{ACTION_PLAN_FILENAME}` describes model-agnostic shot execution steps.\n"
+        f"- `{EXECUTION_CONTRACT_FILENAME}` defines responsibilities, limits, and human approval boundaries.\n"
+        f"- `{APPROVAL_CHECKPOINTS_FILENAME}` defines prompt, reference, take, keeper, and revision approvals.\n"
+        f"- `{TAKE_LOG_FILENAME}` and `{KEEPER_DECISIONS_FILENAME}` are empty templates for downstream tracking.\n"
+        f"- `{PROVIDER_CAPABILITIES_EXAMPLE_FILENAME}` is a template for optional workflow capability hints.\n"
         f"- `{RPACK_FILENAME}` remains the machine-readable source of truth.\n"
-        "- Agents should use the package after it is generated; they should not recreate the RenderPackage.\n\n"
+        "- RenderPackage is agent-actionable, not auto-executable.\n"
+        "- Agents should use the package after it is generated; they should not recreate the RenderPackage or expect it to run code.\n\n"
         "Creator workflow does not depend on opening this folder.\n"
     )
 
@@ -187,12 +271,22 @@ def _render_agent_orchestration_md() -> str:
         "# Agent Orchestration\n\n"
         "This RenderPackage has already been generated.\n\n"
         "An agent should not recreate the package.\n"
-        "An agent should consume this package as a workflow contract for downstream AI-video generation.\n\n"
+        "An agent should consume this package as a workflow contract for downstream AI-video generation.\n"
+        "RenderPackage is agent-actionable, not auto-executable: it contains data, instructions, prompts, and approval checkpoints, not runnable workflow code.\n\n"
         "## Source of truth\n\n"
         "Use:\n\n"
         "DEVELOPER_FILES/rpack.json\n\n"
         "as the machine-readable source of truth.\n\n"
         "Use creator-facing files only for human review.\n\n"
+        "## Continuity and reference rules\n\n"
+        "- Use approved references only as continuity anchors.\n"
+        "- Do not invent final character, voice, prop, location, style, lighting, or effect references silently.\n"
+        "- Treat character sheets as visual continuity anchors only after creator approval.\n"
+        "- Treat Voice Bible entries as speech-performance continuity anchors only after creator approval.\n"
+        "- Treat uploaded assets as source references, not optional decoration.\n"
+        "- Preserve locked visual anchors across generated shots.\n"
+        "- Preserve accent, pace, tone, rhythm, volume, and delivery style across dialogue generation.\n"
+        "- If a reference is missing or ambiguous, ask for creator approval or use only the approved scaffold.\n\n"
         "## Agent workflow\n\n"
         "1. Read DEVELOPER_FILES/rpack.json\n"
         "2. Load the scene metadata\n"
@@ -206,15 +300,15 @@ def _render_agent_orchestration_md() -> str:
         "   - post-production notes where available\n"
         "5. Check whether required reference folders contain user-provided assets\n"
         "6. If references are missing, ask the user to add them or use a separate image-generation workflow\n"
-        "7. Ask the user which AI video provider or local workflow to use\n"
-        "8. Map the shot data to a provider-specific adapter\n"
-        "9. Prepare generation requests using:\n"
+        "7. Ask the user which AI-video tool, local workflow, or compatible agent route to use\n"
+        "8. Map the shot data to that optional execution route\n"
+        "9. Prepare generation tasks using:\n"
         "   - base prompt\n"
         "   - selected references\n"
         "   - provider settings\n"
         "   - shot ID\n"
-        "10. Submit generation jobs only when the user has configured provider access\n"
-        "11. Poll or monitor generation jobs if the provider supports it\n"
+        "10. Submit generation jobs only when the user has configured external access and approved the action\n"
+        "11. Poll or monitor generation jobs only if the external workflow supports it\n"
         "12. Save generated takes using shot IDs\n"
         "13. Preserve provider settings and provenance\n"
         "14. Let the creator choose keepers, or assist with keeper review if explicitly supported\n"
@@ -247,15 +341,16 @@ def _render_agent_orchestration_md() -> str:
         "generated_shots/keepers/\n\n"
         "If an agent creates per-shot subfolders, keep them under generated_shots/takes/.\n\n"
         "Do not place generated media inside DEVELOPER_FILES.\n\n"
-        "## Provider adapters\n\n"
-        "Provider adapters should translate RenderPackage data into provider-specific requests.\n\n"
-        "Adapters may use:\n"
+        "## Optional execution templates\n\n"
+        "Execution templates may translate RenderPackage data into workflow-specific requests.\n"
+        "Universal prompts remain canonical; Grok, Runway, local agents, and custom agents are compatible routes, not product targets.\n\n"
+        "Templates may use:\n"
         "- base prompts\n"
         "- reference folders\n"
         "- shot metadata\n"
         "- duration/editing targets\n"
-        "- provider capability maps\n\n"
-        "Adapters must not claim:\n"
+        "- optional capability hints\n\n"
+        "Templates must not claim:\n"
         "- deterministic output\n"
         "- guaranteed continuity\n"
         "- guaranteed lip-sync\n"
@@ -277,6 +372,7 @@ def _render_provider_capabilities_example_json() -> str:
     payload = {
         "provider": "example_provider",
         "adapter_id": "example.provider",
+        "execution_template_id": "example.provider",
         "supports_text_to_video": True,
         "supports_image_references": True,
         "supports_video_references": False,
@@ -287,7 +383,149 @@ def _render_provider_capabilities_example_json() -> str:
         "supports_download": True,
         "max_reference_images_per_generation": 3,
         "duration_control": "provider_setting",
-        "notes": "Example capability map only. Real adapters must verify provider behaviour.",
+        "notes": "Example capability hint only. Real execution templates must verify workflow behaviour.",
+    }
+    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+
+
+def _render_action_plan_json(agent_shots: list[dict[str, object]], reference_rows: list[dict[str, str]]) -> str:
+    references = [
+        {
+            "folder": row.get("path", ""),
+            "type": row.get("type", ""),
+            "label": row.get("name", ""),
+            "base_prompt": row.get("base_prompt", ""),
+        }
+        for row in reference_rows
+    ]
+    steps: list[dict[str, object]] = [
+        {
+            "step": "review_package",
+            "description": "Read creator-facing files and DEVELOPER_FILES/rpack.json before any generation work.",
+            "requires_human_approval": False,
+        },
+        {
+            "step": "approve_prompts",
+            "description": "Human reviews reference and shot prompts before generation.",
+            "requires_human_approval": True,
+        },
+        {
+            "step": "approve_references",
+            "description": "Human confirms reference assets are present and match the intended look.",
+            "requires_human_approval": True,
+        },
+    ]
+    for shot in agent_shots:
+        steps.append(
+            {
+                "step": "generate_takes",
+                "shot_id": shot.get("shot_id", ""),
+                "description": "Generate candidate takes using the canonical prompt and listed references in the selected external workflow.",
+                "prompt": shot.get("base_prompt", ""),
+                "references": shot.get("references", []),
+                "take_path": GENERATED_TAKES_DIR,
+                "requires_human_approval": True,
+            }
+        )
+    steps.extend(
+        [
+            {
+                "step": "review_takes",
+                "description": "Human reviews generated takes for continuity, shot usefulness, and edit fit.",
+                "requires_human_approval": True,
+            },
+            {
+                "step": "select_keepers",
+                "description": "Record selected keepers in keeper_decisions.csv and place selected clips under generated_shots/keepers/.",
+                "requires_human_approval": True,
+            },
+        ]
+    )
+    payload = {
+        "schema": "renderscript.action_plan.v1",
+        "non_executable": True,
+        "source_of_truth": RPACK_FILENAME,
+        "canonical_prompt_pack": UNIVERSAL_PROMPTS_FILENAME,
+        "references": references,
+        "steps": steps,
+    }
+    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+
+
+def _render_execution_contract_json(selected_provider_ids: list[str]) -> str:
+    payload = {
+        "schema": "renderscript.execution_contract.v1",
+        "non_executable": True,
+        "renderpackage_is": "agent-actionable, not auto-executable",
+        "responsibilities": {
+            "renderscript": [
+                "compile the screenplay scene",
+                "export the RenderPackage",
+                "provide canonical prompts, references, shot data, and orchestration files",
+            ],
+            "creator": [
+                "approve prompts",
+                "approve reference assets",
+                "choose the external AI-video workflow",
+                "review generated takes",
+                "select keepers",
+                "edit and finish the scene",
+            ],
+            "agent_or_external_workflow": [
+                "read package data",
+                "prepare generation tasks from approved prompts and references",
+                "log generated takes when configured",
+                "assist keeper review only when explicitly asked",
+            ],
+        },
+        "limits": [
+            "No provider access is assumed.",
+            "No video generation is performed by RenderScript.",
+            "No deterministic continuity is promised.",
+            "No executable workflow files are included in the standard package.",
+            "Universal prompts are canonical; optional prompt packs are example execution templates.",
+        ],
+        "selected_execution_profiles": selected_provider_ids,
+    }
+    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+
+
+def _render_approval_checkpoints_json() -> str:
+    payload = {
+        "schema": "renderscript.approval_checkpoints.v1",
+        "non_executable": True,
+        "checkpoints": [
+            {
+                "id": "prompt_approval",
+                "label": "Prompt approval",
+                "description": "Creator approves reference and shot prompts before generation.",
+                "required": True,
+            },
+            {
+                "id": "reference_approval",
+                "label": "Reference approval",
+                "description": "Creator approves style, location, character, and prop references before generation.",
+                "required": True,
+            },
+            {
+                "id": "take_review",
+                "label": "Take review",
+                "description": "Creator reviews generated takes for continuity, performance, and usefulness.",
+                "required": True,
+            },
+            {
+                "id": "keeper_selection",
+                "label": "Keeper selection",
+                "description": "Creator selects keeper takes and records decisions.",
+                "required": True,
+            },
+            {
+                "id": "revision_decisions",
+                "label": "Revision decisions",
+                "description": "Creator decides whether to revise prompts, references, or generation settings.",
+                "required": True,
+            },
+        ],
     }
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
@@ -388,6 +626,7 @@ def _render_provenance_json(
     prompt_filename: str,
     generated_at: str,
     guide_debug_text: str,
+    prompt_tuner_metadata: dict[str, object] | None = None,
 ) -> str:
     debug = _parse_debug_text(guide_debug_text)
     payload = {
@@ -396,6 +635,19 @@ def _render_provenance_json(
         "source": {"filename": source_name, "hash": source_hash},
         "provider": provider,
         "prompt_profile": prompt_filename,
+        "versions": {
+            "renderscript_studio_version": RENDERSCRIPT_STUDIO_VERSION,
+            "prompt_tuner_version": PROMPT_TUNER_VERSION,
+            "renderpackage_spec_version": RENDERPACKAGE_SPEC_VERSION,
+            "rscript_schema_version": RSCRIPT_SCHEMA_VERSION,
+        },
+        "prompt_tuner": prompt_tuner_metadata
+        or {
+            "version": PROMPT_TUNER_VERSION,
+            "edited": False,
+            "edited_reference_prompts": [],
+            "edited_shot_prompts": [],
+        },
         "creator_guide": {
             "renderer_used": debug.get("renderer_used", ""),
             "engine": debug.get("engine", ""),
@@ -1130,6 +1382,7 @@ def _render_prompts(
     shots: list[dict[str, object]],
     bindings: dict[str, dict[str, list[str]]],
     provider: str,
+    shot_prompt_by_id: dict[str, str] | None = None,
 ) -> str:
     provider_label = get_provider(provider).label
     if provider == DEFAULT_PROVIDER:
@@ -1148,6 +1401,7 @@ def _render_prompts(
     if provider == GROK_PROVIDER:
         lines.extend(
             [
+                "Example execution template only: Grok is one compatible route, not the RenderScript product target.",
                 "Grok Imagine video workflows typically start from a reference image. For best results, attach at least a style or character reference image before generating.",
                 "",
             ]
@@ -1185,7 +1439,8 @@ def _render_prompts(
             )
         if shot_bindings["prop_ref_ids"]:
             lines.append(f"Props references: {', '.join(shot_bindings['prop_ref_ids'])}")
-        lines.append("Prompt: " + _format_prompt_line(str(shot["beat"]), str(shot["framing"])))
+        prompt = (shot_prompt_by_id or {}).get(shot_id) or _format_prompt_line(str(shot["beat"]), str(shot["framing"]))
+        lines.append("Prompt: " + prompt)
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
@@ -1203,6 +1458,20 @@ def _scene_character_names(scene: dict[str, object], speaker_by_id: dict[str, st
                 seen.add(name)
                 names.append(name)
     return names
+
+
+def _scene_speaker_lookup(scene: dict[str, object], speaker_by_id: dict[str, str]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    beats = scene.get("beats", [])
+    if not isinstance(beats, list):
+        return out
+    for beat in beats:
+        if not isinstance(beat, dict):
+            continue
+        speaker_id = str(beat.get("speaker_id", "")).strip()
+        if speaker_id and speaker_id in speaker_by_id:
+            out[speaker_id] = speaker_by_id[speaker_id]
+    return out
 
 
 def _scene_summary_lines(scene: dict[str, object], speaker_by_id: dict[str, str]) -> list[str]:
@@ -1282,6 +1551,180 @@ def _prop_ref_lookup(units: list[dict[str, object]]) -> dict[str, str]:
     return out
 
 
+GARMENT_WORDS = (
+    "coat",
+    "jacket",
+    "uniform",
+    "dress",
+    "suit",
+    "shirt",
+    "boots",
+    "shoes",
+    "hat",
+    "scarf",
+    "gloves",
+    "hoodie",
+    "robe",
+    "armor",
+    "armour",
+    "mask",
+)
+VEHICLE_TERMS = (
+    "car",
+    "truck",
+    "van",
+    "bus",
+    "train",
+    "taxi",
+    "motorcycle",
+    "bike",
+    "boat",
+    "ship",
+    "plane",
+    "helicopter",
+)
+CREATURE_TERMS = (
+    "creature",
+    "monster",
+    "alien",
+    "horse",
+    "wolf",
+    "dragon",
+)
+LIGHTING_TERMS = (
+    "neon",
+    "flickering light",
+    "flickers",
+    "dim light",
+    "moonlight",
+    "harsh fluorescent",
+    "backlit",
+    "silhouette",
+    "golden hour",
+    "strobe",
+)
+VFX_TERMS = (
+    "explosion",
+    "sparks",
+    "smoke",
+    "fire",
+    "lightning",
+    "portal",
+    "hologram",
+    "shatters",
+    "glitch",
+)
+
+
+def _action_texts(scene: dict[str, object]) -> list[str]:
+    out: list[str] = []
+    beats = scene.get("beats", [])
+    if not isinstance(beats, list):
+        return out
+    for beat in beats:
+        if not isinstance(beat, dict) or beat.get("type") != "action":
+            continue
+        text = re.sub(r"\s+", " ", str(beat.get("text", "")).strip())
+        if text:
+            out.append(text)
+    return out
+
+
+def _append_reference_candidate(
+    out: list[dict[str, str]],
+    seen: set[tuple[str, str]],
+    ref_type: str,
+    label: str,
+    evidence: str,
+) -> None:
+    clean_label = re.sub(r"\s+", " ", label.strip()).strip(" .,:;")
+    if not clean_label:
+        return
+    key = (ref_type, clean_label.lower())
+    if key in seen:
+        return
+    seen.add(key)
+    out.append(
+        {
+            "type": ref_type,
+            "label": clean_label,
+            "source": "screenplay_extraction",
+            "extraction_basis": evidence[:180],
+        }
+    )
+
+
+def _extract_costume_candidates(
+    action_texts: list[str],
+    character_names: list[str],
+    out: list[dict[str, str]],
+    seen: set[tuple[str, str]],
+) -> None:
+    garment_pattern = "|".join(re.escape(word) for word in GARMENT_WORDS)
+    for text in action_texts:
+        lower = text.lower()
+        if not any(word in lower for word in GARMENT_WORDS):
+            continue
+        for character_name in character_names:
+            match = re.search(
+                rf"\b{re.escape(character_name)}\b[^.]*?\b(wears|wearing|dressed in|in a|in an)\b([^.;]*)",
+                text,
+                flags=re.IGNORECASE,
+            )
+            if not match:
+                continue
+            detail = match.group(2).strip(" ,")
+            if not re.search(rf"\b(?:{garment_pattern})\b", detail, flags=re.IGNORECASE):
+                continue
+            _append_reference_candidate(out, seen, "costume", f"{character_name} {detail}", text)
+        generic = re.search(
+            rf"\b(wears|wearing|dressed in)\b([^.;]*\b(?:{garment_pattern})\b[^.;]*)",
+            text,
+            flags=re.IGNORECASE,
+        )
+        if generic:
+            _append_reference_candidate(out, seen, "costume", generic.group(2).strip(" ,"), text)
+
+
+def _extract_term_candidates(
+    action_texts: list[str],
+    terms: tuple[str, ...],
+    ref_type: str,
+    out: list[dict[str, str]],
+    seen: set[tuple[str, str]],
+) -> None:
+    for text in action_texts:
+        lower = text.lower()
+        for term in terms:
+            if re.search(rf"\b{re.escape(term)}s?\b", lower):
+                _append_reference_candidate(out, seen, ref_type, term.title(), text)
+
+
+def _extract_lighting_candidates(
+    scene: dict[str, object],
+    action_texts: list[str],
+    out: list[dict[str, str]],
+    seen: set[tuple[str, str]],
+) -> None:
+    heading = scene.get("heading", {})
+    time_of_day = str(heading.get("time_of_day", "")).strip() if isinstance(heading, dict) else ""
+    if time_of_day:
+        _append_reference_candidate(out, seen, "lighting", f"{time_of_day.title()} lighting", str(heading.get("raw", "")))
+    _extract_term_candidates(action_texts, LIGHTING_TERMS, "lighting", out, seen)
+
+
+def _extract_reference_candidates(scene: dict[str, object], character_names: list[str]) -> list[dict[str, str]]:
+    action_lines = _action_texts(scene)
+    out: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    _extract_costume_candidates(action_lines, character_names, out, seen)
+    _extract_term_candidates(action_lines, VEHICLE_TERMS, "vehicle", out, seen)
+    _extract_term_candidates(action_lines, CREATURE_TERMS, "creature", out, seen)
+    _extract_lighting_candidates(scene, action_lines, out, seen)
+    _extract_term_candidates(action_lines, VFX_TERMS, "vfx", out, seen)
+    return out
+
+
 def _reference_names_for_shot(
     shot_bindings: dict[str, list[str]],
     character_name_by_ref: dict[str, str],
@@ -1304,6 +1747,7 @@ def _build_reference_rows(
     location_reference: str,
     character_names: list[str],
     prop_names: list[str],
+    extra_references: list[dict[str, str]] | None = None,
 ) -> list[dict[str, str]]:
     rows = [
         {
@@ -1311,22 +1755,29 @@ def _build_reference_rows(
             "path": "refs/01_style_reference/",
             "type": "style",
             "purpose": "overall look, visual tone, and image style.",
+            "source": "screenplay_extraction",
         },
         {
             "name": location_reference,
             "path": "refs/02_location_reference/",
             "type": "location",
             "purpose": "location layout, lighting, and environment.",
+            "source": "screenplay_extraction",
         },
     ]
     next_index = 3
     for name in character_names:
+        character_id = _slug_name(name)
         rows.append(
             {
                 "name": f"{name} reference",
                 "path": f"refs/{next_index:02d}_character_reference_{_slug_name(name)}/",
                 "type": "character",
                 "purpose": f"{name}'s face, wardrobe, and general look.",
+                "source": "screenplay_extraction",
+                "character_id": character_id,
+                "structured_notes_path": f"assets/refs/characters/{character_id}_character_reference.md",
+                "reference_sheet_path": f"assets/refs/characters/{character_id}_character_reference_sheet.png",
             }
         )
         next_index += 1
@@ -1338,10 +1789,41 @@ def _build_reference_rows(
                 "path": f"refs/{next_index:02d}_prop_reference_{_slug_name(label)}/",
                 "type": "prop",
                 "purpose": f"the {label.lower()} shape, scale, and visible details.",
+                "source": "screenplay_extraction",
+            }
+        )
+        next_index += 1
+    for candidate in extra_references or []:
+        ref_type = candidate.get("type", "reference")
+        label = candidate.get("label", ref_type).strip()
+        name = f"{label} reference" if not label.lower().endswith("reference") else label
+        rows.append(
+            {
+                "name": name,
+                "path": f"refs/{next_index:02d}_{ref_type}_reference_{_slug_name(label)}/",
+                "type": ref_type,
+                "purpose": _reference_purpose(ref_type, label),
+                "source": candidate.get("source", "screenplay_extraction"),
+                "extraction_basis": candidate.get("extraction_basis", ""),
             }
         )
         next_index += 1
     return rows
+
+
+def _reference_purpose(ref_type: str, label: str) -> str:
+    clean = label.strip() or ref_type
+    if ref_type == "costume":
+        return f"explicit wardrobe or costume continuity for {clean.lower()}."
+    if ref_type == "vehicle":
+        return f"the {clean.lower()} design, scale, materials, and continuity details."
+    if ref_type == "creature":
+        return f"the {clean.lower()} design, silhouette, movement cues, and continuity details."
+    if ref_type == "lighting":
+        return f"{clean.lower()} continuity, mood, light direction, and exposure guidance."
+    if ref_type == "vfx":
+        return f"{clean.lower()} visual effect shape, timing, scale, and shot continuity."
+    return f"{clean.lower()} continuity reference."
 
 
 def _reference_folder_paths(reference_rows: list[dict[str, str]]) -> list[str]:
@@ -1354,22 +1836,66 @@ def _reference_base_prompt(row: dict[str, str]) -> str:
     ref_type = row.get("type", "")
     if ref_type == "style":
         return (
-            "Create a reusable style reference image for this scene: grounded realistic visual tone, natural lighting, "
-            "coherent colour palette, no text, no logo."
+            "Create a clean style / look bible reference sheet for AI video generation. Use a white or very light grey "
+            "background, thin black panel borders, neutral layout, no poster composition, no logos, and no text overlays "
+            "outside the labelled production notes. Include colour palette, lens feel, realism level, texture, lighting "
+            "range, avoid / do-not-change notes, and locked style anchors."
         )
     if ref_type == "location":
         return (
-            f"Create a clean location reference image for {label}: clear layout, natural lighting, reusable environment "
-            "details, no people, no text, no logo."
+            f"Create a clean location / set reference sheet for {label}. Use a white or very light grey background, "
+            "thin black panel borders, no people, no poster styling, and neutral production lighting. Include wide "
+            "layout view, key angle, entrance / exit cues, reusable background details, lighting direction, locked "
+            "environment anchors, scale notes, and avoid / do-not-change notes."
         )
     if ref_type == "character":
         return (
-            f"Create a neutral character reference image of {label} in practical everyday clothing, natural expression, "
-            "plain background, consistent lighting, no text, no logo."
+            f"Create a clean white-background CHARACTER REFERENCE SHEET for AI video generation for {label}. "
+            "Use a landscape film-production layout with thin black panel borders, neutral studio lighting, no other "
+            "characters, no cinematic environment background, no poster composition, and no story-heavy biography. "
+            "Include front full-body view, side full-body view, back full-body view, 3/4 full-body view, portrait / "
+            "close-up, action pose, expression mini-head studies, details / texture references, locked visual anchors, "
+            "avoid / do-not-change notes, and short role / energy notes. Maintain the same face, hair, build, costume, "
+            "shoes, silhouette, and proportions across every panel."
+        )
+    if ref_type == "costume":
+        return (
+            f"Create a clean costume / wardrobe continuity sheet for {label}. Use a white or very light grey background, "
+            "thin black panel borders, no model drift, no unrelated props, and neutral lighting. Include front, side, "
+            "back, detail close-ups, material texture, fastener / trim details, footwear, wear state, locked costume "
+            "anchors, scale notes, and avoid / do-not-change notes."
+        )
+    if ref_type == "vehicle":
+        return (
+            f"Create a clean vehicle reference sheet for {label}. Use a white or very light grey background, thin black "
+            "panel borders, no cinematic road scene, and neutral lighting. Include front, side, rear, 3/4 view, interior "
+            "or key detail panels, material / finish notes, scale cues, locked design anchors, and avoid / do-not-change "
+            "notes."
+        )
+    if ref_type == "creature":
+        return (
+            f"Create a clean creature reference sheet for {label}. Use a white or very light grey background, thin black "
+            "panel borders, no environment scene, and neutral lighting. Include front, side, back, 3/4 view, close-up, "
+            "movement pose, texture details, silhouette notes, locked design anchors, and avoid / do-not-change notes."
+        )
+    if ref_type == "lighting":
+        return (
+            f"Create a clean lighting / mood reference sheet for {label}. Use a white or very light grey production-board "
+            "layout with thin black panel borders. Include key light direction, contrast level, colour temperature, "
+            "exposure notes, practical light sources, shadows, mood range, locked lighting anchors, and avoid / "
+            "do-not-change notes."
+        )
+    if ref_type == "vfx":
+        return (
+            f"Create a clean VFX / action-beat reference sheet for {label}. Use a white or very light grey background, "
+            "thin black panel borders, no poster styling, and no unrelated story elements. Include effect shape, scale, "
+            "timing beats, material / particle cues, interaction with performers or environment, locked effect anchors, "
+            "and avoid / do-not-change notes."
         )
     return (
-        f"Create a clean prop reference image of the {label.lower()}: clear shape, scale, useful visible details, "
-        "plain background, consistent lighting, no text, no logo."
+        f"Create a clean prop / hero object reference sheet for the {label.lower()}: white or very light grey background, "
+        "thin black panel borders, clear shape, scale, useful visible details, material texture, key angles, locked "
+        "object anchors, avoid / do-not-change notes, no text, no logo."
     )
 
 
@@ -1384,11 +1910,21 @@ def _reference_tuning_notes(row: dict[str, str]) -> str:
             "Adjust clothing, age range, hair, realism level, and visual style only if those details are supported by "
             "the screenplay or your intended look."
         )
+    if ref_type == "costume":
+        return "Adjust garment details only when they are explicit in the screenplay or approved by the creator."
+    if ref_type == "vehicle":
+        return "Adjust model, era, condition, materials, and scale only when approved by the creator."
+    if ref_type == "creature":
+        return "Adjust anatomy, silhouette, texture, and movement only when approved by the creator."
+    if ref_type == "lighting":
+        return "Adjust mood, contrast, colour temperature, and practical sources to match the intended scene look."
+    if ref_type == "vfx":
+        return "Adjust effect scale, timing, particles, and interaction only when approved by the creator."
     return "Adjust scale, material, realism level, angle, or visual style only as needed for your project."
 
 
 def _enrich_reference_rows(
-    reference_rows: list[dict[str, str]],
+    reference_rows: list[dict[str, object]],
     shots: list[dict[str, object]],
     bindings: dict[str, dict[str, list[str]]],
     character_name_by_ref: dict[str, str],
@@ -1469,6 +2005,7 @@ def _base_prompt(
             f"{action} {frame.capitalize()} shot in {location.lower()}. Natural movement, practical focused energy, "
             "grounded realistic performance. "
             f"{consistency} "
+            "Do not add new characters, locations, props, text, or story events. "
             "No subtitles, captions, logos, watermarks, or on-screen text."
         ),
     ).strip()
@@ -1499,6 +2036,7 @@ def _shot_card_lines(
     prop_name_by_ref: dict[str, str],
     location_context: str,
     scene_character_names: list[str],
+    shot_prompt_by_id: dict[str, str] | None = None,
 ) -> list[str]:
     shot_id = str(shot["shot_id"])
     shot_bindings = bindings[shot_id]
@@ -1506,6 +2044,9 @@ def _shot_card_lines(
     character_names = [character_name_by_ref.get(ref_id, "Character") for ref_id in shot_bindings["character_ref_ids"]]
     title = _short_beat_label(str(shot.get("beat", "")), max_words=5) or "Scene beat"
     keep_items = _keep_consistent_items(character_names, location_reference, references)
+    base_prompt = (shot_prompt_by_id or {}).get(shot_id) or _base_prompt(
+        shot, location_context, character_names, scene_character_names, references
+    )
     return [
         f"SHOT {_shot_number(shot_id)} - {title}",
         "SHOT INTENT",
@@ -1523,7 +2064,7 @@ def _shot_card_lines(
         ", ".join(references) if references else "None",
         "BASE PROMPT",
         "Copy this section into your AI video tool as the starting prompt.",
-        _base_prompt(shot, location_context, character_names, scene_character_names, references),
+        base_prompt,
         "OPTIONAL TUNING",
         "Adjust the base prompt for your chosen AI video tool: camera movement, shot energy, performance intensity, realism level, reference emphasis, or tool-specific wording.",
         "KEEP CONSISTENT",
@@ -1543,6 +2084,7 @@ def _shot_card_context(
     prop_name_by_ref: dict[str, str],
     location_context: str,
     scene_character_names: list[str],
+    shot_prompt_by_id: dict[str, str] | None = None,
 ) -> dict[str, object]:
     shot_id = str(shot["shot_id"])
     shot_bindings = bindings[shot_id]
@@ -1550,6 +2092,9 @@ def _shot_card_context(
     character_names = [character_name_by_ref.get(ref_id, "Character") for ref_id in shot_bindings["character_ref_ids"]]
     title = _short_beat_label(str(shot.get("beat", "")), max_words=5) or "Scene beat"
     keep_items = _keep_consistent_items(character_names, location_reference, references)
+    base_prompt = (shot_prompt_by_id or {}).get(shot_id) or _base_prompt(
+        shot, location_context, character_names, scene_character_names, references
+    )
     return {
         "title": f"SHOT {_shot_number(shot_id)} - {title}",
         "intent": _creator_beat_text(
@@ -1560,7 +2105,7 @@ def _shot_card_context(
         "scene_context": location_context,
         "characters": ", ".join(character_names) if character_names else "None",
         "references": references,
-        "base_prompt": _base_prompt(shot, location_context, character_names, scene_character_names, references),
+        "base_prompt": base_prompt,
         "keep_consistent": keep_items or ["Scene context", "Reference images"],
         "generation_check": [
             "preserve the listed references",
@@ -1589,14 +2134,13 @@ def _render_renderpackage_pdf(
     location_reference: str,
     prop_name_by_ref: dict[str, str],
     units: list[dict[str, object]],
-    reference_rows: list[dict[str, str]],
+    reference_rows: list[dict[str, object]],
+    shot_prompt_by_id: dict[str, str] | None = None,
 ) -> CreatorGuideRenderResult:
     location_context = _location_context(scene)
     scene_character_names = _scene_character_names(scene, speaker_by_id)
     summary = ["RENDERPACKAGE", "", "Scene Summary", *_scene_summary_lines(scene, speaker_by_id)]
-    reference_names: list[str] = ["Style reference", location_reference]
-    reference_names.extend(f"{name} reference" for name in character_name_by_ref.values())
-    reference_names.extend(prop_name_by_ref.values())
+    reference_names = [str(row.get("name", "")) for row in reference_rows if row.get("name")]
     summary.extend(
         [
             "",
@@ -1639,6 +2183,7 @@ def _render_renderpackage_pdf(
                 prop_name_by_ref,
                 location_context,
                 scene_character_names,
+                shot_prompt_by_id,
             ),
         ]
         if len(current) + len(card) > 48:
@@ -1684,6 +2229,7 @@ def _render_renderpackage_pdf(
             prop_name_by_ref,
             location_context,
             scene_character_names,
+            shot_prompt_by_id,
         )
         for shot in shots
     ]
@@ -1723,6 +2269,7 @@ def _render_copy_paste_prompts_docx(
     location_context: str,
     scene_character_names: list[str],
     reference_rows: list[dict[str, str]],
+    shot_prompt_by_id: dict[str, str] | None = None,
 ) -> bytes:
     blocks: list[tuple[str, str | None]] = [
         ("COPY / PASTE BASE PROMPTS", "Title"),
@@ -1764,7 +2311,9 @@ def _render_copy_paste_prompts_docx(
         shot_bindings = bindings[shot_id]
         references = _reference_names_for_shot(shot_bindings, character_name_by_ref, location_reference, prop_name_by_ref)
         character_names = [character_name_by_ref.get(ref_id, "Character") for ref_id in shot_bindings["character_ref_ids"]]
-        prompt = _base_prompt(shot, location_context, character_names, scene_character_names, references)
+        prompt = (shot_prompt_by_id or {}).get(shot_id) or _base_prompt(
+            shot, location_context, character_names, scene_character_names, references
+        )
         title = _short_beat_label(str(shot.get("beat", "")), max_words=5) or "Scene beat"
         blocks.extend(
             [
@@ -1792,31 +2341,6 @@ def _extract_dialogue_pairs(text: str) -> list[tuple[str, str]]:
         if speaker and line:
             out.append((speaker, line))
     return out
-
-
-def _render_voice_bible(speaker_by_id: dict[str, str]) -> str:
-    lines = [
-        "# Voice Bible",
-        "",
-        "Audio post guidance only. Avoid personal likeness or impersonation.",
-        "",
-    ]
-    names = sorted(set(speaker_by_id.values()))
-    if not names:
-        lines.extend(["No named dialogue characters detected.", ""])
-        return "\n".join(lines).rstrip() + "\n"
-    for name in names:
-        lines.extend(
-            [
-                f"## {name}",
-                "- Tone: grounded and clear",
-                "- Pace: medium",
-                "- Energy: natural, controlled",
-                "- Likeness: no real-person mimicry",
-                "",
-            ]
-        )
-    return "\n".join(lines).rstrip() + "\n"
 
 
 def _dialogue_lines_by_shot(
@@ -1947,6 +2471,7 @@ def _agent_shot_data(
     location_context: str,
     scene_character_names: list[str],
     reference_rows: list[dict[str, str]],
+    shot_prompt_by_id: dict[str, str] | None = None,
 ) -> list[dict[str, object]]:
     reference_path_by_name = {row["name"]: row["path"] for row in reference_rows}
     out: list[dict[str, object]] = []
@@ -1959,6 +2484,9 @@ def _agent_shot_data(
             str(shot.get("beat", "")),
             addressee=_shot_addressee(character_names, scene_character_names),
         )
+        base_prompt = (shot_prompt_by_id or {}).get(shot_id) or _base_prompt(
+            shot, location_context, character_names, scene_character_names, references
+        )
         out.append(
             {
                 "shot_id": shot_id,
@@ -1966,7 +2494,7 @@ def _agent_shot_data(
                 "shot_title": _short_beat_label(str(shot.get("beat", "")), max_words=5) or "Scene beat",
                 "shot_intent": intent,
                 "beat": str(shot.get("beat", "")),
-                "base_prompt": _base_prompt(shot, location_context, character_names, scene_character_names, references),
+                "base_prompt": base_prompt,
                 "suggested_framing": f"{_framing_label(str(shot.get('framing', '')))} shot",
                 "scene_context": location_context,
                 "characters": character_names,
@@ -1992,6 +2520,197 @@ def _agent_shot_data(
     return out
 
 
+def _render_character_reference_notes(row: dict[str, object]) -> str:
+    name = str(row.get("name", "Character reference"))
+    label = re.sub(r"\s+reference$", "", name, flags=re.IGNORECASE)
+    lines = [
+        f"# {label} Character Reference",
+        "",
+        "Structured notes for a creator-approved character reference sheet.",
+        "",
+        f"- Character ID: {row.get('character_id', _slug_name(label))}",
+        f"- Reference ID: {row.get('reference_id', '')}",
+        f"- Reference sheet target: {row.get('reference_sheet_path', '')}",
+        f"- Prompt source: {row.get('path', '')}",
+        f"- Approval status: {row.get('approval_status', 'pending_creator_approval')}",
+        "",
+        "Locked visual anchors:",
+    ]
+    anchors = row.get("locked_visual_anchors", [])
+    if isinstance(anchors, list) and anchors:
+        lines.extend(f"- {anchor}" for anchor in anchors)
+    else:
+        lines.append("- Creator to approve hair, face, clothing, silhouette, posture, and signature items.")
+    lines.extend(["", "Avoid / do-not-change:"])
+    avoid_rules = row.get("avoid_rules", [])
+    if isinstance(avoid_rules, list) and avoid_rules:
+        lines.extend(f"- {rule}" for rule in avoid_rules)
+    else:
+        lines.append("- Creator to approve visual drift risks before this becomes a continuity anchor.")
+    lines.extend(["", "Base prompt:", str(row.get("base_prompt", "")).strip(), ""])
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_reference_prompts_md(
+    reference_rows: list[dict[str, object]],
+    voice_profiles: list[dict[str, object]],
+) -> str:
+    lines = [
+        "# Reference Prompts",
+        "",
+        "These are scaffold prompts for creator review. RenderScript extracts obvious candidates and does not silently invent final designs.",
+        "",
+        "Approval rule: nothing becomes a continuity anchor until the creator approves it in PromptTuner or an equivalent review step.",
+        "",
+        "## Visual References",
+        "",
+    ]
+    for row in reference_rows:
+        lines.extend(
+            [
+                f"### {row.get('name', 'Reference')}",
+                f"- Type: {row.get('type', 'reference')}",
+                f"- Package folder: {row.get('path', '')}",
+                f"- Asset folder: {row.get('asset_folder', '')}",
+                f"- Source: {row.get('source', 'screenplay_extraction')}",
+                f"- Approval status: {row.get('approval_status', 'pending_creator_approval')}",
+                "",
+                str(row.get("base_prompt", "")).strip(),
+                "",
+            ]
+        )
+    lines.extend(["## Voice References", ""])
+    if not voice_profiles:
+        lines.extend(["No character voice references were detected.", ""])
+    for profile in voice_profiles:
+        lines.extend(
+            [
+                f"### {profile.get('name', 'Character')}",
+                f"- Path: {profile.get('path', '')}",
+                f"- Sample folder: {profile.get('sample_folder', '')}",
+                f"- Approval status: {profile.get('approval_status', 'pending_creator_approval')}",
+                f"- Accent: {profile.get('accent', '')}",
+                f"- Pace: {profile.get('pace', '')}",
+                f"- Tone: {profile.get('tone', '')}",
+                f"- Rhythm: {profile.get('rhythm', '')}",
+                f"- Volume: {profile.get('volume', '')}",
+                f"- Speech style: {profile.get('speech_style', '')}",
+                f"- Emotional delivery states: {profile.get('emotional_delivery_states', '')}",
+                f"- Avoid / do-not-change: {profile.get('avoid_rules', '')}",
+                "",
+            ]
+        )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _references_payload(reference_rows: list[dict[str, object]]) -> dict[str, list[dict[str, object]]]:
+    grouped: dict[str, list[dict[str, object]]] = {plural: [] for plural in REFERENCE_TYPE_PLURALS.values()}
+    for row in reference_rows:
+        ref_type = str(row.get("type", ""))
+        plural = REFERENCE_TYPE_PLURALS.get(ref_type, ref_type or "references")
+        grouped.setdefault(plural, [])
+        entry: dict[str, object] = {
+            "reference_id": row.get("reference_id", _reference_id_from_path(str(row.get("path", "")))),
+            "name": row.get("name", ""),
+            "type": ref_type,
+            "path": row.get("path", ""),
+            "asset_folder": row.get("asset_folder", ""),
+            "base_prompt": row.get("base_prompt", ""),
+            "source": row.get("source", "screenplay_extraction"),
+            "approval_required": True,
+            "approved": bool(row.get("approved")),
+            "approval_status": row.get("approval_status", "pending_creator_approval"),
+            "continuity_anchor": bool(row.get("continuity_anchor")),
+            "locked_visual_anchors": row.get("locked_visual_anchors", []),
+            "avoid_rules": row.get("avoid_rules", []),
+        }
+        for optional_key in ("character_id", "reference_sheet_path", "structured_notes_path", "extraction_basis"):
+            if row.get(optional_key):
+                entry[optional_key] = row[optional_key]
+        grouped[plural].append(entry)
+    return grouped
+
+
+def _voice_references_payload(voice_profiles: list[dict[str, object]]) -> dict[str, list[dict[str, object]]]:
+    return {
+        "characters": [
+            {
+                "character_id": profile.get("character_id", ""),
+                "speaker_id": profile.get("speaker_id", ""),
+                "reference_id": profile.get("reference_id", ""),
+                "name": profile.get("name", ""),
+                "path": profile.get("path", ""),
+                "sample_folder": profile.get("sample_folder", ""),
+                "accent": profile.get("accent", ""),
+                "pace": profile.get("pace", ""),
+                "tone": profile.get("tone", ""),
+                "rhythm": profile.get("rhythm", ""),
+                "volume": profile.get("volume", ""),
+                "speech_style": profile.get("speech_style", ""),
+                "emotional_delivery_states": profile.get("emotional_delivery_states", ""),
+                "avoid_rules": profile.get("avoid_rules", ""),
+                "dialogue_reference": profile.get("dialogue_reference", ""),
+                "approval_required": True,
+                "approved": bool(profile.get("approved")),
+                "approval_status": profile.get("approval_status", "pending_creator_approval"),
+                "continuity_anchor": bool(profile.get("continuity_anchor")),
+            }
+            for profile in voice_profiles
+        ]
+    }
+
+
+def _approval_status_payload(
+    reference_rows: list[dict[str, object]],
+    voice_profiles: list[dict[str, object]],
+    shots: list[dict[str, object]],
+) -> dict[str, object]:
+    visual_total = len(reference_rows)
+    visual_approved = sum(1 for row in reference_rows if row.get("approved"))
+    voice_total = len(voice_profiles)
+    voice_approved = sum(1 for profile in voice_profiles if profile.get("approved"))
+    shot_total = len(shots)
+    shot_approved = sum(1 for shot in shots if shot.get("approved"))
+    return {
+        "prompts_approved": shot_total > 0 and shot_approved == shot_total,
+        "approved_shot_count": shot_approved,
+        "total_shot_count": shot_total,
+        "references_approved": visual_total > 0 and visual_approved == visual_total,
+        "voice_refs_approved": voice_total > 0 and voice_approved == voice_total,
+        "approved_reference_count": visual_approved,
+        "total_reference_count": visual_total,
+        "approved_voice_reference_count": voice_approved,
+        "total_voice_reference_count": voice_total,
+    }
+
+
+def _continuity_anchors_payload(
+    reference_rows: list[dict[str, object]],
+    voice_profiles: list[dict[str, object]],
+) -> dict[str, list[dict[str, object]]]:
+    return {
+        "visual_references": [
+            {
+                "reference_id": row.get("reference_id", ""),
+                "name": row.get("name", ""),
+                "type": row.get("type", ""),
+                "path": row.get("path", ""),
+            }
+            for row in reference_rows
+            if row.get("continuity_anchor")
+        ],
+        "voice_references": [
+            {
+                "character_id": profile.get("character_id", ""),
+                "name": profile.get("name", ""),
+                "path": profile.get("path", ""),
+            }
+            for profile in voice_profiles
+            if profile.get("continuity_anchor")
+        ],
+    }
+
+
 def _render_rpack_json(
     source_name: str,
     source_hash: str,
@@ -2007,17 +2726,34 @@ def _render_rpack_json(
     selected_providers: list[str],
     agent_shots: list[dict[str, object]],
     reference_rows: list[dict[str, str]],
+    voice_profiles: list[dict[str, object]],
+    asset_sources: dict[str, list[dict[str, str]]],
+    prompt_tuner_metadata: dict[str, object] | None = None,
 ) -> str:
     heading = scene.get("heading", {})
     heading_raw = heading.get("raw", "") if isinstance(heading, dict) else ""
     payload = {
         "rpack_version": "0.1",
+        "execution_profile": target_provider,
+        "execution_profile_version": target_provider_version,
+        "selected_execution_profiles": selected_providers,
         "target_provider": target_provider,
         "target_provider_version": target_provider_version,
         "selected_providers": selected_providers,
         "source": {"filename": source_name, "hash": source_hash},
         "generator": {"name": "RenderScript AI", "version": __version__},
         "generated_at": generated_at,
+        "renderscript_studio_version": RENDERSCRIPT_STUDIO_VERSION,
+        "prompt_tuner_version": PROMPT_TUNER_VERSION,
+        "renderpackage_spec_version": RENDERPACKAGE_SPEC_VERSION,
+        "rscript_schema_version": RSCRIPT_SCHEMA_VERSION,
+        "prompt_tuner": prompt_tuner_metadata
+        or {
+            "version": PROMPT_TUNER_VERSION,
+            "edited": False,
+            "edited_reference_prompts": [],
+            "edited_shot_prompts": [],
+        },
         "scene": {
             "scene_id": str(scene.get("id", "")),
             "heading_raw": str(heading_raw),
@@ -2028,6 +2764,11 @@ def _render_rpack_json(
             "source_of_truth": RPACK_FILENAME,
             "agent_contract": AGENT_ORCHESTRATION_FILENAME,
             "provider_capabilities_example": PROVIDER_CAPABILITIES_EXAMPLE_FILENAME,
+            "action_plan_path": ACTION_PLAN_FILENAME,
+            "execution_contract_path": EXECUTION_CONTRACT_FILENAME,
+            "approval_checkpoints_path": APPROVAL_CHECKPOINTS_FILENAME,
+            "take_log_path": TAKE_LOG_FILENAME,
+            "keeper_decisions_path": KEEPER_DECISIONS_FILENAME,
             "keeper_sheet_path": KEEPER_SHEET_FILENAME,
             "provenance_path": PROVENANCE_FILENAME,
             "prompt_pack_paths": {
@@ -2038,6 +2779,11 @@ def _render_rpack_json(
             "reference_folders": reference_rows,
             "shots": agent_shots,
         },
+        "references": _references_payload(reference_rows),
+        "voice_references": _voice_references_payload(voice_profiles),
+        "asset_sources": asset_sources,
+        "approval_status": _approval_status_payload(reference_rows, voice_profiles, shots),
+        "continuity_anchors": _continuity_anchors_payload(reference_rows, voice_profiles),
         "bindings": bindings,
         "required_references": required_refs,
         "risk_flags": [],
@@ -2069,6 +2815,158 @@ def _write_deterministic_zip(output_path: Path, files: dict[str, str | bytes], o
                 else:
                     content_bytes = content
             zf.writestr(info, content_bytes)
+
+
+def _normalized_prompt_edits(prompt_edits: dict[str, object] | None) -> tuple[dict[str, str], dict[str, str], dict[str, object]]:
+    reference_edits: dict[str, str] = {}
+    shot_edits: dict[str, str] = {}
+    prompt_assist: dict[str, object] = {}
+    if isinstance(prompt_edits, dict):
+        references = prompt_edits.get("reference_prompts", {})
+        shots = prompt_edits.get("shot_prompts", {})
+        if isinstance(references, dict):
+            for key, value in references.items():
+                text = str(value).strip()
+                if text:
+                    reference_edits[str(key)] = text
+        if isinstance(shots, dict):
+            for key, value in shots.items():
+                text = str(value).strip()
+                if text:
+                    shot_edits[str(key)] = text
+        assist = prompt_edits.get("prompt_assist", {})
+        if isinstance(assist, dict):
+            prompt_assist = assist
+    prompt_assist_used = bool(prompt_assist.get("prompt_assist_used"))
+    reference_prompts_improved = bool(prompt_assist.get("reference_prompts_improved"))
+    shot_prompts_anchored = bool(prompt_assist.get("shot_prompts_anchored"))
+    provider = str(prompt_assist.get("provider", "")).strip()
+    deployment = str(prompt_assist.get("deployment", "")).strip()
+    metadata = {
+        "version": PROMPT_TUNER_VERSION,
+        "edited": bool(reference_edits or shot_edits),
+        "edited_reference_prompts": sorted(reference_edits.keys()),
+        "edited_shot_prompts": sorted(shot_edits.keys()),
+        "prompt_assist_used": prompt_assist_used,
+        "reference_prompts_improved": reference_prompts_improved,
+        "shot_prompts_anchored": shot_prompts_anchored,
+    }
+    if prompt_assist_used:
+        metadata["provider"] = provider or "azure_openai"
+        if deployment:
+            metadata["deployment"] = deployment
+    return reference_edits, shot_edits, metadata
+
+
+def _apply_reference_prompt_edits(reference_rows: list[dict[str, str]], reference_edits: dict[str, str]) -> None:
+    for row in reference_rows:
+        path = row.get("path", "")
+        if path in reference_edits:
+            row["base_prompt"] = reference_edits[path]
+
+
+def _normalized_review_state(prompt_edits: dict[str, object] | None) -> dict[str, object]:
+    reference_approvals: set[str] = set()
+    shot_approvals: set[str] = set()
+    voice_approvals: set[str] = set()
+    voice_bible: dict[str, dict[str, str]] = {}
+    continuity: dict[str, dict[str, str]] = {}
+    if not isinstance(prompt_edits, dict):
+        return {
+            "reference_approvals": reference_approvals,
+            "shot_approvals": shot_approvals,
+            "voice_approvals": voice_approvals,
+            "voice_bible": voice_bible,
+            "continuity": continuity,
+        }
+
+    approvals = prompt_edits.get("reference_approvals", {})
+    if isinstance(approvals, dict):
+        reference_approvals = {str(key) for key, value in approvals.items() if bool(value)}
+
+    voice_approval_raw = prompt_edits.get("voice_approvals", {})
+    if isinstance(voice_approval_raw, dict):
+        voice_approvals = {str(key) for key, value in voice_approval_raw.items() if bool(value)}
+
+    shot_approval_raw = prompt_edits.get("shot_approvals", {})
+    if isinstance(shot_approval_raw, dict):
+        shot_approvals = {str(key) for key, value in shot_approval_raw.items() if bool(value)}
+
+    voice_raw = prompt_edits.get("voice_bible", {})
+    if isinstance(voice_raw, dict):
+        for key, value in voice_raw.items():
+            if not isinstance(value, dict):
+                continue
+            fields: dict[str, str] = {}
+            for field_key, field_value in value.items():
+                text = str(field_value).strip()
+                if text:
+                    fields[str(field_key)] = text
+            if fields:
+                voice_bible[str(key)] = fields
+
+    continuity_raw = prompt_edits.get("continuity", {})
+    if isinstance(continuity_raw, dict):
+        for key, value in continuity_raw.items():
+            if not isinstance(value, dict):
+                continue
+            fields = {}
+            for field_key, field_value in value.items():
+                text = str(field_value).strip()
+                if text:
+                    fields[str(field_key)] = text
+            if fields:
+                continuity[str(key)] = fields
+
+    return {
+        "reference_approvals": reference_approvals,
+        "shot_approvals": shot_approvals,
+        "voice_approvals": voice_approvals,
+        "voice_bible": voice_bible,
+        "continuity": continuity,
+    }
+
+
+def _apply_reference_review_state(reference_rows: list[dict[str, object]], review_state: dict[str, object]) -> None:
+    approved = review_state.get("reference_approvals", set())
+    continuity = review_state.get("continuity", {})
+    approved_paths = approved if isinstance(approved, set) else set()
+    continuity_by_path = continuity if isinstance(continuity, dict) else {}
+    for row in reference_rows:
+        path = str(row.get("path", ""))
+        row["reference_id"] = _reference_id_from_path(path)
+        row["approval_required"] = True
+        row["approved"] = path in approved_paths
+        row["approval_status"] = "approved" if row["approved"] else "pending_creator_approval"
+        row["continuity_anchor"] = bool(row["approved"])
+        row["source"] = str(row.get("source", "screenplay_extraction") or "screenplay_extraction")
+        row["asset_folder"] = _asset_reference_folder_for_type(str(row.get("type", "")))
+        notes = continuity_by_path.get(path, {}) if isinstance(continuity_by_path.get(path, {}), dict) else {}
+        locked = _list_from_multiline(str(notes.get("locked_visual_anchors", ""))) if isinstance(notes, dict) else []
+        avoid = _list_from_multiline(str(notes.get("avoid_rules", ""))) if isinstance(notes, dict) else []
+        row["locked_visual_anchors"] = locked
+        row["avoid_rules"] = avoid
+
+
+def _apply_shot_review_state(
+    shots: list[dict[str, object]],
+    agent_shots: list[dict[str, object]],
+    review_state: dict[str, object],
+) -> None:
+    approved = review_state.get("shot_approvals", set())
+    approved_ids = approved if isinstance(approved, set) else set()
+    for shot in shots:
+        shot_id = str(shot.get("shot_id", ""))
+        is_approved = shot_id in approved_ids
+        shot["approval_required"] = True
+        shot["approved"] = is_approved
+        shot["approval_status"] = "approved" if is_approved else "pending_creator_approval"
+    for shot in agent_shots:
+        shot_id = str(shot.get("shot_id", ""))
+        is_approved = shot_id in approved_ids
+        shot["approval_required"] = True
+        shot["approved"] = is_approved
+        shot["approval_status"] = "approved" if is_approved else "pending_creator_approval"
 
 
 def _safe_reference_asset_filename(filename: str) -> str:
@@ -2130,6 +3028,193 @@ def _attach_reference_asset_metadata(
             row["attached_reference_files"] = metadata[path]
 
 
+def _default_voice_profile(name: str) -> dict[str, str]:
+    return {
+        "accent": "creator to define",
+        "pace": "medium unless the scene requires a change",
+        "tone": "grounded and clear",
+        "rhythm": "natural conversational rhythm",
+        "volume": "natural speaking volume",
+        "speech_style": "specific, repeatable, non-impersonation performance style",
+        "emotional_delivery_states": "neutral; tense; relieved; urgent when explicitly motivated by the scene",
+        "avoid_rules": "Do not imitate a real person. Do not change accent, pace, tone, rhythm, or delivery unless the scene explicitly motivates it.",
+        "dialogue_reference": f"Use {name}'s screenplay dialogue as performance context only. Voice style is continuity data, not final dialogue.",
+    }
+
+
+def _build_voice_profiles(
+    speaker_by_id: dict[str, str],
+    character_ref_by_speaker: dict[str, str],
+    review_state: dict[str, object],
+) -> list[dict[str, object]]:
+    edited_voice = review_state.get("voice_bible", {})
+    approvals = review_state.get("voice_approvals", set())
+    edited_by_id = edited_voice if isinstance(edited_voice, dict) else {}
+    approved_ids = approvals if isinstance(approvals, set) else set()
+
+    profiles: list[dict[str, object]] = []
+    for speaker_id, name in sorted(speaker_by_id.items(), key=lambda item: item[1].lower()):
+        character_id = _slug_name(name)
+        reference_id = character_ref_by_speaker.get(speaker_id, "")
+        fields = _default_voice_profile(name.title())
+        for key in (character_id, reference_id, speaker_id):
+            override = edited_by_id.get(key, {})
+            if isinstance(override, dict):
+                for field_key, field_value in override.items():
+                    text = str(field_value).strip()
+                    if text:
+                        fields[str(field_key)] = text
+        approved = bool({character_id, reference_id, speaker_id} & approved_ids)
+        profiles.append(
+            {
+                "character_id": character_id,
+                "speaker_id": speaker_id,
+                "reference_id": reference_id,
+                "name": name.title(),
+                "path": f"{VOICE_REFS_DIR}{character_id}_voice_reference.md",
+                "sample_folder": VOICE_SAMPLES_DIR,
+                "approved": approved,
+                "approval_required": True,
+                "approval_status": "approved" if approved else "pending_creator_approval",
+                "continuity_anchor": approved,
+                "source": "screenplay_extraction",
+                **fields,
+            }
+        )
+    return profiles
+
+
+def _attach_voice_profiles(
+    reference_rows: list[dict[str, object]],
+    voice_profiles: list[dict[str, object]],
+) -> None:
+    profile_by_character_id = {str(profile.get("character_id", "")): profile for profile in voice_profiles}
+    profile_by_reference_id = {str(profile.get("reference_id", "")): profile for profile in voice_profiles}
+    for row in reference_rows:
+        if row.get("type") != "character":
+            continue
+        profile = profile_by_character_id.get(str(row.get("character_id", ""))) or profile_by_reference_id.get(
+            str(row.get("reference_id", ""))
+        )
+        if profile:
+            row["voice_bible"] = profile
+
+
+def _render_voice_profile_md(profile: dict[str, object]) -> str:
+    name = str(profile.get("name", "Character"))
+    lines = [
+        f"# {name} Voice Reference",
+        "",
+        "Voice style is continuity data, not dialogue. Accent, pace, tone, rhythm, volume, speech style, and delivery should remain stable unless the scene explicitly changes the character's emotional state.",
+        "",
+        f"- Accent: {profile.get('accent', '')}",
+        f"- Pace: {profile.get('pace', '')}",
+        f"- Tone: {profile.get('tone', '')}",
+        f"- Rhythm: {profile.get('rhythm', '')}",
+        f"- Volume: {profile.get('volume', '')}",
+        f"- Speech style: {profile.get('speech_style', '')}",
+        f"- Emotional delivery states: {profile.get('emotional_delivery_states', '')}",
+        f"- Avoid / do-not-change: {profile.get('avoid_rules', '')}",
+        "",
+        "Dialogue reference:",
+        str(profile.get("dialogue_reference", "")).strip(),
+        "",
+        f"Approval status: {profile.get('approval_status', 'pending_creator_approval')}",
+    ]
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_voice_bible(voice_profiles: list[dict[str, object]]) -> str:
+    lines = [
+        "# Voice Bible",
+        "",
+        "Audio post guidance only. Avoid personal likeness or impersonation.",
+        "",
+        "Voice continuity rule: voice style is continuity data, not dialogue. Accent, pace, tone, rhythm, volume, speech style, and delivery must remain stable unless the scene explicitly changes the character's emotional state.",
+        "",
+    ]
+    if not voice_profiles:
+        lines.extend(["No named dialogue characters detected.", ""])
+        return "\n".join(lines).rstrip() + "\n"
+    for profile in voice_profiles:
+        lines.extend(
+            [
+                f"## {profile.get('name', 'Character')}",
+                f"- Accent: {profile.get('accent', '')}",
+                f"- Pace: {profile.get('pace', '')}",
+                f"- Tone: {profile.get('tone', '')}",
+                f"- Rhythm: {profile.get('rhythm', '')}",
+                f"- Volume: {profile.get('volume', '')}",
+                f"- Speech style: {profile.get('speech_style', '')}",
+                f"- Emotional delivery states: {profile.get('emotional_delivery_states', '')}",
+                f"- Avoid / do-not-change: {profile.get('avoid_rules', '')}",
+                f"- Approval status: {profile.get('approval_status', 'pending_creator_approval')}",
+                "",
+            ]
+        )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _safe_voice_asset_filename(filename: str) -> str:
+    name = Path(filename or "voice_sample.wav").name
+    suffix = Path(name).suffix.lower()
+    if suffix not in VOICE_ASSET_SUFFIXES:
+        raise ValueError("Voice assets must be WAV, MP3, M4A, AAC, FLAC, or OGG files.")
+    stem = re.sub(r"[^A-Za-z0-9._-]+", "_", Path(name).stem).strip("._-")
+    return f"{stem or 'voice_sample'}{suffix}"
+
+
+def _voice_asset_files(
+    voice_assets: list[dict[str, object]] | None,
+    voice_profiles: list[dict[str, object]],
+) -> tuple[dict[str, bytes], list[dict[str, str]]]:
+    if not voice_assets:
+        return {}, []
+    profiles_by_key: dict[str, dict[str, object]] = {}
+    for profile in voice_profiles:
+        for key in (
+            str(profile.get("character_id", "")),
+            str(profile.get("reference_id", "")),
+            str(profile.get("speaker_id", "")),
+        ):
+            if key:
+                profiles_by_key[key] = profile
+    files: dict[str, bytes] = {}
+    metadata: list[dict[str, str]] = []
+    used_names: set[str] = set()
+    for asset in voice_assets:
+        key = str(asset.get("character_id") or asset.get("reference_id") or asset.get("speaker_id") or "").strip()
+        profile = profiles_by_key.get(key)
+        if not profile:
+            raise ValueError("Voice sample could not be matched to a package character.")
+        content = asset.get("content")
+        if not isinstance(content, bytes):
+            raise ValueError("Voice sample content is missing.")
+        filename = _safe_voice_asset_filename(str(asset.get("filename") or "voice_sample.wav"))
+        prefix = str(profile.get("character_id", "character"))
+        candidate = f"{prefix}_{filename}"
+        if candidate in used_names:
+            suffix = Path(candidate).suffix
+            stem = Path(candidate).stem
+            counter = 2
+            while f"{stem}_{counter}{suffix}" in used_names:
+                counter += 1
+            candidate = f"{stem}_{counter}{suffix}"
+        used_names.add(candidate)
+        path = f"{VOICE_SAMPLES_DIR}{candidate}"
+        files[path] = content
+        metadata.append(
+            {
+                "filename": candidate,
+                "path": path,
+                "character_id": str(profile.get("character_id", "")),
+                "character_name": str(profile.get("name", "")),
+                "source": "user_upload",
+            }
+        )
+    return files, metadata
+
+
 def package_fountain_file(
     input_path: Path,
     output_path: Path,
@@ -2139,7 +3224,9 @@ def package_fountain_file(
     scene_ordinal: int | None = None,
     duration_s: int = 3,
     project: str = "project",
+    prompt_edits: dict[str, object] | None = None,
     reference_assets: list[dict[str, object]] | None = None,
+    voice_assets: list[dict[str, object]] | None = None,
 ) -> None:
     get_provider(provider)
 
@@ -2161,6 +3248,8 @@ def package_fountain_file(
     )
     shots, shot_units, _ = _build_shots(selected_scene, doc=doc, duration_s=duration_s)
     bindings, required_refs = _build_bindings(shots, units=shot_units, doc=doc)
+    reference_prompt_edits, shot_prompt_by_id, prompt_tuner_metadata = _normalized_prompt_edits(prompt_edits)
+    review_state = _normalized_review_state(prompt_edits)
     character_ref_by_speaker = _character_ref_lookup(speaker_by_id)
     speaker_by_character_ref = {ref_id: speaker_id for speaker_id, ref_id in character_ref_by_speaker.items()}
     character_name_by_ref: dict[str, str] = {}
@@ -2233,6 +3322,7 @@ def package_fountain_file(
         location_reference=location_reference,
         character_names=list(character_name_by_ref.values()),
         prop_names=list(prop_name_by_ref.values()),
+        extra_references=_extract_reference_candidates(selected_scene, list(character_name_by_ref.values())),
     )
     reference_rows = _enrich_reference_rows(
         reference_rows=reference_rows,
@@ -2242,10 +3332,39 @@ def package_fountain_file(
         location_reference=location_reference,
         prop_name_by_ref=prop_name_by_ref,
     )
+    _apply_reference_prompt_edits(reference_rows, reference_prompt_edits)
+    _apply_reference_review_state(reference_rows, review_state)
+    voice_profiles = _build_voice_profiles(
+        _scene_speaker_lookup(selected_scene, speaker_by_id),
+        character_ref_by_speaker,
+        review_state,
+    )
+    _attach_voice_profiles(reference_rows, voice_profiles)
     source_screenplay_filename = _source_screenplay_filename(input_path)
     reference_paths = _reference_folder_paths(reference_rows)
     reference_asset_files, reference_asset_metadata = _reference_asset_files(reference_assets, reference_paths)
     _attach_reference_asset_metadata(reference_rows, reference_asset_metadata)
+    voice_asset_files, voice_asset_metadata = _voice_asset_files(voice_assets, voice_profiles)
+    if reference_asset_metadata:
+        prompt_tuner_metadata["reference_assets_attached"] = True
+        prompt_tuner_metadata["attached_reference_files"] = [
+            item["path"] for items in reference_asset_metadata.values() for item in items
+        ]
+    if voice_asset_metadata:
+        prompt_tuner_metadata["voice_assets_attached"] = True
+        prompt_tuner_metadata["attached_voice_files"] = [item["path"] for item in voice_asset_metadata]
+    approved_reference_paths = sorted(str(row.get("path", "")) for row in reference_rows if row.get("approved"))
+    approved_voice_ids = sorted(str(profile.get("character_id", "")) for profile in voice_profiles if profile.get("approved"))
+    if approved_reference_paths:
+        prompt_tuner_metadata["approved_reference_prompts"] = approved_reference_paths
+    if approved_voice_ids:
+        prompt_tuner_metadata["approved_voice_references"] = approved_voice_ids
+    character_notes_files = {
+        str(row["structured_notes_path"]): _render_character_reference_notes(row)
+        for row in reference_rows
+        if row.get("type") == "character" and row.get("structured_notes_path")
+    }
+    voice_reference_files = {str(profile["path"]): _render_voice_profile_md(profile) for profile in voice_profiles}
     ordered_paths = [
         RENDERPACKAGE_FILENAME,
         COPY_PASTE_PROMPTS_FILENAME,
@@ -2253,10 +3372,21 @@ def package_fountain_file(
         source_screenplay_filename,
         *reference_paths,
         *sorted(reference_asset_files.keys()),
+        "prompts/",
+        REFERENCE_PROMPTS_FILENAME,
+        *ASSET_REFERENCE_DIRS,
+        *sorted(character_notes_files.keys()),
+        AUDIO_DIR,
+        AUDIO_VOICE_BIBLE_FILENAME,
+        VOICE_REFS_DIR,
+        *sorted(voice_reference_files.keys()),
+        VOICE_SAMPLES_DIR,
+        *sorted(voice_asset_files.keys()),
         GENERATED_TAKES_DIR,
         GENERATED_KEEPERS_DIR,
         *_required_files(prompt_files),
     ]
+    ordered_paths = _dedupe_ordered(ordered_paths)
     location_context = _location_context(selected_scene)
     scene_character_names = _scene_character_names(selected_scene, speaker_by_id)
     agent_shots = _agent_shot_data(
@@ -2268,7 +3398,12 @@ def package_fountain_file(
         location_context=location_context,
         scene_character_names=scene_character_names,
         reference_rows=reference_rows,
+        shot_prompt_by_id=shot_prompt_by_id,
     )
+    _apply_shot_review_state(shots, agent_shots, review_state)
+    approved_shot_ids = sorted(str(shot.get("shot_id", "")) for shot in shots if shot.get("approved"))
+    if approved_shot_ids:
+        prompt_tuner_metadata["approved_shot_prompts"] = approved_shot_ids
     renderpackage_pdf = _render_renderpackage_pdf(
         scene=selected_scene,
         shots=shots,
@@ -2279,6 +3414,7 @@ def package_fountain_file(
         prop_name_by_ref=prop_name_by_ref,
         units=shot_units,
         reference_rows=reference_rows,
+        shot_prompt_by_id=shot_prompt_by_id,
     )
     guide_debug_text = renderpackage_pdf.debug_text
 
@@ -2293,6 +3429,7 @@ def package_fountain_file(
             location_context,
             scene_character_names,
             reference_rows,
+            shot_prompt_by_id,
         ),
         KEEPER_SHEET_FILENAME: _render_scoring_sheet(shots),
         source_screenplay_filename: text,
@@ -2315,6 +3452,12 @@ def package_fountain_file(
             selected_providers=selected_provider_ids,
             agent_shots=agent_shots,
             reference_rows=reference_rows,
+            voice_profiles=voice_profiles,
+            asset_sources={
+                "uploaded_images": [item for items in reference_asset_metadata.values() for item in items],
+                "uploaded_voice_samples": voice_asset_metadata,
+            },
+            prompt_tuner_metadata=prompt_tuner_metadata,
         ),
         PROVENANCE_FILENAME: _render_provenance_json(
             source_name=input_path.name,
@@ -2323,10 +3466,40 @@ def package_fountain_file(
             prompt_filename=prompt_filename,
             generated_at=generated_at,
             guide_debug_text=guide_debug_text,
+            prompt_tuner_metadata=prompt_tuner_metadata,
         ),
         PACKAGE_MAP_FILENAME: _render_package_map(provider, prompt_filename, selected_provider_ids),
         AGENT_ORCHESTRATION_FILENAME: _render_agent_orchestration_md(),
+        REFERENCE_PROMPTS_FILENAME: _render_reference_prompts_md(reference_rows, voice_profiles),
+        AUDIO_VOICE_BIBLE_FILENAME: _render_voice_bible(voice_profiles),
         PROVIDER_CAPABILITIES_EXAMPLE_FILENAME: _render_provider_capabilities_example_json(),
+        ACTION_PLAN_FILENAME: _render_action_plan_json(agent_shots, reference_rows),
+        EXECUTION_CONTRACT_FILENAME: _render_execution_contract_json(selected_provider_ids),
+        APPROVAL_CHECKPOINTS_FILENAME: _render_approval_checkpoints_json(),
+        TAKE_LOG_FILENAME: _to_csv(
+            headers=[
+                "shot_id",
+                "take_id",
+                "filename",
+                "workflow",
+                "prompt_used",
+                "references_used",
+                "notes",
+            ],
+            rows=[],
+        ),
+        KEEPER_DECISIONS_FILENAME: _to_csv(
+            headers=[
+                "shot_id",
+                "keeper_take",
+                "filename",
+                "decision",
+                "reason",
+                "revision_needed",
+                "notes",
+            ],
+            rows=[],
+        ),
         SHOT_LIST_FILENAME: _to_csv(
             headers=[
                 "shot_id",
@@ -2353,11 +3526,20 @@ def package_fountain_file(
             ],
             rows=bindings_rows,
         ),
-        UNIVERSAL_PROMPTS_FILENAME: _render_prompts(shots, bindings, provider=DEFAULT_PROVIDER),
-        RUNWAY_PROMPTS_FILENAME: _render_prompts(shots, bindings, provider=RUNWAY_PROVIDER),
-        GROK_PROMPTS_FILENAME: _render_prompts(shots, bindings, provider=GROK_PROVIDER),
+        UNIVERSAL_PROMPTS_FILENAME: _render_prompts(
+            shots, bindings, provider=DEFAULT_PROVIDER, shot_prompt_by_id=shot_prompt_by_id
+        ),
+        RUNWAY_PROMPTS_FILENAME: _render_prompts(
+            shots, bindings, provider=RUNWAY_PROVIDER, shot_prompt_by_id=shot_prompt_by_id
+        ),
+        GROK_PROMPTS_FILENAME: _render_prompts(
+            shots, bindings, provider=GROK_PROVIDER, shot_prompt_by_id=shot_prompt_by_id
+        ),
     }
     for reference_path in reference_paths:
         files[reference_path] = b""
+    files.update(character_notes_files)
+    files.update(voice_reference_files)
     files.update(reference_asset_files)
+    files.update(voice_asset_files)
     _write_deterministic_zip(resolved_output_path, files, ordered_paths=ordered_paths)

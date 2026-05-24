@@ -52,23 +52,22 @@
 
     <h2>Open:</h2>
     <div class="open-list">
-      <p>PACKAGE_MAP.md</p>
-      <p>Universal shot prompts: prompts/shot_prompts.md</p>
-      <p>Optional provider packs: prompts/runway.gen4_image_refs_prompts.md, prompts/grok.imagine_prompts.md</p>
-      <p>prompts/asset_prompts.md</p>
-      <p>assets/ingredients_manifest.md</p>
-      <p>shots/bindings.csv</p>
-      <p>shots/shot_list.csv</p>
-      <p>keepers/scoring_sheet.csv</p>
+      <p>DEVELOPER_FILES/package_map.md</p>
+      <p>Universal shot prompts: DEVELOPER_FILES/prompt_packs/shot_prompts.md</p>
+      <p>Optional example prompt packs: DEVELOPER_FILES/prompt_packs/runway.gen4_image_refs_prompts.md, DEVELOPER_FILES/prompt_packs/grok.imagine_prompts.md</p>
+      <p>DEVELOPER_FILES/bindings.csv</p>
+      <p>DEVELOPER_FILES/shot_list.csv</p>
+      <p>KEEPER_SHEET.csv</p>
+      <p>DEVELOPER_FILES/take_log.csv</p>
+      <p>DEVELOPER_FILES/keeper_decisions.csv</p>
     </div>
 
     <h2>What this package includes</h2>
     <p>• Shot prompts (one block per shot)</p>
-    <p>• Asset prompts for generating reference images</p>
-    <p>• Reference checklist and reference map</p>
+    <p>• Reference prompts and reference folders</p>
     <p>• Shot list and Keeper Sheet</p>
-    <p>• Audio toolkit (dialogue, voice, SFX)</p>
-    <p>• Optional subtitle guide for editing</p>
+    <p>• Agent orchestration and action-layer files</p>
+    <p>• Generated-shot folders for takes and keepers</p>
   </section>
   <div class="page-split"></div>
 
@@ -93,18 +92,18 @@
 
     <h2>Open:</h2>
     <div class="open-list">
-      <p>prompts/asset_prompts.md</p>
-      <p>assets/ingredients_manifest.md</p>
-      <p>assets/refs/*</p>
+      <p>refs/</p>
+      <p>DEVELOPER_FILES/rpack.json</p>
+      <p>DEVELOPER_FILES/bindings.csv</p>
     </div>
 
     <h2>Where to save your images</h2>
     <p>Save reference images into:</p>
-    <p>• assets/refs/styles/</p>
-    <p>• assets/refs/locations/</p>
-    <p>• assets/refs/characters/</p>
-    <p>• assets/refs/props/</p>
-    <p>Use the exact filenames listed in assets/ingredients_manifest.md (example: style_01_ref_01.png).</p>
+    <p>• refs/01_style_reference/</p>
+    <p>• refs/02_location_reference/</p>
+    <p>• refs/03_character_reference_*/</p>
+    <p>• refs/05_prop_reference_*/</p>
+    <p>Use the reference folders listed in DEVELOPER_FILES/rpack.json and DEVELOPER_FILES/bindings.csv.</p>
   </section>
   <div class="page-split"></div>
 
@@ -135,10 +134,11 @@
 
     <h2>Open:</h2>
     <div class="open-list">
-      <p>Universal shot prompts: prompts/shot_prompts.md</p>
-      <p>Optional provider packs: prompts/runway.gen4_image_refs_prompts.md, prompts/grok.imagine_prompts.md</p>
-      <p>shots/bindings.csv</p>
-      <p>shots/shot_list.csv</p>
+      <p>Universal shot prompts: DEVELOPER_FILES/prompt_packs/shot_prompts.md</p>
+      <p>Optional example prompt packs: DEVELOPER_FILES/prompt_packs/runway.gen4_image_refs_prompts.md, DEVELOPER_FILES/prompt_packs/grok.imagine_prompts.md</p>
+      <p>DEVELOPER_FILES/bindings.csv</p>
+      <p>DEVELOPER_FILES/shot_list.csv</p>
+      <p>generated_shots/takes/</p>
     </div>
   </section>
   <div class="page-split"></div>
@@ -157,11 +157,13 @@
     <p>Keeper discipline keeps you moving: pick what cuts well, reroll only what fails.</p>
 
     <h2>Keeper Sheet</h2>
-    <p>Open keepers/scoring_sheet.csv. For each shot: keeper 0/1, rate character/location/style (1–5), add a short note.</p>
+    <p>Open KEEPER_SHEET.csv. For each shot: keeper 0/1, rate character/location/style (1–5), add a short note.</p>
 
     <h2>Open:</h2>
     <div class="open-list">
-      <p>keepers/scoring_sheet.csv</p>
+      <p>KEEPER_SHEET.csv</p>
+      <p>DEVELOPER_FILES/keeper_decisions.csv</p>
+      <p>generated_shots/keepers/</p>
     </div>
 
     <div class="final-note">
@@ -189,17 +191,16 @@
     <p>Assemble keepers, focus on timing and story. Don’t polish audio yet—get the scene working visually.</p>
 
     <h2>Audio in post</h2>
-    <p>• Dialogue (ADR/VO): audio/dialogue_script.txt + audio/voice_bible.md</p>
-    <p>• SFX/ambience: audio/sfx_cue_sheet.md</p>
+    <p>• Dialogue (ADR/VO): use the screenplay source and the rendered package guide.</p>
+    <p>• SFX/ambience: track notes in your editing project or external sound workflow.</p>
     <p>• Mix: dialogue first, SFX second, music last</p>
-    <p>• Optional: edit_guide/subtitles.srt is an editing guide only; disable before final export</p>
+    <p>• Keep audio decisions outside the standard RenderPackage unless your workflow adds them separately.</p>
 
     <h2>Open:</h2>
     <div class="open-list">
-      <p>audio/dialogue_script.txt</p>
-      <p>audio/voice_bible.md</p>
-      <p>audio/sfx_cue_sheet.md</p>
-      <p>edit_guide/subtitles.srt</p>
+      <p>RENDERPACKAGE.pdf</p>
+      <p>&lt;source&gt;.fountain</p>
+      <p>KEEPER_SHEET.csv</p>
     </div>
   </section>
 </body>

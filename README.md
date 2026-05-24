@@ -1,12 +1,74 @@
-# RenderScript AI
+# RenderScript
 
-RenderScript AI is an open-core screenplay-to-RenderPackage engine.
+RenderScript turns screenplay scenes into agent-actionable RenderPackages for AI-video production: prompts, references, keeper sheets, generated-shot folders, and orchestration files in one portable package.
 
-It converts one Fountain screenplay scene into a **RenderPackage**: a portable production kit for AI video workflows.
+RenderScript is filmmaker-first in language, but the product is the same for creators, agents, and developers. Creators use the root files. Agents and developers use the structured files under `DEVELOPER_FILES/`.
 
-This repository contains the open-core engine and CLI.
+The product direction is one-click deploy from a RenderPackage, scene batch, or project bundle to a linked or connected agent. That does not mean one-click finished video. RenderScript prepares and sends the structured production job; external agents and image/video models execute it with human approval gates.
 
-The hosted UI lives separately at `renderscript.studio`.
+## Current Product Truth
+
+- RenderScript is an agent-actionable screenplay-to-AI-video workflow compiler.
+- RenderPackage is the portable production object.
+- RenderPackage is for creators and agents.
+- RenderScript Project Bundle is the full-screenplay wrapper for multiple linked scene RenderPackages.
+- RenderPackage is agent-actionable, not auto-executable.
+- RenderScript is provider/model/agent agnostic.
+- RenderScript does not generate finished video.
+- RenderScript does not include executable workflow code in the standard package.
+- One-click agent deploy is the north-star workflow direction, not the current package contract.
+- No Pro. No future-tier framing. MVP is the product.
+
+RenderScript is agnostic: no named external agent or provider is the product target.
+
+## Current Package Shape
+
+```text
+RENDERPACKAGE.pdf
+COPY_PASTE_PROMPTS.docx
+KEEPER_SHEET.csv
+realistic.fountain
+refs/
+prompts/reference_prompts.md
+assets/refs/
+audio/voice_bible.md
+generated_shots/
+DEVELOPER_FILES/
+```
+
+`realistic.fountain` is the current example source file; real exports use the source screenplay filename.
+
+`refs/` contains creator-facing reference folders and uploaded image assets. `prompts/reference_prompts.md`, `assets/refs/`, and `audio/` carry the structured visual and voice scaffolds used by PromptTuner and capable agents. Extracted references are scaffolds until the creator approves them as continuity anchors.
+
+The open-core source authority lives in this README plus the compact docs in `docs/`.
+
+## Current Project Bundle Shape
+
+Use this when a Fountain screenplay has multiple scenes and the project needs one manifest with linked scene packages:
+
+```text
+PROJECT_OVERVIEW.md
+project_manifest.json
+project_index.json
+project_refs/
+  style_bible.md
+  continuity_rules.md
+  characters.json
+  locations.json
+scenes/
+  sc_001/RENDERPACKAGE.zip
+  sc_002/RENDERPACKAGE.zip
+```
+
+CLI:
+
+```bash
+renderscript project path/to/script.fountain --project pilot -o ./pilot_project_bundle_v1.zip
+```
+
+`project_manifest.json` tracks stable scene IDs, scene package paths, batch chunks, shared project refs, approval status, and incremental scene-package reuse metadata.
+
+For implementation orientation, start with `docs/CODEBASE_GUIDE.md`.
 
 ## License, Copyright, and Branding
 
@@ -18,138 +80,6 @@ The Apache License allows use, modification, and distribution of the covered cod
 
 RenderScript, RenderPackage, PromptTuner, associated logos, and other RenderScript branding assets are names, marks, and branding assets of Ioan Jones. Do not use them to identify a competing product, imply endorsement, or confuse users about the origin of a product or service.
 
-## Why It Exists
+## Repository Rule
 
-Screenplays are written for humans. AI video workflows need structured inputs.
-
-RenderScript sits between those two worlds. It takes one screenplay scene and turns it into a deterministic package with:
-
-- shot planning
-- reference bindings
-- prompt packs
-- creator docs
-- machine-readable package data
-
-## Product Boundary
-
-RenderScript is intentionally narrow:
-
-- Screenplay in
-- RenderPackage out
-
-It does **not**:
-
-- render video
-- execute provider APIs
-- manage user accounts
-- automate generation
-
-## Who This Repo Is For
-
-This open-core repo is for developers who want to:
-
-- generate RenderPackages from the CLI
-- inspect `dev/rpack.json`
-- build provider adapters
-- add validation or QA around package generation
-- integrate RenderPackage into internal pipelines
-
-If you want the hosted UI, that is a separate product surface.
-
-## What A RenderPackage Contains
-
-A RenderPackage typically includes:
-
-- `CREATOR_GUIDE.pdf`
-- `START_HERE.txt`
-- `PACKAGE_MAP.md`
-- shot planning files
-- prompt packs
-- reference bindings
-- audio post-production docs
-- `dev/rpack.json` as the machine-readable contract
-
-## Quick Start
-
-Install:
-
-```bash
-python3 -m pip install -e .
-```
-
-Run tests:
-
-```bash
-python3 -m pytest -q
-```
-
-Build a package:
-
-```bash
-renderscript package path/to/script.fountain --scene 1 --provider universal -o ./out/package.zip
-```
-
-## CLI Examples
-
-Build a package from a screenplay:
-
-```bash
-renderscript package path/to/script.fountain --scene 1 --provider universal -o ./out/package.zip
-```
-
-Add an optional provider pack:
-
-```bash
-renderscript package path/to/script.fountain --scene 1 --provider universal --add-pack grok.imagine -o ./out/package.zip
-```
-
-Use a different primary provider:
-
-```bash
-renderscript package path/to/script.fountain --scene 1 --provider runway.gen4_image_refs -o ./out/package.zip
-```
-
-## Provider Adapters
-
-Current adapters:
-
-- Universal -> `universal`
-- Runway Gen-4 References -> `runway.gen4_image_refs`
-- Grok Imagine -> `grok.imagine`
-
-Universal is the default workflow.
-Provider packs are optional additions.
-
-## Core Ideas
-
-- One scene in, one package out
-- Universal workflow first
-- Provider packs as optional additions
-- Creator-facing files for workflow use
-- `dev/rpack.json` as the machine-readable contract
-
-## Repo Layout
-
-```text
-renderscript/    Core engine
-examples/        Example Fountain scripts
-tests/           Regression tests
-docs/            Project and codebase documentation
-```
-
-## Examples
-
-Example Fountain inputs live in `examples/`.
-
-Those fixtures are also used by the test suite, so they are a good place to start if you want to understand the expected input shape and current behavior.
-
-## Documentation
-
-Start here:
-
-- `docs/CODEBASE_GUIDE.md`
-- `docs/STRUCTURE_MAP.md`
-
-## License
-
-Licensed under Apache-2.0. See `LICENSE`.
+When the RenderPackage contract changes, update every README/readme-style source file in the same PR. Remove obsolete docs rather than leaving contradictory instructions.
