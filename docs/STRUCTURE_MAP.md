@@ -14,26 +14,17 @@ It separates:
 
 ```text
 renderscript/
+├── app/                     # FastAPI UI wrapper
+├── bench/                   # Benchmark protocol and scoring data
 ├── docs/                    # Human-facing codebase documentation
 ├── examples/                # Example Fountain scripts and expected outputs
+├── out/                     # Generated packages and scratch output (not source of truth)
 ├── renderscript/            # Core Python package
 ├── skills/                  # Local inspectable agent-skill templates
 ├── tests/                   # Regression tests
 ├── pyproject.toml           # Package metadata and dependencies
 ├── build_backend.py         # Minimal build backend
 └── renderscript.schema.v0.1.json
-```
-
-## Local Skill Templates
-
-```text
-skills/
-└── renderscript-package-handoff/
-    ├── SKILL.md
-    └── references/
-        ├── handoff-template.md
-        ├── safety.md
-        └── target-workflows.md
 ```
 
 ## Core Python Package
@@ -64,19 +55,48 @@ renderscript/
     └── creator_guide_universal.html
 ```
 
+## UI Layer
+
+```text
+app/
+├── main.py                  # FastAPI app
+├── README.md                # Local UI run instructions
+├── requirements.txt
+├── static/
+│   ├── styles.css
+│   ├── sample_RenderPackage.zip
+│   └── icons/
+│       ├── github.svg
+│       ├── x.svg
+│       └── youtube.svg
+└── templates/
+    └── index.html           # Single-page UI
+```
+
+## Local Skill Templates
+
+```text
+skills/
+└── renderscript-openclaw-handoff/
+    ├── SKILL.md
+    └── references/
+        ├── handoff-template.md
+        ├── safety.md
+        └── target-workflows.md
+```
+
 ## Tests
 
 ```text
 tests/
 ├── expected_package_paths.txt
+├── test_app_ui.py
 ├── test_bench.py
 ├── test_cli_version.py
 ├── test_package_cli.py
 ├── test_pdf_guide.py
 ├── test_phase1a.py
 ├── test_project_bundle.py
-├── test_renderpackage_validation.py
-├── test_skill_template.py
 ├── test_prompt_cli.py
 ├── test_realistic_prompt_golden.py
 ├── test_stage_a_golden.py
@@ -101,6 +121,20 @@ examples/
     └── t4_location_persistence.rscript
 ```
 
+## Generated Output
+
+```text
+out/
+├── *.zip
+├── debug_pdf/
+├── pilot_renderpackage_v7/
+├── universal_polish/
+├── universal_ui_guide/
+└── ...
+```
+
+Treat `out/` as generated artifacts, not canonical source.
+
 ## Responsibility Map
 
 ### Parse and compile
@@ -117,9 +151,12 @@ examples/
 - `renderscript/pdf_guide.py`
 - `renderscript/templates/*`
 
-### Deliver through interface
+### Deliver through interfaces
 
 - `renderscript/cli.py`
+- `app/main.py`
+- `app/templates/index.html`
+- `app/static/styles.css`
 
 ## Source of Truth Map
 
@@ -146,7 +183,10 @@ The source of truth is:
 
 ### For UI behavior
 
-The hosted Studio UI lives outside the open-core branch. The open-core branch exposes the CLI and package builders.
+The source of truth is:
+
+- `app/main.py`
+- `app/templates/index.html`
 
 ### For expected behavior
 
@@ -157,7 +197,7 @@ The source of truth is:
 ## High-Level Call Graph
 
 ```text
-CLI
+UI / CLI
   -> compiler.py
   -> renderpackage.py
       -> providers.py
@@ -177,7 +217,9 @@ Start here:
 Then check:
 
 - `renderscript/renderpackage.py`
-- tests in `tests/test_package_cli.py`
+- `app/main.py`
+- `app/templates/index.html`
+- tests in `tests/test_package_cli.py` and `tests/test_app_ui.py`
 
 ### I want to change the package folder contents
 
@@ -198,6 +240,12 @@ Start here:
 
 - `renderscript/fountain_parser.py`
 - `renderscript/compiler.py`
+
+### I want to understand what the app does on submit
+
+Start here:
+
+- `app/main.py`
 
 ### I want to understand why a test is failing
 

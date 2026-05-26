@@ -1,17 +1,19 @@
 ---
-name: renderscript-package-handoff
-description: Use when an agent needs to work from a RenderScript RenderPackage.zip or Project Bundle.zip to inspect package files, prepare safe AI-video workflow handoff batches, map shots to approved references, log takes and keepers, or build a local workflow adapter. Enforces creator approvals and forbids hidden code, credential handling, uploads, generation, spending, or external tool access without explicit approval.
+name: renderscript-openclaw-handoff
+description: OpenClaw handoff for RenderScript RenderPackage.zip or Project Bundle.zip: inspect, verify approvals, batch shots, log takes; no uploads, generation, spend, creds without approval.
 ---
 
-# RenderScript Package Handoff
+# RenderScript OpenClaw Handoff
 
 ## Core Boundary
 
 Treat RenderPackage as an inspectable production package, not runnable software.
 
+This is the optional RenderScript handoff skill for OpenClaw. Downstream AI-video tools remain creator-selected and approval-gated.
+
 Do not download third-party skills, run package-contained code, request credentials, upload files, generate video, spend credits, or operate external tools unless the creator explicitly approves that exact action.
 
-Use this skill to turn package data into safe handoff batches for manual workflows, capable assistants, workspace agents, local tools, or custom developer workflows.
+Use this skill to turn package data into safe OpenClaw handoff batches. Keep any video-tool execution outside RenderScript and under explicit creator control.
 
 ## Workflow
 
@@ -25,11 +27,11 @@ Use this skill to turn package data into safe handoff batches for manual workflo
    - Treat uploaded assets as source references, not decoration.
    - If any required reference or shot is unapproved, stop and ask for creator review.
 
-3. Choose a handoff route.
-   - Manual workflow: prepare copy/paste prompts and asset lists.
-   - Package handoff: prepare a concise brief for a capable assistant or workspace.
-   - Custom workflow: prepare deterministic JSON/Markdown batches for a developer-built adapter.
-   - For target-specific guidance, read `references/target-workflows.md`.
+3. Choose the OpenClaw handoff shape.
+   - Planning only: prepare prompts, asset lists, and missing-approval notes.
+   - Assisted execution: prepare a concise OpenClaw batch and stop before any external side effect.
+   - Structured adapter: prepare deterministic JSON/Markdown for a user-owned OpenClaw workflow.
+   - For target guidance, read `references/target-workflows.md`.
 
 4. Prepare the handoff batch.
    - Use stable shot IDs.

@@ -1,10 +1,10 @@
 # RenderScript Codebase Guide
 
-Status: current open-core orientation guide.
+Status: current orientation guide. If this conflicts with `docs/14_LATEST_RENDERPACKAGE_STATE_LOCK.md`, the state lock wins.
 
 ## Product Boundary
 
-RenderScript turns one selected Fountain screenplay scene into an agent-actionable RenderPackage. For full screenplays, it can also build a Project Bundle that links one scene RenderPackage per scene. These outputs are for creators and agents; they are not auto-executable and they do not generate finished video.
+RenderScript turns one selected Fountain screenplay scene into an agent-actionable RenderPackage. For full screenplays, it can also build a Project Bundle that links one scene RenderPackage per scene. These outputs are for creators, agents, and developers; they are not auto-executable and they do not generate finished video.
 
 The current package contract is:
 
@@ -23,7 +23,7 @@ DEVELOPER_FILES/
 
 Machine-readable files live under `DEVELOPER_FILES/`, especially `DEVELOPER_FILES/rpack.json`. Structured reference scaffolds also live in `prompts/reference_prompts.md`, `assets/refs/`, and `audio/`.
 
-RenderPackage is also the input to repo-local, inspectable skills and adapters. The starter template lives in `skills/renderscript-package-handoff/`; it is text-first and approval-gated.
+RenderPackage is also the input to repo-local, inspectable skills and adapters. The optional OpenClaw skill lives in `skills/renderscript-openclaw-handoff/`; it is text-first and approval-gated.
 
 ## Main Source Files
 
@@ -35,6 +35,8 @@ RenderPackage is also the input to repo-local, inspectable skills and adapters. 
 - `renderscript/providers.py`: compatibility registry for optional execution templates.
 - `renderscript/validate.py`: validates `.rscript` documents and RenderPackage zips.
 - `renderscript/cli.py`: developer CLI entrypoint.
+- `app/main.py`: FastAPI app and PromptTuner backend routes.
+- `app/templates/index.html`: Studio UI.
 
 ## Package Builder
 
@@ -66,21 +68,26 @@ Directory outputs can reuse matching scene packages when source hash, scene ID, 
 
 ## Execution Templates
 
-Universal prompts are canonical. Non-canonical prompt packs are optional example execution templates. No named external agent or provider is the RenderScript product target.
+Universal prompts are canonical. Non-canonical prompt packs are optional example execution templates. No AI-video provider or agent is the RenderScript product target.
 
 Some compatibility names still exist in code, including `provider`, `target_provider`, and `ProviderAdapter`. Treat them as legacy surface area unless changing them is part of a deliberate compatibility migration.
 
-## Approval Metadata
+## PromptTuner And Prompt Assist
 
-RenderPackage records prompt, visual-reference, and voice-reference approval state in `DEVELOPER_FILES/rpack.json`. Extracted references remain scaffolds until a creator approves them. Project Bundles preserve the same scene-level approval metadata in each nested RenderPackage.
+PromptTuner is the package-WYSIWYG review step before export. Manual editing must always work.
+
+Prompt Assist is optional and uses a backend proxy. Azure OpenAI keys must never be exposed in frontend bundles or package metadata.
+
+Studio export is approval-gated. Every reference, voice reference, and shot prompt must be approved before single-scene or Project Bundle export unlocks.
 
 ## Where To Change Things
 
 - Package structure: `renderscript/renderpackage.py`, `renderscript/validate.py`, package tests.
 - PDF wording: `renderscript/templates/renderpackage_storyboard.html` and `renderscript/pdf_guide.py`.
 - Prompt packs: `renderscript/renderpackage.py` and `renderscript/providers.py`.
+- UI workflow: `app/templates/index.html`, `app/static/styles.css`, `app/main.py`.
 - Public/source copy: `README.md` and `docs/*.md`.
-- Local skill template: `skills/renderscript-package-handoff/`.
+- Optional OpenClaw skill: `skills/renderscript-openclaw-handoff/`.
 
 ## README Rule
 

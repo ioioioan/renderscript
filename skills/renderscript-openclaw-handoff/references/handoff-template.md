@@ -1,6 +1,6 @@
 # Handoff Batch Template
 
-Use this shape for manual or package handoff.
+Use this shape for OpenClaw handoff.
 
 ```markdown
 # RenderScript Handoff Batch
@@ -9,6 +9,7 @@ Project:
 Scene:
 Batch:
 Target workflow:
+OpenClaw mode:
 Prepared from:
 
 ## Approval Status

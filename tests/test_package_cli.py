@@ -699,12 +699,9 @@ def test_package_add_pack_grok_generates_grok_prompt_file(
     assert "DEVELOPER_FILES/prompt_packs/grok.imagine_prompts.md" in contents
     grok_prompt_text = contents["DEVELOPER_FILES/prompt_packs/grok.imagine_prompts.md"].decode("utf-8")
     assert "# Grok Imagine Prompts" in grok_prompt_text
-    assert "Example execution template only" in grok_prompt_text
-    assert "not the RenderScript product target" in grok_prompt_text
-    assert (
-        "Grok Imagine video workflows typically start from a reference image. "
-        "For best results, attach at least a style or character reference image before generating."
-    ) in grok_prompt_text
+    assert "Legacy example execution template only" in grok_prompt_text
+    assert "not a supported RenderScript integration" in grok_prompt_text
+    assert "Use this prompt pack only if you have independently validated the target workflow." in grok_prompt_text
     assert "How to apply refs:" in grok_prompt_text
     package_map = contents["DEVELOPER_FILES/package_map.md"].decode("utf-8")
     assert "Grok Imagine" in package_map

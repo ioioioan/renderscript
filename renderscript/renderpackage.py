@@ -300,8 +300,8 @@ def _render_agent_orchestration_md() -> str:
         "   - post-production notes where available\n"
         "5. Check whether required reference folders contain user-provided assets\n"
         "6. If references are missing, ask the user to add them or use a separate image-generation workflow\n"
-        "7. Ask the user which AI-video tool, local workflow, or compatible agent route to use\n"
-        "8. Map the shot data to that optional execution route\n"
+        "7. Ask the user which AI-video tool or agent-assisted workflow to use\n"
+        "8. Map the shot data to that approved execution route\n"
         "9. Prepare generation tasks using:\n"
         "   - base prompt\n"
         "   - selected references\n"
@@ -343,7 +343,7 @@ def _render_agent_orchestration_md() -> str:
         "Do not place generated media inside DEVELOPER_FILES.\n\n"
         "## Optional execution templates\n\n"
         "Execution templates may translate RenderPackage data into workflow-specific requests.\n"
-        "Universal prompts remain canonical; Grok, Runway, local agents, and custom agents are compatible routes, not product targets.\n\n"
+        "Universal prompts remain canonical; agent-assisted workflows are optional, while downstream AI-video tools are creator-selected execution targets.\n\n"
         "Templates may use:\n"
         "- base prompts\n"
         "- reference folders\n"
@@ -1401,8 +1401,8 @@ def _render_prompts(
     if provider == GROK_PROVIDER:
         lines.extend(
             [
-                "Example execution template only: Grok is one compatible route, not the RenderScript product target.",
-                "Grok Imagine video workflows typically start from a reference image. For best results, attach at least a style or character reference image before generating.",
+                "Legacy example execution template only: this is not a supported RenderScript integration.",
+                "Use this prompt pack only if you have independently validated the target workflow.",
                 "",
             ]
         )
@@ -1427,7 +1427,7 @@ def _render_prompts(
                 f"style={', '.join(shot_bindings['style_ref_ids'])}"
             )
             lines.append(
-                "How to apply refs: Attach at least a style or character reference image before generating when available. Keep the same refs on rerolls."
+                "How to apply refs: follow the target workflow's current reference-image limits, and keep the same approved refs on rerolls when supported."
             )
         else:
             lines.append("Apply references: Attach style/location/character reference images if your tool supports them.")

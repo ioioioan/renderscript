@@ -4,7 +4,9 @@ RenderScript turns screenplay scenes into agent-actionable RenderPackages for AI
 
 RenderScript is filmmaker-first in language, but the product is the same for creators, agents, and developers. Creators use the root files. Agents and developers use the structured files under `DEVELOPER_FILES/`.
 
-The product direction is one-click deploy from a RenderPackage, scene batch, or project bundle to a linked or connected agent. That does not mean one-click finished video. RenderScript prepares and sends the structured production job; external agents and image/video models execute it with human approval gates.
+The product direction is one-click deploy from a RenderPackage, scene batch, or project bundle to a linked or connected agent. That does not mean one-click finished video. RenderScript prepares and sends the structured production job; external agents and creator-selected image/video tools execute it with human approval gates.
+
+RenderScript was originally created through the Codex plugin for VS Code. Ongoing development is now consolidated in Codex with the repository documentation as the source of truth.
 
 ## Current Product Truth
 
@@ -17,10 +19,10 @@ The product direction is one-click deploy from a RenderPackage, scene batch, or 
 - RenderScript does not generate finished video.
 - RenderScript does not include executable workflow code in the standard package.
 - One-click agent deploy is the north-star workflow direction, not the current package contract.
-- Developers can build their own local, inspectable package handoff skills from `skills/renderscript-package-handoff/`.
+- Developers who use OpenClaw can use the optional local, inspectable handoff skill from `skills/renderscript-openclaw-handoff/`.
 - No Pro. No future-tier framing. MVP is the product.
 
-RenderScript is agnostic: no named external agent or provider is the product target.
+OpenClaw is mentioned because this repo includes an optional skill for it. It is not the RenderScript product target, and RenderScript remains agent agnostic.
 
 ## Current Package Shape
 
@@ -39,9 +41,9 @@ DEVELOPER_FILES/
 
 `realistic.fountain` is the current example source file; real exports use the source screenplay filename.
 
-`refs/` contains creator-facing reference folders and uploaded image assets. `prompts/reference_prompts.md`, `assets/refs/`, and `audio/` carry the structured visual and voice scaffolds used by PromptTuner and capable agents. Extracted references are scaffolds until the creator approves them as continuity anchors.
+`refs/` contains creator-facing reference folders and uploaded image assets. `prompts/reference_prompts.md`, `assets/refs/`, and `audio/` carry the structured visual and voice scaffolds used by PromptTuner, agents, and local tools. Extracted references are scaffolds until the creator approves them as continuity anchors.
 
-The open-core source authority lives in this README plus the compact docs in `docs/`.
+The current source authority lives in `docs/`, starting with `docs/14_LATEST_RENDERPACKAGE_STATE_LOCK.md`.
 
 ## Current Project Bundle Shape
 
@@ -69,13 +71,19 @@ renderscript project path/to/script.fountain --project pilot -o ./pilot_project_
 
 `project_manifest.json` tracks stable scene IDs, scene package paths, batch chunks, shared project refs, approval status, and incremental scene-package reuse metadata.
 
-For implementation orientation, start with `docs/CODEBASE_GUIDE.md`.
+The current direction docs are:
 
-## Local Skill Template
+- `docs/15_ONE_CLICK_AGENT_DEPLOY.md`
+- `docs/16_FULL_PROJECT_MODE_MVP.md`
+- `docs/17_LOCAL_SKILL_TEMPLATE.md`
 
-RenderPackage is designed to be safe input for developer-built workflows. The repo includes a text-first starter skill at `skills/renderscript-package-handoff/` for agents that need to inspect a RenderPackage, verify approvals, prepare handoff batches, and stop before uploads, generation, spending, credentials, or external tool access.
+## Optional OpenClaw Skill
 
-Do not treat random downloaded skills as trusted. Copy and adapt the local template in your own workspace so the workflow remains inspectable.
+RenderPackage is designed to be safe input for agent-assisted and developer-built workflows. The repo includes a text-first optional skill at `skills/renderscript-openclaw-handoff/` for OpenClaw users who want OpenClaw to inspect a RenderPackage, verify approvals, prepare handoff batches, and stop before uploads, generation, spending, credentials, or external tool access.
+
+In plain terms, a skill is an instruction folder for OpenClaw. This one teaches the agent how to read the RenderPackage files and where to stop for creator approval. It does not generate video, connect accounts, request credentials, upload assets, or spend credits.
+
+Do not treat random downloaded skills as trusted. If using OpenClaw, copy the RenderScript skill from the public repo or a tagged release into `~/.openclaw/workspace/skills/` so the workflow remains inspectable.
 
 ## License, Copyright, and Branding
 
